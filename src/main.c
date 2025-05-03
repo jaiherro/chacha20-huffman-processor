@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
+#include "compression/huffman.h"
 #include "encryption/chacha20.h"
 #include "encryption/key_derivation.h"
 #include "utils/file_list.h"
@@ -57,10 +57,9 @@
 #define MODE_DECOMPRESS  4  /* Decompress a file */
 #define MODE_PROCESS     5  /* Process (encrypt+compress) a file */
 #define MODE_EXTRACT     6  /* Extract (decompress+decrypt) a file */
-#define MODE_TEST        7  /* Run tests */
-#define MODE_LIST        8  /* List processed files */
-#define MODE_FIND        9  /* Find a file in the list */
-#define MODE_BATCH       10 /* Batch process multiple files */
+#define MODE_LIST        7  /* List processed files */
+#define MODE_FIND        8  /* Find a file in the list */
+#define MODE_BATCH       9  /* Batch process multiple files */
 
 /* Default values */
 #define DEFAULT_KEY_ITERATIONS  10000   /* Default iterations for key derivation */
@@ -89,7 +88,6 @@ int extract_file(const char *input_file, const char *output_file,
 int handle_file_list(const char *command, const char *filename);
 int batch_process(char *filenames[], int num_files, const char *output_dir, 
                   const char *password, int iterations);
-int run_tests();
 
 /**
  * Print binary data in a readable hexadecimal format
@@ -122,9 +120,8 @@ void print_usage(const char *program_name) {
     printf("  %s -d infile outfile      Decrypt a file (password prompt)\n", program_name);
     printf("  %s -c infile outfile      Compress a file\n", program_name);
     printf("  %s -x infile outfile      Decompress a file\n", program_name);
-    printf("  %s -p infile outfile      Process a file (encrypt+compress)\n", program_name);
-    printf("  %s -u infile outfile      Extract a file (decompress+decrypt)\n", program_name);
-    printf("  %s -t                     Run tests\n", program_name);
+    printf("  %s -p infile outfile      Process a file (compress+encrypt)\n", program_name);
+    printf("  %s -u infile outfile      Extract a file (decrypt+decompress)\n", program_name);
     printf("  %s -l                     List processed files\n", program_name);
     printf("  %s -f filename            Find a file in the list\n", program_name);
     printf("  %s -b outdir file1 file2... Batch process multiple files\n", program_name);
@@ -140,9 +137,8 @@ void print_usage(const char *program_name) {
  * @return 0 on success, non-zero on failure
  */
 int run_demo() {
-    /* Demo text to encrypt/decrypt and compress/decompress */
-    const char *demo_text = "This is a demonstration of ChaCha20 encryption and Huffman compression. "
-                           "AAAAAABBBBCCCDDDDDDDD is a good test for Huffman compression.";
+    /* Demo text to compress/encrypt and decrypt/decompress */
+    const char *demo_text = "This is a demonstration of Huffman compression and ChaCha20 encryption.";
     size_t demo_len = strlen(demo_text);
     
     /* For demonstration, use a fixed key and nonce */
@@ -160,9 +156,9 @@ int run_demo() {
     
     /* Buffers for the demonstration */
     uint8_t *plaintext = NULL;
-    uint8_t *ciphertext = NULL;
-    uint8_t *decrypted = NULL;
     uint8_t *compressed = NULL;
+    uint8_t *encrypted = NULL;
+    uint8_t *decrypted = NULL;
     uint8_t *decompressed = NULL;
     size_t compressed_size = 0;
     size_t decompressed_size = 0;
@@ -171,19 +167,18 @@ int run_demo() {
     chacha20_ctx ctx;
     
     int result = 0;
-    int i, success = 1;
     
     printf("Secure File Processor Demonstration\n");
     printf("==================================\n\n");
     
     /* Allocate memory for the demonstration */
-    plaintext = (uint8_t *)malloc(demo_len);
-    ciphertext = (uint8_t *)malloc(demo_len);
-    decrypted = (uint8_t *)malloc(demo_len);
-    compressed = (uint8_t *)malloc(rle_worst_case_size(demo_len));
-    decompressed = (uint8_t *)malloc(demo_len);
+    plaintext = (uint8_t *)malloc(demo_len + 1);
+    compressed = (uint8_t *)malloc(huffman_worst_case_size(demo_len));
+    encrypted = (uint8_t *)malloc(huffman_worst_case_size(demo_len));
+    decrypted = (uint8_t *)malloc(huffman_worst_case_size(demo_len));
+    decompressed = (uint8_t *)malloc(demo_len + 1);
     
-    if (!plaintext || !ciphertext || !decrypted || !compressed || !decompressed) {
+    if (!plaintext || !compressed || !encrypted || !decrypted || !decompressed) {
         fprintf(stderr, "Memory allocation failed\n");
         result = -1;
         goto cleanup;
@@ -191,129 +186,84 @@ int run_demo() {
     
     /* Copy the demo text to plaintext buffer */
     memcpy(plaintext, demo_text, demo_len);
+    plaintext[demo_len] = '\0';
     
-    printf("Original plaintext: %s\n", plaintext);
-    PRINT_HEX("Original plaintext (hex)", plaintext, demo_len);
+    printf("Original plaintext: %s\n\n", plaintext);
     
-    printf("\n--- ChaCha20 Encryption Demonstration ---\n\n");
+    printf("--- Demonstration Pipeline: Plaintext -> Compress -> Encrypt -> Decrypt -> Decompress ---\n\n");
     
-    /* Encrypt the plaintext */
+    /* Step 1: Compress the plaintext */
+    printf("Step 1: Compressing data...\n");
+    if (huffman_compress(plaintext, demo_len, compressed, huffman_worst_case_size(demo_len), &compressed_size) != 0) {
+        fprintf(stderr, "Compression failed\n");
+        result = -1;
+        goto cleanup;
+    }
+    
+    printf("Compressed data size: %zu bytes (%.2f%% of original)\n\n", 
+           compressed_size, (float)compressed_size * 100 / demo_len);
+    
+    /* Step 2: Encrypt the compressed data */
+    printf("Step 2: Encrypting compressed data...\n");
     if (chacha20_init(&ctx, demo_key, demo_nonce, 0) != 0) {
         fprintf(stderr, "Failed to initialize ChaCha20 context for encryption\n");
         result = -1;
         goto cleanup;
     }
     
-    if (chacha20_process(&ctx, plaintext, ciphertext, demo_len) != 0) {
+    if (chacha20_process(&ctx, compressed, encrypted, compressed_size) != 0) {
         fprintf(stderr, "Encryption failed\n");
         result = -1;
         goto cleanup;
     }
     
-    printf("Encrypted ciphertext (hex): ");
-    for (i = 0; i < demo_len; i++) {
-        printf("%02x", ciphertext[i]);
-        if ((i + 1) % 4 == 0) printf(" ");
-    }
-    printf("\n");
+    printf("Data encrypted successfully\n\n");
     
     /* Clean up the context before reusing it */
     chacha20_cleanup(&ctx);
     
-    /* Decrypt the ciphertext */
+    /* Step 3: Decrypt the encrypted data */
+    printf("Step 3: Decrypting data...\n");
     if (chacha20_init(&ctx, demo_key, demo_nonce, 0) != 0) {
         fprintf(stderr, "Failed to initialize ChaCha20 context for decryption\n");
         result = -1;
         goto cleanup;
     }
     
-    if (chacha20_process(&ctx, ciphertext, decrypted, demo_len) != 0) {
+    if (chacha20_process(&ctx, encrypted, decrypted, compressed_size) != 0) {
         fprintf(stderr, "Decryption failed\n");
         result = -1;
         goto cleanup;
     }
     
-    printf("Decrypted plaintext: %s\n", decrypted);
+    printf("Data decrypted successfully\n\n");
     
-    /* Verify decryption */
-    for (i = 0; i < demo_len; i++) {
-        if (plaintext[i] != decrypted[i]) {
-            success = 0;
-            break;
-        }
-    }
-    
-    printf("Encryption/Decryption verification: %s\n", success ? "PASSED" : "FAILED");
-    
-    printf("\n--- RLE Compression Demonstration ---\n\n");
-    
-    /* Compress the plaintext */
-    if (rle_compress(plaintext, demo_len, compressed, rle_worst_case_size(demo_len), &compressed_size) != 0) {
-        fprintf(stderr, "Compression failed\n");
-        result = -1;
-        goto cleanup;
-    }
-    
-    printf("Compressed data size: %zu bytes (%.2f%% of original)\n", 
-           compressed_size, (float)compressed_size * 100 / demo_len);
-    
-    /* Decompress the compressed data */
-    if (rle_decompress(compressed, compressed_size, decompressed, demo_len, &decompressed_size) != 0) {
+    /* Step 4: Decompress the decrypted data */
+    printf("Step 4: Decompressing data...\n");
+    if (huffman_decompress(decrypted, compressed_size, decompressed, demo_len, &decompressed_size) != 0) {
         fprintf(stderr, "Decompression failed\n");
         result = -1;
         goto cleanup;
     }
     
+    decompressed[decompressed_size] = '\0';
     printf("Decompressed data size: %zu bytes\n", decompressed_size);
-    printf("Decompressed plaintext: %s\n", decompressed);
+    printf("Decompressed plaintext: %s\n\n", decompressed);
     
-    /* Verify decompression */
-    success = 1;
-    if (decompressed_size != demo_len) {
-        success = 0;
+    /* Verification */
+    if (decompressed_size == demo_len && memcmp(plaintext, decompressed, demo_len) == 0) {
+        printf("Verification: SUCCESS - Original data recovered successfully\n");
     } else {
-        for (i = 0; i < demo_len; i++) {
-            if (plaintext[i] != decompressed[i]) {
-                success = 0;
-                break;
-            }
-        }
+        printf("Verification: FAILED - Original data could not be recovered\n");
+        result = -1;
     }
-    
-    printf("Compression/Decompression verification: %s\n", success ? "PASSED" : "FAILED");
-    
-    printf("\n--- File List Demonstration ---\n\n");
-    
-    /* Initialize a file list */
-    file_list_t file_list;
-    file_list_init(&file_list);
-    
-    /* Add some example files */
-    file_list_add(&file_list, "example1.txt", 1024, 512);
-    file_list_add(&file_list, "document.docx", 8192, 4096);
-    file_list_add(&file_list, "image.jpg", 65536, 62000);
-    
-    /* Print the file list */
-    file_list_print(&file_list);
-    
-    /* Find a file */
-    printf("\nSearching for 'doc'...\n");
-    file_entry_t *found = file_list_find(&file_list, "doc");
-    if (found) {
-        printf("Found: %s\n", found->filename);
-    } else {
-        printf("No matching file found\n");
-    }
-    
-    /* Free the file list */
-    file_list_free(&file_list);
     
 cleanup:
     /* Free allocated memory */
     if (plaintext) free(plaintext);
-    if (ciphertext) free(ciphertext);
-    if (decrypted) free(decrypted);
     if (compressed) free(compressed);
+    if (encrypted) free(encrypted);
+    if (decrypted) free(decrypted);
     if (decompressed) free(decompressed);
     
     /* Clean up the context */
@@ -603,7 +553,7 @@ cleanup:
 }
 
 /**
- * Compress a file using RLE
+ * Compress a file using Huffman
  * 
  * @param input_file  Path to the input file
  * @param output_file Path to the output file
@@ -646,7 +596,7 @@ int compress_file(const char *input_file, const char *output_file) {
     
     /* Allocate buffers */
     buffer = (uint8_t *)malloc(BUFFER_SIZE);
-    output_buffer = (uint8_t *)malloc(rle_worst_case_size(BUFFER_SIZE));
+    output_buffer = (uint8_t *)malloc(huffman_worst_case_size(BUFFER_SIZE));
     
     if (buffer == NULL || output_buffer == NULL) {
         fprintf(stderr, "Memory allocation failed\n");
@@ -659,9 +609,9 @@ int compress_file(const char *input_file, const char *output_file) {
     
     while ((read_size = fread(buffer, 1, BUFFER_SIZE, in)) > 0) {
         /* Compress the chunk */
-        if (rle_compress(buffer, read_size, output_buffer, 
-                      rle_worst_case_size(BUFFER_SIZE), &output_size) != 0) {
-            fprintf(stderr, "RLE compression failed\n");
+        if (huffman_compress(buffer, read_size, output_buffer, 
+                      huffman_worst_case_size(BUFFER_SIZE), &output_size) != 0) {
+            fprintf(stderr, "Huffman compression failed\n");
             result = -1;
             goto cleanup;
         }
@@ -719,7 +669,7 @@ cleanup:
 }
 
 /**
- * Decompress a file that was compressed using RLE
+ * Decompress a file that was compressed using Huffman
  * 
  * @param input_file  Path to the input file
  * @param output_file Path to the output file
@@ -756,7 +706,7 @@ int decompress_file(const char *input_file, const char *output_file) {
     }
     
     /* Allocate buffers */
-    buffer = (uint8_t *)malloc(rle_worst_case_size(BUFFER_SIZE));
+    buffer = (uint8_t *)malloc(huffman_worst_case_size(BUFFER_SIZE));
     output_buffer = (uint8_t *)malloc(BUFFER_SIZE);
     
     if (buffer == NULL || output_buffer == NULL) {
@@ -768,7 +718,7 @@ int decompress_file(const char *input_file, const char *output_file) {
     /* Process the file in chunks */
     while (fread(&chunk_size, sizeof(size_t), 1, in) == 1) {
         /* Check if chunk size is reasonable */
-        if (chunk_size > rle_worst_case_size(BUFFER_SIZE)) {
+        if (chunk_size > huffman_worst_case_size(BUFFER_SIZE)) {
             fprintf(stderr, "Invalid chunk size: %zu\n", chunk_size);
             result = -1;
             goto cleanup;
@@ -782,8 +732,8 @@ int decompress_file(const char *input_file, const char *output_file) {
         }
         
         /* Decompress the chunk */
-        if (rle_decompress(buffer, chunk_size, output_buffer, BUFFER_SIZE, &output_size) != 0) {
-            fprintf(stderr, "RLE decompression failed\n");
+        if (huffman_decompress(buffer, chunk_size, output_buffer, BUFFER_SIZE, &output_size) != 0) {
+            fprintf(stderr, "Huffman decompression failed\n");
             result = -1;
             goto cleanup;
         }
@@ -816,7 +766,7 @@ cleanup:
 }
 
 /**
- * Process a file (encrypt and compress)
+ * Process a file (compress and encrypt)
  * 
  * @param input_file  Path to the input file
  * @param output_file Path to the output file
@@ -832,20 +782,20 @@ int process_file(const char *input_file, const char *output_file,
     /* Create a temporary filename */
     snprintf(temp_file, MAX_FILENAME, "%s.tmp", output_file);
     
-    printf("Processing file '%s' to '%s' (encrypt + compress)\n", input_file, output_file);
+    printf("Processing file '%s' to '%s' (compress + encrypt)\n", input_file, output_file);
     
-    /* First encrypt the file */
-    result = encrypt_file(input_file, temp_file, password, iterations);
+    /* First compress the file */
+    result = compress_file(input_file, temp_file);
     if (result != 0) {
-        fprintf(stderr, "Encryption failed\n");
+        fprintf(stderr, "Compression failed\n");
         remove(temp_file);
         return result;
     }
     
-    /* Then compress the encrypted file */
-    result = compress_file(temp_file, output_file);
+    /* Then encrypt the compressed file */
+    result = encrypt_file(temp_file, output_file, password, iterations);
     if (result != 0) {
-        fprintf(stderr, "Compression failed\n");
+        fprintf(stderr, "Encryption failed\n");
         remove(temp_file);
         return result;
     }
@@ -858,7 +808,7 @@ int process_file(const char *input_file, const char *output_file,
 }
 
 /**
- * Extract a file (decompress and decrypt)
+ * Extract a file (decrypt and decompress)
  * 
  * @param input_file  Path to the input file
  * @param output_file Path to the output file
@@ -874,20 +824,20 @@ int extract_file(const char *input_file, const char *output_file,
     /* Create a temporary filename */
     snprintf(temp_file, MAX_FILENAME, "%s.tmp", output_file);
     
-    printf("Extracting file '%s' to '%s' (decompress + decrypt)\n", input_file, output_file);
+    printf("Extracting file '%s' to '%s' (decrypt + decompress)\n", input_file, output_file);
     
-    /* First decompress the file */
-    result = decompress_file(input_file, temp_file);
+    /* First decrypt the file */
+    result = decrypt_file(input_file, temp_file, password, iterations);
     if (result != 0) {
-        fprintf(stderr, "Decompression failed\n");
+        fprintf(stderr, "Decryption failed\n");
         remove(temp_file);
         return result;
     }
     
-    /* Then decrypt the file */
-    result = decrypt_file(temp_file, output_file, password, iterations);
+    /* Then decompress the file */
+    result = decompress_file(temp_file, output_file);
     if (result != 0) {
-        fprintf(stderr, "Decryption failed\n");
+        fprintf(stderr, "Decompression failed\n");
         remove(temp_file);
         return result;
     }
@@ -1013,130 +963,6 @@ int batch_process(char *filenames[], int num_files, const char *output_dir,
     return result;
 }
 
-/**
- * Run the built-in tests
- * 
- * @return 0 on success, non-zero on failure
- */
-int run_tests() {
-    /* This is a simplified test function - in a real implementation, 
-     * this would run more comprehensive tests */
-    printf("Running built-in tests...\n");
-    
-    /* Test ChaCha20 */
-    chacha20_ctx ctx;
-    uint8_t key[CHACHA20_KEY_SIZE] = {
-        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
-        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-        0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f
-    };
-    uint8_t nonce[CHACHA20_NONCE_SIZE] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x01
-    };
-    uint8_t plaintext[] = "This is a test message";
-    size_t plaintext_len = strlen((char *)plaintext);
-    uint8_t ciphertext[64], decrypted[64];
-    int success = 1;
-    
-    /* Initialize ChaCha20 context */
-    if (chacha20_init(&ctx, key, nonce, 0) != 0) {
-        fprintf(stderr, "Failed to initialize ChaCha20 context\n");
-        return -1;
-    }
-    
-    /* Encrypt */
-    if (chacha20_process(&ctx, plaintext, ciphertext, plaintext_len) != 0) {
-        fprintf(stderr, "Encryption failed\n");
-        return -1;
-    }
-    
-    /* Reinitialize context */
-    chacha20_cleanup(&ctx);
-    if (chacha20_init(&ctx, key, nonce, 0) != 0) {
-        fprintf(stderr, "Failed to reinitialize ChaCha20 context\n");
-        return -1;
-    }
-    
-    /* Decrypt */
-    if (chacha20_process(&ctx, ciphertext, decrypted, plaintext_len) != 0) {
-        fprintf(stderr, "Decryption failed\n");
-        return -1;
-    }
-    
-    /* Check if decryption worked */
-    decrypted[plaintext_len] = '\0';
-    success = (memcmp(plaintext, decrypted, plaintext_len) == 0);
-    printf("ChaCha20 Test: %s\n", success ? "PASSED" : "FAILED");
-    
-    /* Test RLE compression */
-    uint8_t test_data[] = "AAAABBBCCDDDDD";
-    size_t test_len = strlen((char *)test_data);
-    uint8_t compressed[100], decompressed[100];
-    size_t compressed_size, decompressed_size;
-    
-    /* Compress */
-    if (rle_compress(test_data, test_len, compressed, 100, &compressed_size) != 0) {
-        fprintf(stderr, "Compression failed\n");
-        return -1;
-    }
-    
-    /* Decompress */
-    if (rle_decompress(compressed, compressed_size, decompressed, 100, &decompressed_size) != 0) {
-        fprintf(stderr, "Decompression failed\n");
-        return -1;
-    }
-    
-    /* Check if decompression worked */
-    decompressed[decompressed_size] = '\0';
-    success = (decompressed_size == test_len && 
-              memcmp(test_data, decompressed, test_len) == 0);
-    printf("RLE Test: %s\n", success ? "PASSED" : "FAILED");
-    printf("Original size: %zu, Compressed size: %zu (%.2f%%)\n",
-           test_len, compressed_size, (float)compressed_size * 100 / test_len);
-    
-    /* Test key derivation */
-    uint8_t derived_key[CHACHA20_KEY_SIZE], derived_nonce[CHACHA20_NONCE_SIZE];
-    uint8_t salt[DEFAULT_SALT_SIZE];
-    
-    /* Generate salt */
-    if (generate_salt(salt, DEFAULT_SALT_SIZE) != 0) {
-        fprintf(stderr, "Failed to generate salt\n");
-        return -1;
-    }
-    
-    /* Derive key and nonce */
-    if (derive_key_and_nonce("test_password", salt, DEFAULT_SALT_SIZE, 1000,
-                           derived_key, CHACHA20_KEY_SIZE, 
-                           derived_nonce, CHACHA20_NONCE_SIZE) != 0) {
-        fprintf(stderr, "Key derivation failed\n");
-        return -1;
-    }
-    
-    printf("Key Derivation Test: PASSED\n");
-    
-    /* Test file list */
-    file_list_t file_list;
-    file_list_init(&file_list);
-    
-    /* Add some test entries */
-    file_list_add(&file_list, "test1.txt", 100, 50);
-    file_list_add(&file_list, "test2.txt", 200, 150);
-    
-    /* Find an entry */
-    file_entry_t *found = file_list_find(&file_list, "test1");
-    success = (found != NULL && strcmp(found->filename, "test1.txt") == 0);
-    printf("File List Test: %s\n", success ? "PASSED" : "FAILED");
-    
-    /* Free the file list */
-    file_list_free(&file_list);
-    
-    printf("All tests completed!\n");
-    
-    return 0;
-}
-
 int main(int argc, char *argv[]) {
     int mode = MODE_DEMO;
     char *input_file = NULL, *output_file = NULL;
@@ -1205,9 +1031,6 @@ int main(int argc, char *argv[]) {
             }
             input_file = argv[2];
             output_file = argv[3];
-        } else if (strcmp(argv[1], "-t") == 0) {
-            /* Test mode */
-            mode = MODE_TEST;
         } else if (strcmp(argv[1], "-l") == 0) {
             /* List mode */
             mode = MODE_LIST;
@@ -1353,10 +1176,6 @@ int main(int argc, char *argv[]) {
             
         case MODE_DECOMPRESS:
             result = decompress_file(input_file, output_file);
-            break;
-            
-        case MODE_TEST:
-            result = run_tests();
             break;
             
         case MODE_LIST:

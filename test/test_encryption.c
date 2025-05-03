@@ -91,7 +91,7 @@ int hex_to_bytes(const char *hex_str, uint8_t *byte_array, size_t byte_len) {
  * 
  * @return 0 on success, non-zero on failure
  */
-int test_quarterround() {
+int test_quarterround(void) {
     /* Test vector from RFC 8439, Section 2.1.1 */
     uint32_t state[16] = {
         0x11111111, 0x01020304, 0x9b8d6f43, 0x01234567,
@@ -127,7 +127,7 @@ int test_quarterround() {
  * 
  * @return 0 on success, non-zero on failure
  */
-int test_block() {
+int test_block(void) {
     /* Test vector from RFC 8439, Section 2.3.2 */
     uint8_t key[CHACHA20_KEY_SIZE] = {
         0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
@@ -186,7 +186,7 @@ int test_block() {
  * 
  * @return 0 on success, non-zero on failure
  */
-int test_encryption() {
+int test_encryption(void) {
     /* Test vector from RFC 8439, Section 2.4.2 */
     const char *key_hex = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
     const char *nonce_hex = "000000000000004a00000000";
@@ -312,7 +312,7 @@ cleanup:
  * 
  * @return 0 on success, non-zero on failure
  */
-int test_counter_overflow() {
+int test_counter_overflow(void) {
     uint8_t key[CHACHA20_KEY_SIZE] = {
         0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
         0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
@@ -359,7 +359,7 @@ int test_counter_overflow() {
  * 
  * @return 0 on success, non-zero on failure
  */
-int test_double_counter_overflow() {
+int test_double_counter_overflow(void) {
     uint8_t key[CHACHA20_KEY_SIZE] = {
         0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
         0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
@@ -401,7 +401,7 @@ int test_double_counter_overflow() {
     return 0;
 }
 
-int main() {
+int main(void) {
     int failures = 0;
     
     printf("Running ChaCha20 tests...\n\n");

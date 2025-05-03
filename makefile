@@ -43,5 +43,5 @@ clean:
 
 # Test target
 test: all
-	$(CC) $(CFLAGS) -o tests $(TEST_DIR)/*.c $(ENCRYPTION_OBJS) $(COMPRESSION_OBJS) $(SHARING_OBJS) $(UTILS_OBJS) -lm
+	$(CC) $(CFLAGS) -o tests $(TEST_DIR)/*.c $(ENCRYPTION_OBJS) $(COMPRESSION_OBJS) $(UTILS_OBJS) -lm
 	./tests
