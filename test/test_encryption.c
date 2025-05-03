@@ -198,6 +198,7 @@ int test_encryption(void) {
     uint8_t *plaintext = NULL;
     uint8_t *ciphertext = NULL;
     uint8_t *decrypted = NULL;
+    uint8_t *expected_ciphertext = NULL;  /* Changed to pointer */
     size_t plaintext_len;
     chacha20_ctx ctx;
     int result = 0;
@@ -222,8 +223,9 @@ int test_encryption(void) {
     plaintext = (uint8_t *)malloc(plaintext_len);
     ciphertext = (uint8_t *)malloc(plaintext_len);
     decrypted = (uint8_t *)malloc(plaintext_len);
+    expected_ciphertext = (uint8_t *)malloc(plaintext_len);  /* Allocate memory */
     
-    if (plaintext == NULL || ciphertext == NULL || decrypted == NULL) {
+    if (plaintext == NULL || ciphertext == NULL || decrypted == NULL || expected_ciphertext == NULL) {
         DEBUG_PRINT("Failed to allocate memory\n");
         result = 1;
         goto cleanup;
@@ -236,7 +238,6 @@ int test_encryption(void) {
         goto cleanup;
     }
     
-    uint8_t expected_ciphertext[plaintext_len];
     if (hex_to_bytes(expected_ciphertext_hex, expected_ciphertext, plaintext_len) != 0) {
         DEBUG_PRINT("Failed to convert expected ciphertext hex string\n");
         result = 1;
@@ -302,6 +303,7 @@ cleanup:
     if (plaintext) free(plaintext);
     if (ciphertext) free(ciphertext);
     if (decrypted) free(decrypted);
+    if (expected_ciphertext) free(expected_ciphertext); /* Free the allocated memory */
     chacha20_cleanup(&ctx);
     
     return result;
