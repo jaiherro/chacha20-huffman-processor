@@ -1,3 +1,0 @@
-# How to run
-1. `make`
-2. `chmod +x ./secure_compress && ./secure_compress`
