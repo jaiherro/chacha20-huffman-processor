@@ -220,25 +220,12 @@ void print_processing_summary(const char *operation, const char *input_file, con
 }
 
 /**
- * Print a banner for the program
- */
-void print_banner(void) {
-    printf("\n");
-    printf("╔══════════════════════════════════════════════════════════════╗\n");
-    printf("║                   SECURE FILE PROCESSOR                      ║\n");
-    printf("║                                                              ║\n");
-    printf("║  ChaCha20 Encryption + Huffman Compression                   ║\n");
-    printf("╚══════════════════════════════════════════════════════════════╝\n");
-    printf("\n");
-}
-
-/**
  * Print a section header
  * 
  * @param title Title of the section
  */
 void print_section_header(const char *title) {
-    printf("\n=== %s ===\n", title);
+    printf("\n--- %s ---\n", title);
 }
 
 /**
@@ -247,7 +234,7 @@ void print_section_header(const char *title) {
  * @param program_name The name of the program executable
  */
 void print_usage(const char *program_name) {
-    print_banner();
+    printf("Secure File Processor\n\n");
     
     printf("USAGE:\n");
     printf("  %s [MODE] [OPTIONS] [FILE(S)]\n\n", program_name);
