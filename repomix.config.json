@@ -1,0 +1,34 @@
+{
+  "input": {
+    "maxFileSize": 50000000
+  },
+  "output": {
+    "filePath": "codebase.md",
+    "style": "markdown",
+    "compress": false,
+    "headerText": "This repository contains the source code for our project.\n",
+    "fileSummary": true,
+    "directoryStructure": true,
+    "removeComments": false,
+    "removeEmptyLines": false,
+    "topFilesLength": 5,
+    "showLineNumbers": false,
+    "includeEmptyDirectories": true,
+    "git": {
+      "sortByChanges": true,
+      "sortByChangesMaxCommits": 100
+    }
+  },
+  "include": [],
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": []
+  },
+  "security": {
+    "enableSecurityCheck": true
+  },
+  "tokenCount": {
+    "encoding": "o200k_base"
+  }
+}
