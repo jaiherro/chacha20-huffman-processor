@@ -8,7 +8,6 @@
  * - stdio.h (for file I/O and printing)
  * - stdlib.h (for memory allocation)
  * - string.h (for string operations)
- * - math.h (not used in this file)
  */
 
 #include "utils/file_list.h"
