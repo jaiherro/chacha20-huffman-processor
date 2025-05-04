@@ -50,7 +50,6 @@
 #endif
 
 /* Program modes */
-#define MODE_DEMO        0  /* Run a simple demonstration */
 #define MODE_ENCRYPT     1  /* Encrypt a file */
 #define MODE_DECRYPT     2  /* Decrypt a file */
 #define MODE_COMPRESS    3  /* Compress a file */
@@ -74,7 +73,6 @@
 /* Function prototypes */
 void print_hex(const char *label, const uint8_t *data, size_t len);
 void print_usage(const char *program_name);
-int run_demo();
 int encrypt_file(const char *input_file, const char *output_file, 
                 const char *password, int iterations);
 int decrypt_file(const char *input_file, const char *output_file, 
@@ -115,7 +113,6 @@ void print_usage(const char *program_name) {
     printf("Secure File Processor - ChaCha20 Encryption and Huffman Compression\n");
     printf("===========================================================\n\n");
     printf("Usage:\n");
-    printf("  %s                        Run a simple demonstration\n", program_name);
     printf("  %s -e infile outfile      Encrypt a file (password prompt)\n", program_name);
     printf("  %s -d infile outfile      Decrypt a file (password prompt)\n", program_name);
     printf("  %s -c infile outfile      Compress a file\n", program_name);
@@ -124,152 +121,11 @@ void print_usage(const char *program_name) {
     printf("  %s -u infile outfile      Extract a file (decrypt+decompress)\n", program_name);
     printf("  %s -l                     List processed files\n", program_name);
     printf("  %s -f filename            Find a file in the list\n", program_name);
-    printf("  %s -b outdir file1 file2... Batch process multiple files\n", program_name);
+    printf("  %s -b outdir file1...     Batch process multiple files\n", program_name);
     printf("\nOptions:\n");
     printf("  -i iterations            Number of iterations for key derivation (default: %d)\n", DEFAULT_KEY_ITERATIONS);
     printf("  -q                       Quiet mode (minimal output)\n");
     printf("\nWhen using password options, you will be prompted for a password.\n");
-}
-
-/**
- * Run a simple demonstration of encryption and compression
- * 
- * @return 0 on success, non-zero on failure
- */
-int run_demo() {
-    /* Demo text to compress/encrypt and decrypt/decompress */
-    const char *demo_text = "This is a demonstration of Huffman compression and ChaCha20 encryption.";
-    size_t demo_len = strlen(demo_text);
-    
-    /* For demonstration, use a fixed key and nonce */
-    uint8_t demo_key[CHACHA20_KEY_SIZE] = {
-        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
-        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-        0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f
-    };
-    
-    uint8_t demo_nonce[CHACHA20_NONCE_SIZE] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x01
-    };
-    
-    /* Buffers for the demonstration */
-    uint8_t *plaintext = NULL;
-    uint8_t *compressed = NULL;
-    uint8_t *encrypted = NULL;
-    uint8_t *decrypted = NULL;
-    uint8_t *decompressed = NULL;
-    size_t compressed_size = 0;
-    size_t decompressed_size = 0;
-    
-    /* ChaCha20 context */
-    chacha20_ctx ctx;
-    
-    int result = 0;
-    
-    printf("Secure File Processor Demonstration\n");
-    printf("==================================\n\n");
-    
-    /* Allocate memory for the demonstration */
-    plaintext = (uint8_t *)malloc(demo_len + 1);
-    compressed = (uint8_t *)malloc(huffman_worst_case_size(demo_len));
-    encrypted = (uint8_t *)malloc(huffman_worst_case_size(demo_len));
-    decrypted = (uint8_t *)malloc(huffman_worst_case_size(demo_len));
-    decompressed = (uint8_t *)malloc(demo_len + 1);
-    
-    if (!plaintext || !compressed || !encrypted || !decrypted || !decompressed) {
-        fprintf(stderr, "Memory allocation failed\n");
-        result = -1;
-        goto cleanup;
-    }
-    
-    /* Copy the demo text to plaintext buffer */
-    memcpy(plaintext, demo_text, demo_len);
-    plaintext[demo_len] = '\0';
-    
-    printf("Original plaintext: %s\n\n", plaintext);
-    
-    printf("--- Demonstration Pipeline: Plaintext -> Compress -> Encrypt -> Decrypt -> Decompress ---\n\n");
-    
-    /* Step 1: Compress the plaintext */
-    printf("Step 1: Compressing data...\n");
-    if (huffman_compress(plaintext, demo_len, compressed, huffman_worst_case_size(demo_len), &compressed_size) != 0) {
-        fprintf(stderr, "Compression failed\n");
-        result = -1;
-        goto cleanup;
-    }
-    
-    printf("Compressed data size: %zu bytes (%.2f%% of original)\n\n", 
-           compressed_size, (float)compressed_size * 100 / demo_len);
-    
-    /* Step 2: Encrypt the compressed data */
-    printf("Step 2: Encrypting compressed data...\n");
-    if (chacha20_init(&ctx, demo_key, demo_nonce, 0) != 0) {
-        fprintf(stderr, "Failed to initialize ChaCha20 context for encryption\n");
-        result = -1;
-        goto cleanup;
-    }
-    
-    if (chacha20_process(&ctx, compressed, encrypted, compressed_size) != 0) {
-        fprintf(stderr, "Encryption failed\n");
-        result = -1;
-        goto cleanup;
-    }
-    
-    printf("Data encrypted successfully\n\n");
-    
-    /* Clean up the context before reusing it */
-    chacha20_cleanup(&ctx);
-    
-    /* Step 3: Decrypt the encrypted data */
-    printf("Step 3: Decrypting data...\n");
-    if (chacha20_init(&ctx, demo_key, demo_nonce, 0) != 0) {
-        fprintf(stderr, "Failed to initialize ChaCha20 context for decryption\n");
-        result = -1;
-        goto cleanup;
-    }
-    
-    if (chacha20_process(&ctx, encrypted, decrypted, compressed_size) != 0) {
-        fprintf(stderr, "Decryption failed\n");
-        result = -1;
-        goto cleanup;
-    }
-    
-    printf("Data decrypted successfully\n\n");
-    
-    /* Step 4: Decompress the decrypted data */
-    printf("Step 4: Decompressing data...\n");
-    if (huffman_decompress(decrypted, compressed_size, decompressed, demo_len, &decompressed_size) != 0) {
-        fprintf(stderr, "Decompression failed\n");
-        result = -1;
-        goto cleanup;
-    }
-    
-    decompressed[decompressed_size] = '\0';
-    printf("Decompressed data size: %zu bytes\n", decompressed_size);
-    printf("Decompressed plaintext: %s\n\n", decompressed);
-    
-    /* Verification */
-    if (decompressed_size == demo_len && memcmp(plaintext, decompressed, demo_len) == 0) {
-        printf("Verification: SUCCESS - Original data recovered successfully\n");
-    } else {
-        printf("Verification: FAILED - Original data could not be recovered\n");
-        result = -1;
-    }
-    
-cleanup:
-    /* Free allocated memory */
-    if (plaintext) free(plaintext);
-    if (compressed) free(compressed);
-    if (encrypted) free(encrypted);
-    if (decrypted) free(decrypted);
-    if (decompressed) free(decompressed);
-    
-    /* Clean up the context */
-    chacha20_cleanup(&ctx);
-    
-    return result;
 }
 
 /**
@@ -964,7 +820,7 @@ int batch_process(char *filenames[], int num_files, const char *output_dir,
 }
 
 int main(int argc, char *argv[]) {
-    int mode = MODE_DEMO;
+    int mode;
     char *input_file = NULL, *output_file = NULL;
     char password[MAX_PASSWORD];
     int iterations = DEFAULT_KEY_ITERATIONS;
@@ -1106,14 +962,14 @@ int main(int argc, char *argv[]) {
                 return 1;
             }
         }
-    }
+    } else {
+            /* Unknown mode */
+            print_usage(argv[0]);
+            return 1;
+        }
     
     /* Execute the selected mode */
     switch (mode) {
-        case MODE_DEMO:
-            result = run_demo();
-            break;
-            
         case MODE_ENCRYPT:
         case MODE_PROCESS:
         case MODE_EXTRACT:
