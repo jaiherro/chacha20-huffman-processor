@@ -205,20 +205,33 @@ static huffman_node *build_huffman_tree(unsigned long frequencies[MAX_SYMBOLS]) 
     if (queue.count == 0) {
         return NULL;
     } else if (queue.count == 1) {
-        /* Create a parent node with the single symbol as a child */
+        /* Create a second leaf node with the same symbol */
+        huffman_node *right_child = (huffman_node *)malloc(sizeof(huffman_node));
+        if (right_child == NULL) {
+            free(nodes[0]);
+            return NULL;
+        }
+        right_child->symbol = nodes[0]->symbol;
+        right_child->frequency = 0;
+        right_child->left = NULL;
+        right_child->right = NULL;
+        
+        /* Create a parent node with both left and right children */
         parent = (huffman_node *)malloc(sizeof(huffman_node));
         if (parent == NULL) {
             free(nodes[0]);
+            free(right_child);
             return NULL;
         }
         
         parent->symbol = 0;  /* Not used for internal nodes */
         parent->frequency = nodes[0]->frequency;
         parent->left = nodes[0];
-        parent->right = NULL;
+        parent->right = right_child;
         
-        nodes[node_count] = parent;
-        node_count++;
+        /* Add nodes to the pool for cleanup */
+        nodes[node_count++] = right_child;
+        nodes[node_count++] = parent;
         
         return parent;
     }
