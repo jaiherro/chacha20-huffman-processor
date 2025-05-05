@@ -44,7 +44,7 @@
 
 /* Debug mode can be enabled via makefile (make DEBUG=1) */
 #ifdef DEBUG
-#define DEBUG_PRINT(fmt, ...) printf("[Debug] " fmt, ##__VA_ARGS__)
+#define DEBUG_PRINT(fmt, ...) printf("[Main] " fmt, ##__VA_ARGS__)
 #define PRINT_HEX(label, data, len) print_hex(label, data, len)
 #else
 #define DEBUG_PRINT(fmt, ...)
@@ -362,33 +362,6 @@ int get_password(char *password, size_t max_len, int confirm) {
 }
 
 /**
- * Initialize a performance counter
- * 
- * @param counter Performance counter to initialize
- */
-void perf_counter_start(performance_counter_t *counter) {
-    if (counter != NULL) {
-        counter->count = 0;
-    }
-}
-
-/**
- * Get the elapsed "time" from a performance counter
- * This is not actual time but just a counter value
- * 
- * @param counter Performance counter to read
- * @return Value of the counter
- */
-unsigned long perf_counter_elapsed(performance_counter_t *counter) {
-    if (counter != NULL) {
-        /* Increment the counter and return value */
-        counter->count++;
-        return counter->count;
-    }
-    return 0;
-}
-
-/**
  * Encrypt a file using ChaCha20
  * 
  * @param input_file  Path to the input file
@@ -408,7 +381,6 @@ int encrypt_file(const char *input_file, const char *output_file,
     uint8_t salt[DEFAULT_SALT_SIZE];
     size_t read_size, file_size = 0, original_size = 0;
     int result = 0;
-    performance_counter_t perf_counter;
     
     if (!quiet) {
         print_section_header("File Encryption");
@@ -416,10 +388,7 @@ int encrypt_file(const char *input_file, const char *output_file,
         printf("Output: %s\n", output_file);
         printf("Using %d iterations for key derivation\n", iterations);
     }
-    
-    /* Start performance counter */
-    perf_counter_start(&perf_counter);
-    
+        
     /* Open input file */
     in = fopen(input_file, "rb");
     if (in == NULL) {
@@ -510,12 +479,9 @@ int encrypt_file(const char *input_file, const char *output_file,
             print_progress_bar(file_size, original_size, PROGRESS_WIDTH);
         }
     }
-    
-    /* Record operation completion */
-    unsigned long perf_value = perf_counter_elapsed(&perf_counter);
-    
+        
     if (!quiet) {
-        printf("\n\nEncryption operation completed (performance counter: %lu).\n", perf_value);
+        printf("\n\nEncryption operation completed.\n");
         print_processing_summary("Encryption", input_file, output_file, 
                                original_size, file_size + DEFAULT_SALT_SIZE);
     }
@@ -580,7 +546,6 @@ int decrypt_file(const char *input_file, const char *output_file,
     uint8_t salt[DEFAULT_SALT_SIZE];
     size_t read_size, file_size = 0, total_size = 0;
     int result = 0;
-    performance_counter_t perf_counter;
     
     if (!quiet) {
         print_section_header("File Decryption");
@@ -588,10 +553,7 @@ int decrypt_file(const char *input_file, const char *output_file,
         printf("Output: %s\n", output_file);
         printf("Using %d iterations for key derivation\n", iterations);
     }
-    
-    /* Start performance counter */
-    perf_counter_start(&perf_counter);
-    
+        
     /* Open input file */
     in = fopen(input_file, "rb");
     if (in == NULL) {
@@ -683,12 +645,9 @@ int decrypt_file(const char *input_file, const char *output_file,
             print_progress_bar(file_size, total_size - DEFAULT_SALT_SIZE, PROGRESS_WIDTH);
         }
     }
-    
-    /* Record operation completion */
-    unsigned long perf_value = perf_counter_elapsed(&perf_counter);
-    
+        
     if (!quiet) {
-        printf("\n\nDecryption operation completed (performance counter: %lu).\n", perf_value);
+        printf("\n\nDecryption operation completed.\n");
         
         size_t output_size = file_size;
         print_processing_summary("Decryption", input_file, output_file, 
@@ -731,17 +690,13 @@ int compress_file(const char *input_file, const char *output_file, int quiet) {
     uint8_t *buffer = NULL, *output_buffer = NULL;
     size_t read_size, output_size, file_size = 0, total_size = 0;
     int result = 0;
-    performance_counter_t perf_counter;
-    
+
     if (!quiet) {
         print_section_header("File Compression");
         printf("Input:  %s\n", input_file);
         printf("Output: %s\n", output_file);
     }
-    
-    /* Start performance counter */
-    perf_counter_start(&perf_counter);
-    
+        
     /* Open input file */
     in = fopen(input_file, "rb");
     if (in == NULL) {
@@ -816,12 +771,9 @@ int compress_file(const char *input_file, const char *output_file, int quiet) {
             print_progress_bar(file_size, total_size, PROGRESS_WIDTH);
         }
     }
-    
-    /* Record operation completion */
-    unsigned long perf_value = perf_counter_elapsed(&perf_counter);
-    
+        
     if (!quiet) {
-        printf("\n\nCompression operation completed (performance counter: %lu).\n", perf_value);
+        printf("\n\nCompression operation completed.\n");
         print_processing_summary("Compression", input_file, output_file, 
                                total_size, total_output_size);
     }
@@ -868,16 +820,12 @@ int decompress_file(const char *input_file, const char *output_file, int quiet) 
     uint8_t *buffer = NULL, *output_buffer = NULL;
     size_t chunk_size, output_size, file_size = 0, original_size = 0;
     int result = 0;
-    performance_counter_t perf_counter;
     
     if (!quiet) {
         print_section_header("File Decompression");
         printf("Input:  %s\n", input_file);
         printf("Output: %s\n", output_file);
     }
-    
-    /* Start performance counter */
-    perf_counter_start(&perf_counter);
     
     /* Open input file */
     in = fopen(input_file, "rb");
@@ -952,12 +900,9 @@ int decompress_file(const char *input_file, const char *output_file, int quiet) 
             print_progress_bar(file_size, original_size, PROGRESS_WIDTH);
         }
     }
-    
-    /* Record operation completion */
-    unsigned long perf_value = perf_counter_elapsed(&perf_counter);
-    
+
     if (!quiet) {
-        printf("\n\nDecompression operation completed (performance counter: %lu).\n", perf_value);
+        printf("\n\nDecompression operation completed.\n");
         
         /* Get the actual size of the input file */
         fseek(in, 0, SEEK_END);
