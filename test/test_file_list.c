@@ -21,8 +21,9 @@ static int test_list_init() {
     int head_null = check_null(list.head, "list.head not NULL after init");
     int tail_null = check_null(list.tail, "list.tail not NULL after init");
     int count_zero = check_equal_size(0, list.count, "list.count not 0 after init");
+    int seq_ok = check_equal_int(1, list.next_sequence_num, "list.next_sequence_num not 1 after init");
     file_list_free(&list); // Clean up (should be safe)
-    return init_ok && head_null && tail_null && count_zero;
+    return init_ok && head_null && tail_null && count_zero && seq_ok;
 }
 
 // Test adding items
@@ -37,6 +38,7 @@ static int test_list_add() {
     int tail1_ok = check_not_null(list.tail, "list.tail NULL after first add");
     int head_tail_ok1 = check(list.head == list.tail, "list.head != list.tail for single item");
     int name1_ok = head1_ok && check_equal_int(0, strcmp(list.head->filename, "file1.txt"), "Filename mismatch (1)");
+    int seq1_ok = head1_ok && check_equal_int(1, list.head->sequence_num, "Sequence number mismatch (1)");
 
     int res2 = file_list_add(&list, "file2.log", 2000, 1500);
     int add2_ok = check_equal_int(0, res2, "file_list_add (2) failed");
@@ -45,12 +47,14 @@ static int test_list_add() {
     int tail2_ok = check_not_null(list.tail, "list.tail NULL after second add");
     int head_tail_ok2 = check(list.head != list.tail, "list.head == list.tail for two items");
     int name2_ok = tail2_ok && check_equal_int(0, strcmp(list.tail->filename, "file2.log"), "Filename mismatch (2)");
+    int seq2_ok = tail2_ok && check_equal_int(2, list.tail->sequence_num, "Sequence number mismatch (2)");
     int next_ok = head1_ok && head2_ok && check(list.head->next == list.tail, "list.head->next != list.tail");
-
+    int seq_num_ok = check_equal_int(3, list.next_sequence_num, "list.next_sequence_num not 3 after two adds");
 
     file_list_free(&list); // Clean up
-    return add1_ok && count1_ok && head1_ok && tail1_ok && head_tail_ok1 && name1_ok &&
-           add2_ok && count2_ok && head2_ok && tail2_ok && head_tail_ok2 && name2_ok && next_ok;
+    return add1_ok && count1_ok && head1_ok && tail1_ok && head_tail_ok1 && name1_ok && seq1_ok &&
+           add2_ok && count2_ok && head2_ok && tail2_ok && head_tail_ok2 && name2_ok && seq2_ok && 
+           next_ok && seq_num_ok;
 }
 
 // Test finding items
@@ -96,7 +100,8 @@ static int test_list_save_load() {
 
     // Compare
     int count_ok = check_equal_size(list_orig.count, list_loaded.count, "Loaded list count mismatch");
-    if (!count_ok) { file_list_free(&list_orig); file_list_free(&list_loaded); unlink(TEST_LIST_FILE); return 0; }
+    int seq_num_ok = check_equal_int(list_orig.next_sequence_num, list_loaded.next_sequence_num, "Loaded next_sequence_num mismatch");
+    if (!count_ok || !seq_num_ok) { file_list_free(&list_orig); file_list_free(&list_loaded); unlink(TEST_LIST_FILE); return 0; }
 
     file_entry_t *curr_orig = list_orig.head;
     file_entry_t *curr_loaded = list_loaded.head;
@@ -105,7 +110,7 @@ static int test_list_save_load() {
         if (!check_equal_int(0, strcmp(curr_orig->filename, curr_loaded->filename), "Loaded filename mismatch") ||
             !check_equal_size(curr_orig->original_size, curr_loaded->original_size, "Loaded original_size mismatch") ||
             !check_equal_size(curr_orig->processed_size, curr_loaded->processed_size, "Loaded processed_size mismatch") ||
-            !check_equal_int(curr_orig->timestamp, curr_loaded->timestamp, "Loaded timestamp mismatch (may fail if run across second boundary)")) {
+            !check_equal_int(curr_orig->sequence_num, curr_loaded->sequence_num, "Loaded sequence_num mismatch")) {
              content_ok = 0;
              break;
          }
@@ -121,7 +126,7 @@ static int test_list_save_load() {
     file_list_free(&list_loaded);
     unlink(TEST_LIST_FILE); // Delete the test file
 
-    return count_ok && content_ok;
+    return count_ok && content_ok && seq_num_ok;
 }
 
 

@@ -14,7 +14,6 @@
 #include <stdio.h>   /* For file I/O and printing */
 #include <stdlib.h>  /* For memory allocation */
 #include <string.h>  /* For string operations */
-#include <time.h>    /* For time functions */
 
 /* Debug printing support */
 #ifdef FILE_LIST_DEBUG
@@ -31,6 +30,7 @@ int file_list_init(file_list_t *list) {
     list->head = NULL;
     list->tail = NULL;
     list->count = 0;
+    list->next_sequence_num = 1; // Start with sequence number 1
     
     DEBUG_PRINT("Initialized empty file list\n");
     
@@ -54,7 +54,7 @@ int file_list_add(file_list_t *list, const char *filename,
     /* Initialize the new entry */
     strncpy(new_entry->filename, filename, FILE_LIST_MAX_FILENAME - 1);
     new_entry->filename[FILE_LIST_MAX_FILENAME - 1] = '\0'; /* Ensure null-termination */
-    new_entry->timestamp = time(NULL);
+    new_entry->sequence_num = list->next_sequence_num++; // Assign and increment sequence number
     new_entry->original_size = original_size;
     new_entry->processed_size = processed_size;
     new_entry->next = NULL;
@@ -122,10 +122,7 @@ size_t file_list_get_recent(file_list_t *list, size_t count, file_entry_t **resu
         return result_count;
     }
     
-    /* Otherwise, find the most recent entries */
-    /* Note: A more efficient implementation would use a sorted list or heap,
-     * but for simplicity, we'll just do a linear scan through the list */
-    
+    /* Otherwise, find the most recent entries based on sequence number */
     /* Initialize result array with NULL pointers */
     for (size_t i = 0; i < count; i++) {
         result[i] = NULL;
@@ -134,9 +131,9 @@ size_t file_list_get_recent(file_list_t *list, size_t count, file_entry_t **resu
     /* Scan through the list */
     current = list->head;
     while (current != NULL) {
-        /* Find the position to insert this entry based on timestamp */
+        /* Find the position to insert this entry based on sequence number */
         for (size_t i = 0; i < count; i++) {
-            if (result[i] == NULL || current->timestamp > result[i]->timestamp) {
+            if (result[i] == NULL || current->sequence_num > result[i]->sequence_num) {
                 /* Shift existing entries down */
                 for (size_t j = count - 1; j > i; j--) {
                     result[j] = result[j - 1];
@@ -179,9 +176,10 @@ int file_list_save(file_list_t *list, const char *filename) {
         return -1;
     }
     
-    /* Write the number of entries */
-    if (fwrite(&list->count, sizeof(size_t), 1, file) != 1) {
-        DEBUG_PRINT("Failed to write count to file\n");
+    /* Write the number of entries and next sequence number */
+    if (fwrite(&list->count, sizeof(size_t), 1, file) != 1 ||
+        fwrite(&list->next_sequence_num, sizeof(unsigned long), 1, file) != 1) {
+        DEBUG_PRINT("Failed to write header to file\n");
         fclose(file);
         return -1;
     }
@@ -205,7 +203,7 @@ int file_list_save(file_list_t *list, const char *filename) {
         }
         
         /* Write the rest of the entry data */
-        if (fwrite(&current->timestamp, sizeof(time_t), 1, file) != 1 ||
+        if (fwrite(&current->sequence_num, sizeof(unsigned long), 1, file) != 1 ||
             fwrite(&current->original_size, sizeof(size_t), 1, file) != 1 ||
             fwrite(&current->processed_size, sizeof(size_t), 1, file) != 1) {
             DEBUG_PRINT("Failed to write entry data to file\n");
@@ -241,9 +239,10 @@ int file_list_load(file_list_t *list, const char *filename) {
         return -1;
     }
     
-    /* Read the number of entries */
-    if (fread(&count, sizeof(size_t), 1, file) != 1) {
-        DEBUG_PRINT("Failed to read count from file\n");
+    /* Read the number of entries and next sequence number */
+    if (fread(&count, sizeof(size_t), 1, file) != 1 ||
+        fread(&list->next_sequence_num, sizeof(unsigned long), 1, file) != 1) {
+        DEBUG_PRINT("Failed to read header from file\n");
         fclose(file);
         return -1;
     }
@@ -277,7 +276,7 @@ int file_list_load(file_list_t *list, const char *filename) {
         }
         
         /* Read the rest of the entry data */
-        if (fread(&new_entry->timestamp, sizeof(time_t), 1, file) != 1 ||
+        if (fread(&new_entry->sequence_num, sizeof(unsigned long), 1, file) != 1 ||
             fread(&new_entry->original_size, sizeof(size_t), 1, file) != 1 ||
             fread(&new_entry->processed_size, sizeof(size_t), 1, file) != 1) {
             DEBUG_PRINT("Failed to read entry data from file\n");
@@ -329,14 +328,13 @@ void file_list_free(file_list_t *list) {
     list->head = NULL;
     list->tail = NULL;
     list->count = 0;
+    list->next_sequence_num = 1; // Reset sequence number too
     
     DEBUG_PRINT("Freed file list\n");
 }
 
 void file_list_print(file_list_t *list) {
     file_entry_t *current;
-    char time_str[64];
-    struct tm *timeinfo;
     
     if (list == NULL) {
         printf("File list is NULL\n");
@@ -352,13 +350,9 @@ void file_list_print(file_list_t *list) {
     
     current = list->head;
     while (current != NULL) {
-        /* Format the timestamp */
-        timeinfo = localtime(&current->timestamp);
-        strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", timeinfo);
-        
         /* Print the entry */
         printf("  %s\n", current->filename);
-        printf("    Timestamp: %s\n", time_str);
+        printf("    Sequence: #%lu\n", current->sequence_num);
         printf("    Original size: %zu bytes\n", current->original_size);
         printf("    Processed size: %zu bytes\n", current->processed_size);
         printf("    Compression ratio: %.2f%%\n",

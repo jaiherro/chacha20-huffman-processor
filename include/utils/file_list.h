@@ -11,7 +11,6 @@
 #define FILE_LIST_H
 
 #include <stddef.h>  /* For size_t */
-#include <time.h>    /* For time_t */
 
 /**
  * Maximum length of a filename in the file list
@@ -24,7 +23,7 @@
  */
 typedef struct file_entry {
     char filename[FILE_LIST_MAX_FILENAME];  /* Filename */
-    time_t timestamp;                       /* Processing timestamp */
+    unsigned long sequence_num;             /* Processing sequence number */
     size_t original_size;                   /* Original file size */
     size_t processed_size;                  /* Size after processing */
     struct file_entry *next;                /* Pointer to next entry */
@@ -38,6 +37,7 @@ typedef struct {
     file_entry_t *head;  /* Pointer to the first entry */
     file_entry_t *tail;  /* Pointer to the last entry */
     size_t count;        /* Number of entries in the list */
+    unsigned long next_sequence_num;  /* Next sequence number to assign */
 } file_list_t;
 
 /**
