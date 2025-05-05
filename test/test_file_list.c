@@ -1,142 +1,173 @@
-#include "test_utils.h"
 #include "utils/file_list.h"
-#include <stdlib.h> // For malloc, free
-#include <unistd.h> // For unlink (or _unlink on Windows)
+#include "test_utils.h"
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdio.h> // For remove()
 
-#ifdef _WIN32
-#include <io.h>     // For _unlink
-#define unlink _unlink
-#else
-#include <unistd.h> // For unlink
-#endif
+#define TEST_LIST_FILENAME "test_list.dat"
 
+// Helper to clean up test file
+static void cleanup_test_file() {
+    remove(TEST_LIST_FILENAME);
+}
 
-#define TEST_LIST_FILE "test_list.dat"
-
-// Test initialization
-static int test_list_init() {
+// Test case 1: Initialize and free an empty list
+static int test_fl_init_free() {
     file_list_t list;
     int result = file_list_init(&list);
-    int init_ok = check_equal_int(0, result, "file_list_init failed");
-    int head_null = check_null(list.head, "list.head not NULL after init");
-    int tail_null = check_null(list.tail, "list.tail not NULL after init");
-    int count_zero = check_equal_size(0, list.count, "list.count not 0 after init");
-    int seq_ok = check_equal_int(1, list.next_sequence_num, "list.next_sequence_num not 1 after init");
-    file_list_free(&list); // Clean up (should be safe)
-    return init_ok && head_null && tail_null && count_zero && seq_ok;
-}
-
-// Test adding items
-static int test_list_add() {
-    file_list_t list;
-    file_list_init(&list);
-
-    int res1 = file_list_add(&list, "file1.txt", 100, 50);
-    int add1_ok = check_equal_int(0, res1, "file_list_add (1) failed");
-    int count1_ok = check_equal_size(1, list.count, "list.count not 1 after first add");
-    int head1_ok = check_not_null(list.head, "list.head NULL after first add");
-    int tail1_ok = check_not_null(list.tail, "list.tail NULL after first add");
-    int head_tail_ok1 = check(list.head == list.tail, "list.head != list.tail for single item");
-    int name1_ok = head1_ok && check_equal_int(0, strcmp(list.head->filename, "file1.txt"), "Filename mismatch (1)");
-    int seq1_ok = head1_ok && check_equal_int(1, list.head->sequence_num, "Sequence number mismatch (1)");
-
-    int res2 = file_list_add(&list, "file2.log", 2000, 1500);
-    int add2_ok = check_equal_int(0, res2, "file_list_add (2) failed");
-    int count2_ok = check_equal_size(2, list.count, "list.count not 2 after second add");
-    int head2_ok = check_not_null(list.head, "list.head NULL after second add");
-    int tail2_ok = check_not_null(list.tail, "list.tail NULL after second add");
-    int head_tail_ok2 = check(list.head != list.tail, "list.head == list.tail for two items");
-    int name2_ok = tail2_ok && check_equal_int(0, strcmp(list.tail->filename, "file2.log"), "Filename mismatch (2)");
-    int seq2_ok = tail2_ok && check_equal_int(2, list.tail->sequence_num, "Sequence number mismatch (2)");
-    int next_ok = head1_ok && head2_ok && check(list.head->next == list.tail, "list.head->next != list.tail");
-    int seq_num_ok = check_equal_int(3, list.next_sequence_num, "list.next_sequence_num not 3 after two adds");
-
-    file_list_free(&list); // Clean up
-    return add1_ok && count1_ok && head1_ok && tail1_ok && head_tail_ok1 && name1_ok && seq1_ok &&
-           add2_ok && count2_ok && head2_ok && tail2_ok && head_tail_ok2 && name2_ok && seq2_ok && 
-           next_ok && seq_num_ok;
-}
-
-// Test finding items
-static int test_list_find() {
-    file_list_t list;
-    file_list_init(&list);
-    file_list_add(&list, "document_final_v2.txt", 1024, 800);
-    file_list_add(&list, "archive.zip", 50000, 45000);
-    file_list_add(&list, "image.png", 256, 200);
-
-    file_entry_t *found1 = file_list_find(&list, "archive.zip");
-    int find1_ok = check_not_null(found1, "Did not find 'archive.zip'");
-    int name1_ok = find1_ok && check_equal_int(0, strcmp(found1->filename, "archive.zip"), "Found wrong file for 'archive.zip'");
-
-    file_entry_t *found2 = file_list_find(&list, "document"); // Partial match
-    int find2_ok = check_not_null(found2, "Did not find partial 'document'");
-    int name2_ok = find2_ok && check_equal_int(0, strcmp(found2->filename, "document_final_v2.txt"), "Found wrong file for partial 'document'");
-
-    file_entry_t *found3 = file_list_find(&list, "nonexistent.dat");
-    int find3_ok = check_null(found3, "Found 'nonexistent.dat' which shouldn't exist");
+    ASSERT_EQUAL_INT(0, result, "file_list_init failed");
+    ASSERT_EQUAL_INT(0, list.count, "Initial count should be 0");
+    ASSERT_NULL(list.head, "Initial head should be NULL");
+    ASSERT_NULL(list.tail, "Initial tail should be NULL");
+    ASSERT_EQUAL_INT(1, list.next_sequence_num, "Initial sequence number should be 1");
 
     file_list_free(&list);
-    return find1_ok && name1_ok && find2_ok && name2_ok && find3_ok;
+    // Check again after free (should be same as initial state)
+    ASSERT_EQUAL_INT(0, list.count, "Count after free should be 0");
+    ASSERT_NULL(list.head, "Head after free should be NULL");
+    ASSERT_NULL(list.tail, "Tail after free should be NULL");
+    ASSERT_EQUAL_INT(1, list.next_sequence_num, "Sequence number after free should be 1");
+
+    return 1; // Success
 }
 
-// Test saving and loading the list
-static int test_list_save_load() {
-    file_list_t list_orig, list_loaded;
-    file_list_init(&list_orig);
-    file_list_add(&list_orig, "save_test_1.c", 500, 400);
-    file_list_add(&list_orig, "save_test_2.h", 100, 90);
+// Test case 2: Add entries to the list
+static int test_fl_add() {
+    file_list_t list;
+    file_list_init(&list);
 
-    // Save
-    int save_res = file_list_save(&list_orig, TEST_LIST_FILE);
-    int save_ok = check_equal_int(0, save_res, "file_list_save failed");
-    if (!save_ok) { file_list_free(&list_orig); unlink(TEST_LIST_FILE); return 0; }
+    int result = file_list_add(&list, "file1.txt", 100, 50);
+    ASSERT_EQUAL_INT(0, result, "file_list_add (1) failed");
+    ASSERT_EQUAL_INT(1, list.count, "Count should be 1 after first add");
+    ASSERT_NOT_NULL(list.head, "Head should not be NULL after add");
+    ASSERT_NOT_NULL(list.tail, "Tail should not be NULL after add");
+    ASSERT_EQUAL_INT(1, list.head->sequence_num, "First sequence number should be 1");
+    ASSERT_EQUAL_INT(2, list.next_sequence_num, "Next sequence number should be 2");
+    ASSERT_EQUAL_INT(0, strcmp(list.head->filename, "file1.txt"), "Filename mismatch (1)");
+    ASSERT_EQUAL_INT(100, list.head->original_size, "Original size mismatch (1)");
+    ASSERT_EQUAL_INT(50, list.head->processed_size, "Processed size mismatch (1)");
+    ASSERT_EQUAL_INT(list.head, list.tail, "Head and tail should be same for single element");
 
-    // Load into a new list
-    file_list_init(&list_loaded);
-    int load_res = file_list_load(&list_loaded, TEST_LIST_FILE);
-    int load_ok = check_equal_int(0, load_res, "file_list_load failed");
-    if (!load_ok) { file_list_free(&list_orig); file_list_free(&list_loaded); unlink(TEST_LIST_FILE); return 0; }
+    result = file_list_add(&list, "file2.log", 2000, 1500);
+    ASSERT_EQUAL_INT(0, result, "file_list_add (2) failed");
+    ASSERT_EQUAL_INT(2, list.count, "Count should be 2 after second add");
+    ASSERT_NOT_NULL(list.tail, "Tail should not be NULL");
+    ASSERT_EQUAL_INT(2, list.tail->sequence_num, "Second sequence number should be 2");
+    ASSERT_EQUAL_INT(3, list.next_sequence_num, "Next sequence number should be 3");
+    ASSERT_EQUAL_INT(0, strcmp(list.tail->filename, "file2.log"), "Filename mismatch (2)");
+    ASSERT_NOT_EQUAL_INT(list.head, list.tail, "Head and tail should differ for two elements");
+    ASSERT_EQUAL_INT(list.tail, list.head->next, "Second element not linked correctly");
 
-    // Compare
-    int count_ok = check_equal_size(list_orig.count, list_loaded.count, "Loaded list count mismatch");
-    int seq_num_ok = check_equal_int(list_orig.next_sequence_num, list_loaded.next_sequence_num, "Loaded next_sequence_num mismatch");
-    if (!count_ok || !seq_num_ok) { file_list_free(&list_orig); file_list_free(&list_loaded); unlink(TEST_LIST_FILE); return 0; }
+    file_list_free(&list);
+    return 1; // Success
+}
 
-    file_entry_t *curr_orig = list_orig.head;
-    file_entry_t *curr_loaded = list_loaded.head;
-    int content_ok = 1;
-    while(curr_orig != NULL && curr_loaded != NULL) {
-        if (!check_equal_int(0, strcmp(curr_orig->filename, curr_loaded->filename), "Loaded filename mismatch") ||
-            !check_equal_size(curr_orig->original_size, curr_loaded->original_size, "Loaded original_size mismatch") ||
-            !check_equal_size(curr_orig->processed_size, curr_loaded->processed_size, "Loaded processed_size mismatch") ||
-            !check_equal_int(curr_orig->sequence_num, curr_loaded->sequence_num, "Loaded sequence_num mismatch")) {
-             content_ok = 0;
-             break;
-         }
-        curr_orig = curr_orig->next;
-        curr_loaded = curr_loaded->next;
-    }
-    // Also check that both lists ended at the same time
-    content_ok = content_ok && check(curr_orig == NULL && curr_loaded == NULL, "Loaded list structure mismatch");
+// Test case 3: Find entries in the list
+static int test_fl_find() {
+    file_list_t list;
+    file_list_init(&list);
+    file_list_add(&list, "document_final_v2.txt", 1024, 512);
+    file_list_add(&list, "image.jpg", 4096, 4000);
+    file_list_add(&list, "archive.zip", 10000, 8000);
 
+    file_entry_t *found;
 
-    // Clean up
-    file_list_free(&list_orig);
-    file_list_free(&list_loaded);
-    unlink(TEST_LIST_FILE); // Delete the test file
+    // Find exact match
+    found = file_list_find(&list, "image.jpg");
+    ASSERT_NOT_NULL(found, "Failed to find exact match 'image.jpg'");
+    ASSERT_EQUAL_INT(0, strcmp(found->filename, "image.jpg"), "Found wrong file for exact match");
 
-    return count_ok && content_ok && seq_num_ok;
+    // Find partial match
+    found = file_list_find(&list, "final_v2");
+    ASSERT_NOT_NULL(found, "Failed to find partial match 'final_v2'");
+    ASSERT_EQUAL_INT(0, strcmp(found->filename, "document_final_v2.txt"), "Found wrong file for partial match");
+
+    // Find case-sensitive match (should work if strstr is case-sensitive)
+    found = file_list_find(&list, "Archive"); // Assuming case-sensitive
+    ASSERT_NULL(found, "Should not find case-insensitive match 'Archive'");
+
+    // Find non-existent file
+    found = file_list_find(&list, "nonexistent.dat");
+    ASSERT_NULL(found, "Should not find non-existent file");
+
+    file_list_free(&list);
+    return 1; // Success
 }
 
 
-// Test suite runner for File List tests
-void run_file_list_tests() {
-    TEST_START("File List");
-    RUN_TEST(test_list_init);
-    RUN_TEST(test_list_add);
-    RUN_TEST(test_list_find);
-    RUN_TEST(test_list_save_load);
-    // Add more tests: get_recent, empty list save/load
-    TEST_END("File List");
+// Test case 4: Save and load the list
+static int test_fl_save_load() {
+    cleanup_test_file(); // Ensure no old file exists
+    file_list_t list_save;
+    file_list_init(&list_save);
+    file_list_add(&list_save, "save_test1.bin", 1, 1);
+    file_list_add(&list_save, "save_test2.tmp", 9999, 5555);
+    ASSERT_EQUAL_INT(3, list_save.next_sequence_num, "Sequence number before save mismatch");
+
+    // Save the list
+    int result = file_list_save(&list_save, TEST_LIST_FILENAME);
+    ASSERT_EQUAL_INT(0, result, "file_list_save failed");
+
+    // Load the list into a new structure
+    file_list_t list_load;
+    file_list_init(&list_load); // Initialize before load
+    result = file_list_load(&list_load, TEST_LIST_FILENAME);
+    ASSERT_EQUAL_INT(0, result, "file_list_load failed");
+
+    // Verify loaded list
+    ASSERT_EQUAL_INT(list_save.count, list_load.count, "Loaded count mismatch");
+    ASSERT_EQUAL_INT(list_save.next_sequence_num, list_load.next_sequence_num, "Loaded sequence number mismatch");
+    ASSERT_NOT_NULL(list_load.head, "Loaded head is NULL");
+    ASSERT_NOT_NULL(list_load.tail, "Loaded tail is NULL");
+
+    // Check first element
+    ASSERT_EQUAL_INT(0, strcmp(list_load.head->filename, "save_test1.bin"), "Loaded filename (1) mismatch");
+    ASSERT_EQUAL_INT(1, list_load.head->sequence_num, "Loaded sequence num (1) mismatch");
+    ASSERT_EQUAL_INT(1, list_load.head->original_size, "Loaded original size (1) mismatch");
+    ASSERT_EQUAL_INT(1, list_load.head->processed_size, "Loaded processed size (1) mismatch");
+
+    // Check second element
+    ASSERT_NOT_NULL(list_load.head->next, "Loaded second element link is NULL");
+    ASSERT_EQUAL_INT(list_load.tail, list_load.head->next, "Loaded tail pointer mismatch");
+    ASSERT_EQUAL_INT(0, strcmp(list_load.tail->filename, "save_test2.tmp"), "Loaded filename (2) mismatch");
+    ASSERT_EQUAL_INT(2, list_load.tail->sequence_num, "Loaded sequence num (2) mismatch");
+    ASSERT_EQUAL_INT(9999, list_load.tail->original_size, "Loaded original size (2) mismatch");
+    ASSERT_EQUAL_INT(5555, list_load.tail->processed_size, "Loaded processed size (2) mismatch");
+
+    file_list_free(&list_save);
+    file_list_free(&list_load);
+    cleanup_test_file();
+    return 1; // Success
+}
+
+// Test case 5: Load non-existent file
+static int test_fl_load_nonexistent() {
+    cleanup_test_file(); // Ensure file does not exist
+    file_list_t list;
+    file_list_init(&list);
+
+    int result = file_list_load(&list, TEST_LIST_FILENAME);
+    ASSERT_NOT_EQUAL_INT(0, result, "file_list_load should fail for non-existent file");
+    // List should remain empty
+    ASSERT_EQUAL_INT(0, list.count, "Count should be 0 after failed load");
+    ASSERT_NULL(list.head, "Head should be NULL after failed load");
+
+    file_list_free(&list);
+    return 1; // Success
+}
+
+
+// Function to run all file list tests
+int run_file_list_tests() {
+    START_TEST_SUITE("File List Utility");
+
+    RUN_TEST(test_fl_init_free);
+    RUN_TEST(test_fl_add);
+    RUN_TEST(test_fl_find);
+    RUN_TEST(test_fl_save_load);
+    RUN_TEST(test_fl_load_nonexistent);
+    // Add more tests (e.g., get_recent, edge cases for save/load)
+
+    END_TEST_SUITE();
 }
