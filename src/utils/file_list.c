@@ -351,7 +351,7 @@ void file_list_print(file_list_t *list) {
     current = list->head;
     while (current != NULL) {
         /* Print the entry */
-        printf("  %s\n", current->filename);
+        printf("--> %s\n", current->filename);
         printf("    Sequence: #%lu\n", current->sequence_num);
         printf("    Original size: %zu bytes\n", current->original_size);
         printf("    Processed size: %zu bytes\n", current->processed_size);

@@ -198,8 +198,8 @@ void print_file_info(const char *filename, size_t size) {
         sprintf(size_str, "%.2f GB", (float)size / (1024 * 1024 * 1024));
     }
     
-    printf("  File: %s\n", filename);
-    printf("  Size: %s\n", size_str);
+    printf("    File: %s\n", filename);
+    printf("    Size: %s\n", size_str);
 }
 
 /**
@@ -216,12 +216,12 @@ void print_processing_summary(const char *operation, const char *input_file, con
     float ratio = (float)output_size * 100 / input_size;
     
     printf("\n--> %s Summary:\n", operation);
-    printf("  Input:  %s (%zu bytes)\n", input_file, input_size);
-    printf("  Output: %s (%zu bytes)\n", output_file, output_size);
-    printf("  Ratio:  %.2f%%\n", ratio);
+    printf("    Input:  %s (%zu bytes)\n", input_file, input_size);
+    printf("    Output: %s (%zu bytes)\n", output_file, output_size);
+    printf("    Ratio:  %.2f%%\n", ratio);
     
     if (ratio < 100) {
-        printf("  Saved:  %.2f%%\n", 100 - ratio);
+        printf("    Saved:  %.2f%%\n", 100 - ratio);
     }
 }
 
@@ -1074,11 +1074,11 @@ int handle_file_list(const char *command, const char *filename, int quiet) {
         if (found) {
             printf("Found matching file:\n");
             
-            printf("  Filename: %s\n", found->filename);
-            printf("  Sequence: #%lu\n", found->sequence_num);
-            printf("  Original size: %zu bytes\n", found->original_size);
-            printf("  Processed size: %zu bytes\n", found->processed_size);
-            printf("  Compression ratio: %.2f%%\n",
+            printf("--> Filename: %s\n", found->filename);
+            printf("    Sequence: #%lu\n", found->sequence_num);
+            printf("    Original size: %zu bytes\n", found->original_size);
+            printf("    Processed size: %zu bytes\n", found->processed_size);
+            printf("    Compression ratio: %.2f%%\n",
                   (float)found->processed_size * 100 / found->original_size);
         } else {
             printf("No matching file found for pattern '%s'\n", filename);
@@ -1145,8 +1145,8 @@ int batch_process(char *filenames[], int num_files, const char *output_dir,
         
         if (!quiet) {
             printf("\n[%d/%d] Processing file:\n", i + 1, num_files);
-            printf("  Input:  %s\n", filenames[i]);
-            printf("  Output: %s\n", output_file);
+            printf("    Input:  %s\n", filenames[i]);
+            printf("    Output: %s\n", output_file);
         }
         
         /* Process the file */
@@ -1154,11 +1154,11 @@ int batch_process(char *filenames[], int num_files, const char *output_dir,
         if (result == 0) {
             success_count++;
             if (!quiet) {
-                printf("  Status: Success\n");
+                printf("    Status: Success\n");
             }
         } else {
             if (!quiet) {
-                fprintf(stderr, "  Status: Failed\n");
+                fprintf(stderr, "    Status: Failed\n");
             }
             /* Continue with next file */
         }

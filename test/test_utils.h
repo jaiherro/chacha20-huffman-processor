@@ -27,7 +27,7 @@ static int passed_tests = 0;
 #define RUN_TEST(test_func) \
     do { \
         total_tests++; \
-        printf("  Running test: %s... ", #test_func); \
+        printf("    Running test: %s... ", #test_func); \
         fflush(stdout); \
         if (test_func()) { \
             printf("PASSED\n"); \
