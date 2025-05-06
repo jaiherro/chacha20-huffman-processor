@@ -37,10 +37,10 @@
 #define PROGRESS_WIDTH 30 // Width of the progress bar
 
 /* Program modes */
-#define MODE_ENCRYPT     1  /* Encrypt a file */
-#define MODE_DECRYPT     2  /* Decrypt a file */
-#define MODE_COMPRESS    3  /* Compress a file */
-#define MODE_DECOMPRESS  4  /* Decompress a file */
+#define MODE_COMPRESS    1  /* Compress a file */
+#define MODE_DECOMPRESS  2  /* Decompress a file */
+#define MODE_ENCRYPT     3  /* Encrypt a file */
+#define MODE_DECRYPT     4  /* Decrypt a file */
 #define MODE_PROCESS     5  /* Process (compress+encrypt) a file */
 #define MODE_EXTRACT     6  /* Extract (decrypt+decompress) a file */
 #define MODE_LIST        7  /* List processed files */
@@ -49,14 +49,14 @@
 #define MODE_HELP       10  /* Show help information */
 
 /* Default values */
-#define DEFAULT_KEY_ITERATIONS  10000       /* Default iterations for key derivation */
-#define DEFAULT_SALT_SIZE       16          /* Default salt size in bytes */
+#define DEFAULT_KEY_ITERATIONS  10000           /* Default iterations for key derivation */
+#define DEFAULT_SALT_SIZE       16              /* Default salt size in bytes */
 #define DEFAULT_FILE_LIST       "file_list.dat" /* Default file list filename */
-#define DEFAULT_OUTPUT_DIR      "output"    /* Default output directory for batch */
-#define MAX_FILENAME            256         /* Maximum filename length */
-#define MAX_PASSWORD            128         /* Maximum password length */
-#define MAX_BATCH_FILES         100         /* Maximum number of files in batch mode */
-#define BUFFER_SIZE             4096        /* Buffer size for file processing */
+#define DEFAULT_OUTPUT_DIR      "output"        /* Default output directory for batch */
+#define MAX_FILENAME            256             /* Maximum filename length */
+#define MAX_PASSWORD            128             /* Maximum password length */
+#define MAX_BATCH_FILES         100             /* Maximum number of files in batch mode */
+#define BUFFER_SIZE             4096            /* Buffer size for file processing */
 
 /* Function prototypes */
 void print_hex(const char *label, const uint8_t *data, size_t len);
@@ -1425,10 +1425,10 @@ int main(int argc, char *argv[]) {
     int file_arg_start_index = 2; // Default starting index for options/files
 
     switch (mode) {
-        case MODE_ENCRYPT:
-        case MODE_DECRYPT:
         case MODE_COMPRESS:
         case MODE_DECOMPRESS:
+        case MODE_ENCRYPT:
+        case MODE_DECRYPT:
         case MODE_PROCESS:
         case MODE_EXTRACT:
             if (argc < 4) {
@@ -1511,6 +1511,42 @@ int main(int argc, char *argv[]) {
 
     /* --- Execute Selected Mode --- */
     switch (mode) {
+        case MODE_COMPRESS:
+             if (!file_exists(input_file)) {
+                 fprintf(stderr, "Error: Input file '%s' does not exist or cannot be read.\n", input_file);
+                 return 1;
+             }
+            processed_size = compress_file(input_file, output_file, quiet_mode, &original_size);
+             // Allow success for empty file (processed_size will be header size)
+             if (processed_size > 0 || original_size == 0) {
+                 result = 0; // Success
+                 // Add to list after successful operation
+                 if (add_entry_to_file_list(output_file, original_size, processed_size, quiet_mode) != 0) {
+                     // Warning handled by helper
+                 }
+             } else {
+                 result = 1; // Failure
+             }
+            // print_operation_result handled by compress_file if not quiet
+            break;
+
+        case MODE_DECOMPRESS:
+             if (!file_exists(input_file)) {
+                 fprintf(stderr, "Error: Input file '%s' does not exist or cannot be read.\n", input_file);
+                 return 1;
+             }
+            processed_size = decompress_file(input_file, output_file, quiet_mode, &original_size);
+             // Check for definite failure (return 0 when input size > header size)
+             if (processed_size == 0 && original_size > sizeof(size_t)) {
+                 result = 1; // Failure
+                 if (!quiet_mode) fprintf(stderr, "Decompression failed (corrupted file or I/O error).\n");
+             } else {
+                 result = 0; // Success (includes empty file case)
+                 // We don't add decompressed files to the list by default
+             }
+            // print_operation_result handled by decompress_file if not quiet
+            break;
+
         case MODE_ENCRYPT:
             if (get_password(password, sizeof(password), 1) != 0) return 1; // Request confirmation
             if (!file_exists(input_file)) {
@@ -1553,42 +1589,6 @@ int main(int argc, char *argv[]) {
                  // We don't add decrypted files to the list by default
             }
             // print_operation_result handled by decrypt_file if not quiet
-            break;
-
-        case MODE_COMPRESS:
-             if (!file_exists(input_file)) {
-                 fprintf(stderr, "Error: Input file '%s' does not exist or cannot be read.\n", input_file);
-                 return 1;
-             }
-            processed_size = compress_file(input_file, output_file, quiet_mode, &original_size);
-             // Allow success for empty file (processed_size will be header size)
-             if (processed_size > 0 || original_size == 0) {
-                 result = 0; // Success
-                 // Add to list after successful operation
-                 if (add_entry_to_file_list(output_file, original_size, processed_size, quiet_mode) != 0) {
-                     // Warning handled by helper
-                 }
-             } else {
-                 result = 1; // Failure
-             }
-            // print_operation_result handled by compress_file if not quiet
-            break;
-
-        case MODE_DECOMPRESS:
-             if (!file_exists(input_file)) {
-                 fprintf(stderr, "Error: Input file '%s' does not exist or cannot be read.\n", input_file);
-                 return 1;
-             }
-            processed_size = decompress_file(input_file, output_file, quiet_mode, &original_size);
-             // Check for definite failure (return 0 when input size > header size)
-             if (processed_size == 0 && original_size > sizeof(size_t)) {
-                 result = 1; // Failure
-                 if (!quiet_mode) fprintf(stderr, "Decompression failed (corrupted file or I/O error).\n");
-             } else {
-                 result = 0; // Success (includes empty file case)
-                 // We don't add decompressed files to the list by default
-             }
-            // print_operation_result handled by decompress_file if not quiet
             break;
 
         case MODE_PROCESS: // Compress + Encrypt
