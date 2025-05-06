@@ -23,7 +23,7 @@ static int hex_to_bytes(const char *hex_str, uint8_t *bytes, size_t max_len) {
 
 // Test case 1: RFC 8439 Test Vector 1 (Section 2.4.2)
 // Encrypting 114 bytes of zeros
-static int test_chacha20_rfc8439_vector1() {
+static int test_chacha20_rfc8439_vector1(void) {
     // Key (256 bits / 32 bytes)
     uint8_t key[CHACHA20_KEY_SIZE];
     const char *key_hex = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
@@ -87,7 +87,7 @@ static int test_chacha20_rfc8439_vector1() {
 }
 
 // Test case 2: Basic encryption/decryption with non-zero data
-static int test_chacha20_basic() {
+static int test_chacha20_basic(void) {
     uint8_t key[CHACHA20_KEY_SIZE] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
                                       0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10,
                                       0x10, 0x32, 0x54, 0x76, 0x98, 0xba, 0xdc, 0xfe,
@@ -133,7 +133,7 @@ static int test_chacha20_basic() {
 }
 
 // Test case 3: Processing data larger than one block
-static int test_chacha20_multi_block() {
+static int test_chacha20_multi_block(void) {
      uint8_t key[CHACHA20_KEY_SIZE] = {0}; // Simple key
      uint8_t nonce[CHACHA20_NONCE_SIZE] = {0}; // Simple nonce
      uint32_t counter = 1;
@@ -178,7 +178,7 @@ static int test_chacha20_multi_block() {
 
 
 // Function to run all encryption tests
-int run_encryption_tests() {
+int run_encryption_tests(void) {
     START_TEST_SUITE("ChaCha20 Encryption");
 
     RUN_TEST(test_chacha20_rfc8439_vector1);

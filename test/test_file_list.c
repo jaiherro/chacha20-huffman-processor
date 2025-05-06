@@ -8,12 +8,12 @@
 #define TEST_LIST_FILENAME "test_list.dat"
 
 // Helper to clean up test file
-static void cleanup_test_file() {
+static void cleanup_test_file(void) {
     remove(TEST_LIST_FILENAME);
 }
 
 // Test case 1: Initialize and free an empty list
-static int test_fl_init_free() {
+static int test_fl_init_free(void) {
     file_list_t list;
     int result = file_list_init(&list);
     ASSERT_EQUAL_INT(0, result, "file_list_init failed");
@@ -33,7 +33,7 @@ static int test_fl_init_free() {
 }
 
 // Test case 2: Add entries to the list
-static int test_fl_add() {
+static int test_fl_add(void) {
     file_list_t list;
     file_list_init(&list);
 
@@ -64,7 +64,7 @@ static int test_fl_add() {
 }
 
 // Test case 3: Find entries in the list
-static int test_fl_find() {
+static int test_fl_find(void) {
     file_list_t list;
     file_list_init(&list);
     file_list_add(&list, "document_final_v2.txt", 1024, 512);
@@ -97,7 +97,7 @@ static int test_fl_find() {
 
 
 // Test case 4: Save and load the list
-static int test_fl_save_load() {
+static int test_fl_save_load(void) {
     cleanup_test_file(); // Ensure no old file exists
     file_list_t list_save;
     file_list_init(&list_save);
@@ -142,7 +142,7 @@ static int test_fl_save_load() {
 }
 
 // Test case 5: Load non-existent file
-static int test_fl_load_nonexistent() {
+static int test_fl_load_nonexistent(void) {
     cleanup_test_file(); // Ensure file does not exist
     file_list_t list;
     file_list_init(&list);
@@ -159,7 +159,7 @@ static int test_fl_load_nonexistent() {
 
 
 // Function to run all file list tests
-int run_file_list_tests() {
+int run_file_list_tests(void) {
     START_TEST_SUITE("File List Utility");
 
     RUN_TEST(test_fl_init_free);

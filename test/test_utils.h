@@ -50,9 +50,9 @@ static int passed_tests = 0;
 
 // Function prototypes for test runners in other files
 // We declare them here so test_main.c can call them.
-int run_compression_tests();
-int run_encryption_tests();
-int run_key_derivation_tests();
-int run_file_list_tests();
+int run_compression_tests(void);
+int run_encryption_tests(void);
+int run_key_derivation_tests(void);
+int run_file_list_tests(void);
 
 #endif // TEST_UTILS_H

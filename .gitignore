@@ -1,3 +1,6 @@
+# MacOS Garbage
+.DS_Store
+
 # Prerequisites
 *.d
 
@@ -58,3 +61,4 @@ codebase.md
 *.dat
 *.enc
 secure_compress
+run_tests

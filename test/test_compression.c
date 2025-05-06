@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 // Test case 1: Basic compression and decompression
-static int test_huffman_basic() {
+static int test_huffman_basic(void) {
     const char *input_str = "this is a test string with repeated characters";
     uint8_t *input = (uint8_t *)input_str;
     size_t input_len = strlen(input_str);
@@ -37,7 +37,7 @@ static int test_huffman_basic() {
 }
 
 // Test case 2: Empty input
-static int test_huffman_empty() {
+static int test_huffman_empty(void) {
     uint8_t input[] = "";
     size_t input_len = 0;
 
@@ -65,7 +65,7 @@ static int test_huffman_empty() {
 }
 
 // Test case 3: Input with a single character repeated
-static int test_huffman_single_char() {
+static int test_huffman_single_char(void) {
     const char *input_str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     uint8_t *input = (uint8_t *)input_str;
     size_t input_len = strlen(input_str);
@@ -97,7 +97,7 @@ static int test_huffman_single_char() {
 }
 
 // Test case 4: Input with all unique characters (worst case for Huffman)
-static int test_huffman_unique_chars() {
+static int test_huffman_unique_chars(void) {
     uint8_t input[256];
     size_t input_len = 256;
     for (size_t i = 0; i < input_len; ++i) {
@@ -132,7 +132,7 @@ static int test_huffman_unique_chars() {
 
 
 // Function to run all compression tests
-int run_compression_tests() {
+int run_compression_tests(void) {
     START_TEST_SUITE("Huffman Compression");
 
     RUN_TEST(test_huffman_basic);
