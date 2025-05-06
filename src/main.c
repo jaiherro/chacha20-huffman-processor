@@ -212,9 +212,9 @@ void print_usage(const char *program_name) {
     printf("EXAMPLES:\n");
     printf("  %s -e document.txt document.enc                 # Encrypt a file\n", program_name);
     printf("  %s -d document.enc document.txt                 # Decrypt a file\n", program_name);
-    printf("  %s -p report.pdf report.pdf.sec -i 20000       # Compress and encrypt with more iterations\n", program_name);
+    printf("  %s -p report.pdf report.pdf.sec -i 20000        # Compress and encrypt with more iterations\n", program_name);
     printf("  %s -u report.pdf.sec report.pdf                 # Decrypt and decompress\n", program_name);
-    printf("  %s -b secure_files file1.txt image.jpg        # Batch process files into 'secure_files' dir\n", program_name);
+    printf("  %s -b secure_files file1.txt image.jpg          # Batch process files into 'secure_files' dir\n", program_name);
     printf("  %s -l                                           # List all processed files\n", program_name);
     printf("  %s -f report                                    # Find files containing 'report' in the list\n\n", program_name);
 
