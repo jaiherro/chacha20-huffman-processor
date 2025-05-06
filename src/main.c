@@ -194,10 +194,10 @@ void print_usage(const char *program_name) {
     printf("  %s [MODE] [OPTIONS] [FILE(S)]\n\n", program_name);
 
     printf("MODES:\n");
-    printf("  -e <input> <output>    Encrypt a file (with password prompt)\n");
-    printf("  -d <input> <output>    Decrypt a file (with password prompt)\n");
     printf("  -c <input> <output>    Compress a file\n");
     printf("  -x <input> <output>    Decompress a file\n");
+    printf("  -e <input> <output>    Encrypt a file (with password prompt)\n");
+    printf("  -d <input> <output>    Decrypt a file (with password prompt)\n");
     printf("  -p <input> <output>    Process a file (compress then encrypt)\n");
     printf("  -u <input> <output>    Extract a file (decrypt then decompress)\n");
     printf("  -l                     List processed files (from %s)\n", DEFAULT_FILE_LIST);
