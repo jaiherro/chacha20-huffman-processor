@@ -1,6 +1,6 @@
 #include "test_utils.h" // Includes declarations for run_*_tests functions
 
-int main() {
+int main(void) {
     int overall_result = 0;
     int suite_result;
 

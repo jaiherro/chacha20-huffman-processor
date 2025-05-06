@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 // Test case 1: Basic key derivation and consistency check
-static int test_kdf_basic_consistency() {
+static int test_kdf_basic_consistency(void) {
     const char *password = "correct horse battery staple";
     uint8_t salt[16];
     size_t salt_len = sizeof(salt);
@@ -39,7 +39,7 @@ static int test_kdf_basic_consistency() {
 }
 
 // Test case 2: Check that different salts produce different keys/nonces
-static int test_kdf_different_salts() {
+static int test_kdf_different_salts(void) {
     const char *password = "password123";
     uint8_t salt1[16], salt2[16];
     size_t salt_len = 16;
@@ -76,7 +76,7 @@ static int test_kdf_different_salts() {
 }
 
 // Test case 3: Check that different passwords produce different keys/nonces
-static int test_kdf_different_passwords() {
+static int test_kdf_different_passwords(void) {
     const char *passwordA = "passwordA";
     const char *passwordB = "passwordB";
     uint8_t salt[16];
@@ -109,7 +109,7 @@ static int test_kdf_different_passwords() {
 }
 
 // Test case 4: generate_salt basic functionality
-static int test_generate_salt() {
+static int test_generate_salt(void) {
     uint8_t salt1[16];
     uint8_t salt2[16];
     size_t salt_len = 16;
@@ -133,7 +133,7 @@ static int test_generate_salt() {
 
 
 // Function to run all key derivation tests
-int run_key_derivation_tests() {
+int run_key_derivation_tests(void) {
     START_TEST_SUITE("Key Derivation");
 
     RUN_TEST(test_kdf_basic_consistency);
