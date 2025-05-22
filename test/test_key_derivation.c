@@ -3,19 +3,20 @@
 #include "test_utils.h"
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
+// #include <stdint.h> // Removed
 
 // Test case 1: Basic key derivation and consistency check
-static int test_kdf_basic_consistency(void) {
+static int test_kdf_basic_consistency(void)
+{
     const char *password = "correct horse battery staple";
-    uint8_t salt[16];
-    size_t salt_len = sizeof(salt);
-    unsigned int iterations = 100; // Use fewer iterations for faster testing
+    unsigned char salt[16];                // Replaced uint8_t with unsigned char
+    unsigned long salt_len = sizeof(salt); // Replaced size_t with unsigned long
+    unsigned int iterations = 100;         // Use fewer iterations for faster testing
 
-    uint8_t key1[CHACHA20_KEY_SIZE];
-    uint8_t nonce1[CHACHA20_NONCE_SIZE];
-    uint8_t key2[CHACHA20_KEY_SIZE];
-    uint8_t nonce2[CHACHA20_NONCE_SIZE];
+    unsigned char key1[CHACHA20_KEY_SIZE];     // Replaced uint8_t with unsigned char
+    unsigned char nonce1[CHACHA20_NONCE_SIZE]; // Replaced uint8_t with unsigned char
+    unsigned char key2[CHACHA20_KEY_SIZE];     // Replaced uint8_t with unsigned char
+    unsigned char nonce2[CHACHA20_NONCE_SIZE]; // Replaced uint8_t with unsigned char
 
     // Generate a salt
     int result = generate_salt(salt, salt_len);
@@ -39,16 +40,17 @@ static int test_kdf_basic_consistency(void) {
 }
 
 // Test case 2: Check that different salts produce different keys/nonces
-static int test_kdf_different_salts(void) {
+static int test_kdf_different_salts(void)
+{
     const char *password = "password123";
-    uint8_t salt1[16], salt2[16];
-    size_t salt_len = 16;
+    unsigned char salt1[16], salt2[16]; // Replaced uint8_t with unsigned char
+    unsigned long salt_len = 16;        // Replaced size_t with unsigned long
     unsigned int iterations = 50;
 
-    uint8_t key1[CHACHA20_KEY_SIZE];
-    uint8_t nonce1[CHACHA20_NONCE_SIZE];
-    uint8_t key2[CHACHA20_KEY_SIZE];
-    uint8_t nonce2[CHACHA20_NONCE_SIZE];
+    unsigned char key1[CHACHA20_KEY_SIZE];     // Replaced uint8_t with unsigned char
+    unsigned char nonce1[CHACHA20_NONCE_SIZE]; // Replaced uint8_t with unsigned char
+    unsigned char key2[CHACHA20_KEY_SIZE];     // Replaced uint8_t with unsigned char
+    unsigned char nonce2[CHACHA20_NONCE_SIZE]; // Replaced uint8_t with unsigned char
 
     // Generate two different salts
     ASSERT_EQUAL_INT(0, generate_salt(salt1, salt_len), "generate_salt (1) failed");
@@ -57,10 +59,9 @@ static int test_kdf_different_salts(void) {
     salt2[0] ^= 0xFF;
     ASSERT_TRUE(memcmp(salt1, salt2, salt_len) != 0, "Salts should be different");
 
-
     // Derive with salt1
     int result = derive_key_and_nonce(password, salt1, salt_len, iterations,
-                                  key1, sizeof(key1), nonce1, sizeof(nonce1));
+                                      key1, sizeof(key1), nonce1, sizeof(nonce1));
     ASSERT_EQUAL_INT(0, result, "derive_key_and_nonce (salt1) failed");
 
     // Derive with salt2
@@ -76,24 +77,25 @@ static int test_kdf_different_salts(void) {
 }
 
 // Test case 3: Check that different passwords produce different keys/nonces
-static int test_kdf_different_passwords(void) {
+static int test_kdf_different_passwords(void)
+{
     const char *passwordA = "passwordA";
     const char *passwordB = "passwordB";
-    uint8_t salt[16];
-    size_t salt_len = 16;
+    unsigned char salt[16];      // Replaced uint8_t with unsigned char
+    unsigned long salt_len = 16; // Replaced size_t with unsigned long
     unsigned int iterations = 50;
 
-    uint8_t keyA[CHACHA20_KEY_SIZE];
-    uint8_t nonceA[CHACHA20_NONCE_SIZE];
-    uint8_t keyB[CHACHA20_KEY_SIZE];
-    uint8_t nonceB[CHACHA20_NONCE_SIZE];
+    unsigned char keyA[CHACHA20_KEY_SIZE];     // Replaced uint8_t with unsigned char
+    unsigned char nonceA[CHACHA20_NONCE_SIZE]; // Replaced uint8_t with unsigned char
+    unsigned char keyB[CHACHA20_KEY_SIZE];     // Replaced uint8_t with unsigned char
+    unsigned char nonceB[CHACHA20_NONCE_SIZE]; // Replaced uint8_t with unsigned char
 
     // Generate salt
     ASSERT_EQUAL_INT(0, generate_salt(salt, salt_len), "generate_salt failed");
 
     // Derive with passwordA
     int result = derive_key_and_nonce(passwordA, salt, salt_len, iterations,
-                                  keyA, sizeof(keyA), nonceA, sizeof(nonceA));
+                                      keyA, sizeof(keyA), nonceA, sizeof(nonceA));
     ASSERT_EQUAL_INT(0, result, "derive_key_and_nonce (pw A) failed");
 
     // Derive with passwordB
@@ -109,10 +111,11 @@ static int test_kdf_different_passwords(void) {
 }
 
 // Test case 4: generate_salt basic functionality
-static int test_generate_salt(void) {
-    uint8_t salt1[16];
-    uint8_t salt2[16];
-    size_t salt_len = 16;
+static int test_generate_salt(void)
+{
+    unsigned char salt1[16];     // Replaced uint8_t with unsigned char
+    unsigned char salt2[16];     // Replaced uint8_t with unsigned char
+    unsigned long salt_len = 16; // Replaced size_t with unsigned long
 
     int result = generate_salt(salt1, salt_len);
     ASSERT_EQUAL_INT(0, result, "generate_salt (1) failed");
@@ -124,16 +127,16 @@ static int test_generate_salt(void) {
     ASSERT_TRUE(memcmp(salt1, salt2, salt_len) != 0, "Subsequent calls to generate_salt produced identical salts");
 
     // Test with different length
-    uint8_t salt3[32];
+    unsigned char salt3[32]; // Replaced uint8_t with unsigned char
     result = generate_salt(salt3, 32);
-     ASSERT_EQUAL_INT(0, result, "generate_salt (3) failed");
+    ASSERT_EQUAL_INT(0, result, "generate_salt (3) failed");
 
     return 1; // Success
 }
 
-
 // Function to run all key derivation tests
-int run_key_derivation_tests(void) {
+int run_key_derivation_tests(void)
+{
     START_TEST_SUITE("Key Derivation");
 
     RUN_TEST(test_kdf_basic_consistency);

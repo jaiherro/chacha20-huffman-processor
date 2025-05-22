@@ -12,7 +12,7 @@ DEBUG_FLAGS = -DDEBUG -g -DCHACHA20_DEBUG -DKDF_DEBUG -DHUFFMAN_DEBUG -DFILE_LIS
 # BASE_CFLAGS = -Wall -Werror -pedantic -std=c99 -I$(INCLUDE_DIR)
 
 # Source files (Windows-compatible wildcards)
-APP_SRCS = $(wildcard $(SRC_DIR)/*/*.c) $(wildcard $(SRC_DIR)/*/*/*.c)
+APP_SRCS = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/*/*.c)
 TEST_SRCS = $(wildcard $(TEST_DIR)/*.c)
 
 # Object files
@@ -20,7 +20,7 @@ APP_OBJS = $(APP_SRCS:.c=.o)
 TEST_OBJS = $(TEST_SRCS:.c=.o)
 
 # Library objects for tests (exclude main.o if it exists)
-LIB_OBJS = $(filter-out $(SRC_DIR)/core/main.o, $(APP_OBJS))
+LIB_OBJS = $(filter-out $(SRC_DIR)/main.o, $(APP_OBJS))
 
 # Executables
 TARGET = secure_compress

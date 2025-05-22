@@ -34,160 +34,85 @@
 
 /* Console formatting */
 #define CLEAR_LINE "\r                                                                          \r" // Clear line macro
-#define PROGRESS_WIDTH 30 // Width of the progress bar
+#define PROGRESS_WIDTH 30                                                                           // Width of the progress bar
 
 /* Program modes */
-#define MODE_COMPRESS    1  /* Compress a file */
-#define MODE_DECOMPRESS  2  /* Decompress a file */
-#define MODE_ENCRYPT     3  /* Encrypt a file */
-#define MODE_DECRYPT     4  /* Decrypt a file */
-#define MODE_PROCESS     5  /* Process (compress+encrypt) a file */
-#define MODE_EXTRACT     6  /* Extract (decrypt+decompress) a file */
-#define MODE_LIST        7  /* List processed files */
-#define MODE_FIND        8  /* Find a file in the list */
-#define MODE_BATCH       9  /* Batch process multiple files */
-#define MODE_HELP       10  /* Show help information */
+#define MODE_COMPRESS 1   /* Compress a file */
+#define MODE_DECOMPRESS 2 /* Decompress a file */
+#define MODE_ENCRYPT 3    /* Encrypt a file */
+#define MODE_DECRYPT 4    /* Decrypt a file */
+#define MODE_PROCESS 5    /* Process (compress+encrypt) a file */
+#define MODE_EXTRACT 6    /* Extract (decrypt+decompress) a file */
+#define MODE_LIST 7       /* List processed files */
+#define MODE_FIND 8       /* Find a file in the list */
+#define MODE_BATCH 9      /* Batch process multiple files */
+#define MODE_HELP 10      /* Show help information */
 
 /* Default values */
-#define DEFAULT_KEY_ITERATIONS  10000           /* Default iterations for key derivation */
-#define DEFAULT_SALT_SIZE       16              /* Default salt size in bytes */
-#define DEFAULT_FILE_LIST       "file_list.dat" /* Default file list filename */
-#define DEFAULT_OUTPUT_DIR      "output"        /* Default output directory for batch */
-#define MAX_FILENAME            256             /* Maximum filename length */
-#define MAX_PASSWORD            128             /* Maximum password length */
-#define MAX_BATCH_FILES         100             /* Maximum number of files in batch mode */
-#define BUFFER_SIZE             4096            /* Buffer size for file processing */
+#define DEFAULT_KEY_ITERATIONS 10000      /* Default iterations for key derivation */
+#define DEFAULT_SALT_SIZE 16              /* Default salt size in bytes */
+#define DEFAULT_FILE_LIST "file_list.dat" /* Default file list filename */
+#define DEFAULT_OUTPUT_DIR "output"       /* Default output directory for batch */
+#define MAX_FILENAME 256                  /* Maximum filename length */
+#define MAX_PASSWORD 128                  /* Maximum password length */
+#define MAX_BATCH_FILES 100               /* Maximum number of files in batch mode */
+#define BUFFER_SIZE 4096                  /* Buffer size for file processing */
 
 /* Function prototypes */
-void print_hex(const char *label, const uint8_t *data, size_t len);
+// Replaced uint8_t with unsigned char, size_t with unsigned long where appropriate
+void print_hex(const char *label, const unsigned char *data, unsigned long len);
 void print_usage(const char *program_name);
-void print_progress_bar(size_t current, size_t total, size_t width);
+void print_progress_bar(unsigned long current, unsigned long total, unsigned long width);
 void print_operation_result(int result, const char *operation);
 void print_processing_summary(const char *operation, const char *input_file, const char *output_file,
-                              size_t input_size, size_t output_size);
+                              unsigned long input_size, unsigned long output_size);
 void print_section_header(const char *title);
-int get_password(char *password, size_t max_len, int confirm);
+int get_password(char *password, unsigned long max_len, int confirm);
 int ensure_directory_exists(const char *directory);
 int file_exists(const char *filename);
-int add_entry_to_file_list(const char *output_file, size_t original_size, size_t processed_size, int quiet);
-size_t encrypt_file(const char *input_file, const char *output_file,
-                    const char *password, int iterations, int quiet, size_t *original_size_out);
-size_t decrypt_file(const char *input_file, const char *output_file,
-                    const char *password, int iterations, int quiet, size_t *original_size_out);
-size_t compress_file(const char *input_file, const char *output_file, int quiet, size_t *original_size_out);
-size_t decompress_file(const char *input_file, const char *output_file, int quiet, size_t *original_size_out);
-size_t process_file(const char *input_file, const char *output_file,
-                    const char *password, int iterations, int quiet, size_t *original_size_out);
-size_t extract_file(const char *input_file, const char *output_file,
-                    const char *password, int iterations, int quiet, size_t *original_size_out);
+int add_entry_to_file_list(const char *output_file, unsigned long original_size, unsigned long processed_size, int quiet);
+unsigned long encrypt_file(const char *input_file, const char *output_file,
+                           const char *password, int iterations, int quiet, unsigned long *original_size_out);
+unsigned long decrypt_file(const char *input_file, const char *output_file,
+                           const char *password, int iterations, int quiet, unsigned long *original_size_out);
+unsigned long compress_file(const char *input_file, const char *output_file, int quiet, unsigned long *original_size_out);
+unsigned long decompress_file(const char *input_file, const char *output_file, int quiet, unsigned long *original_size_out);
+unsigned long process_file(const char *input_file, const char *output_file,
+                           const char *password, int iterations, int quiet, unsigned long *original_size_out);
+unsigned long extract_file(const char *input_file, const char *output_file,
+                           const char *password, int iterations, int quiet, unsigned long *original_size_out);
 int handle_file_list(const char *command, const char *filename, int quiet);
 int batch_process(char *filenames[], int num_files, const char *output_dir,
                   const char *password, int iterations, int quiet);
-
 
 /**
  * Print binary data in a readable hexadecimal format (only if DEBUG defined)
  */
 #ifdef DEBUG
-void print_hex(const char *label, const uint8_t *data, size_t len) {
-    size_t i;
+// Replaced uint8_t with unsigned char, size_t with unsigned long
+void print_hex(const char *label, const unsigned char *data, unsigned long len)
+{
+    unsigned long i; // Replaced size_t with unsigned long
     printf("[Main] %s: ", label);
     // Limit printing for very long data to avoid excessive output
-    size_t print_len = (len > 64) ? 64 : len;
-    for (i = 0; i < print_len; i++) {
+    unsigned long print_len = (len > 64) ? 64 : len; // Replaced size_t with unsigned long
+    for (i = 0; i < print_len; i++)
+    {
         printf("%02x", data[i]);
-        if ((i + 1) % 4 == 0 && i + 1 < print_len) printf(" ");
+        if ((i + 1) % 4 == 0 && i + 1 < print_len)
+            printf(" ");
     }
-    if (len > 64) printf("... (%zu bytes total)", len);
+    if (len > 64)
+        printf("... (%lu bytes total)", len); // Use %lu for unsigned long
     printf("\n");
 }
 #endif // DEBUG (print_hex is defined only in debug mode)
 
 /**
- * Print a progress bar to show operation progress
+ * Print program usage instructions
  */
-void print_progress_bar(size_t current, size_t total, size_t width) {
-    // Avoid division by zero if total is 0 (e.g., empty file)
-    float percent = (total == 0) ? 1.0f : (float)current / total;
-    // Ensure percent doesn't exceed 1.0 due to potential rounding issues
-    if (percent > 1.0f) percent = 1.0f;
-
-    size_t filled_width = (size_t)(width * percent);
-
-    printf(CLEAR_LINE); // Clear the current line
-    printf("[");
-
-    /* Print filled portion */
-    size_t i;
-    for (i = 0; i < filled_width; i++) {
-        printf("=");
-    }
-
-    /* Print cursor if not full */
-    if (filled_width < width) {
-        printf(">");
-        i++;
-    }
-
-    /* Print empty portion */
-    for (; i < width; i++) {
-        printf(" ");
-    }
-
-    /* Print percentage */
-    // Use %zu for size_t which is standard C99
-    printf("] %5.1f%% (%zu/%zu bytes)", percent * 100.0f, current, total);
-    fflush(stdout); // Ensure progress bar updates immediately
-}
-
-/**
- * Print operation result with appropriate formatting
- */
-void print_operation_result(int result, const char *operation) {
-    // Add newline before result for better spacing if progress bar was used
-    printf("\n");
-    if (result == 0) {
-        printf("--> %s completed successfully.\n", operation);
-    } else {
-        // Use fprintf to stderr for errors
-        fprintf(stderr, "--> ERROR: %s failed.\n", operation);
-    }
-}
-
-/**
- * Print a summary of file processing operation
- */
-void print_processing_summary(const char *operation, const char *input_file, const char *output_file,
-                              size_t input_size, size_t output_size) {
-    // Avoid division by zero for ratio calculation
-    float ratio = (input_size == 0) ? 0.0f : (float)output_size * 100.0f / input_size;
-
-    printf("\n--> %s Summary:\n", operation);
-    printf("    Input:  %s (%zu bytes)\n", input_file, input_size);
-    printf("    Output: %s (%zu bytes)\n", output_file, output_size);
-    // Only show ratio if input size is non-zero
-    if (input_size > 0) {
-        printf("    Ratio:  %.2f%%\n", ratio);
-        // Only show savings if ratio is less than 100%
-        if (ratio < 100.0f) {
-            printf("    Saved:  %.2f%%\n", 100.0f - ratio);
-        }
-    } else {
-        printf("    Ratio:  N/A (input size is 0)\n");
-    }
-}
-
-/**
- * Print a section header
- */
-void print_section_header(const char *title) {
-    printf("\n--- %s ---\n", title);
-}
-
-/**
- * Print the usage information for the program
- */
-void print_usage(const char *program_name) {
+void print_usage(const char *program_name)
+{
     printf("Secure File Processor\n\n");
 
     printf("USAGE:\n");
@@ -206,27 +131,131 @@ void print_usage(const char *program_name) {
     printf("  -h, --help             Show this help information\n\n");
 
     printf("OPTIONS:\n");
-    printf("  -i <num>               Number of iterations for key derivation (default: %d)\n", DEFAULT_KEY_ITERATIONS);
-    printf("  -q                     Quiet mode (minimal output, suppresses progress bars and summaries)\n\n");
+    printf("  -i <num>                 Number of iterations for key derivation (default: %d)\n", DEFAULT_KEY_ITERATIONS);
+    printf("  -q                       Quiet mode (minimal output, suppresses progress bars and summaries)\n\n");
 
     printf("EXAMPLES:\n");
-    printf("  %s -e document.txt document.enc                 # Encrypt a file\n", program_name);
-    printf("  %s -d document.enc document.txt                 # Decrypt a file\n", program_name);
-    printf("  %s -p report.pdf report.pdf.sec -i 20000        # Compress and encrypt with more iterations\n", program_name);
-    printf("  %s -u report.pdf.sec report.pdf                 # Decrypt and decompress\n", program_name);
-    printf("  %s -b secure_files file1.txt image.jpg          # Batch process files into 'secure_files' dir\n", program_name);
-    printf("  %s -l                                           # List all processed files\n", program_name);
-    printf("  %s -f report                                    # Find files containing 'report' in the list\n\n", program_name);
+    printf("  %s -e document.txt document.enc                   # Encrypt a file\n", program_name);
+    printf("  %s -d document.enc document.txt                   # Decrypt a file\n", program_name);
+    printf("  %s -p report.pdf report.pdf.sec -i 20000          # Compress and encrypt with more iterations\n", program_name);
+    printf("  %s -u report.pdf.sec report.pdf                   # Decrypt and decompress\n", program_name);
+    printf("  %s -b secure_files file1.txt image.jpg            # Batch process files into 'secure_files' dir\n", program_name);
+    printf("  %s -l                                             # List all processed files\n", program_name);
+    printf("  %s -f report                                      # Find files containing 'report' in the list\n\n", program_name);
 
     printf("Note: For operations requiring encryption/decryption (-e, -d, -p, -u, -b), you will be prompted for a password.\n");
 }
 
 /**
+ * Print a progress bar to show operation progress
+ */
+// Replaced size_t with unsigned long
+void print_progress_bar(unsigned long current, unsigned long total, unsigned long width)
+{
+    // Avoid division by zero if total is 0 (e.g., empty file)
+    float percent = (total == 0) ? 1.0f : (float)current / total;
+    // Ensure percent doesn't exceed 1.0 due to potential rounding issues
+    if (percent > 1.0f)
+        percent = 1.0f;
+
+    unsigned long filled_width = (unsigned long)(width * percent); // Replaced size_t with unsigned long
+
+    printf(CLEAR_LINE); // Clear the current line
+    printf("[");
+
+    /* Print filled portion */
+    unsigned long i; // Replaced size_t with unsigned long
+    for (i = 0; i < filled_width; i++)
+    {
+        printf("=");
+    }
+
+    /* Print cursor if not full */
+    if (filled_width < width)
+    {
+        printf(">");
+        i++;
+    }
+
+    /* Print empty portion */
+    for (; i < width; i++)
+    {
+        printf(" ");
+    }
+
+    /* Print percentage */
+    // Use %lu for unsigned long which is standard C99
+    printf("] %5.1f%% (%lu/%lu bytes)", percent * 100.0f, current, total);
+    fflush(stdout); // Ensure progress bar updates immediately
+}
+
+/**
+ * Print operation result with appropriate formatting
+ */
+void print_operation_result(int result, const char *operation)
+{
+    // Add newline before result for better spacing if progress bar was used
+    printf("\n");
+    if (result == 0)
+    {
+        printf("--> %s completed successfully.\n", operation);
+    }
+    else
+    {
+        // Use fprintf to stderr for errors
+        fprintf(stderr, "--> ERROR: %s failed.\n", operation);
+    }
+}
+
+/**
+ * Print a summary of file processing operation
+ */
+// Replaced size_t with unsigned long
+void print_processing_summary(const char *operation, const char *input_file, const char *output_file,
+                              unsigned long input_size, unsigned long output_size)
+{
+    // Avoid division by zero for ratio calculation
+    float ratio = (input_size == 0) ? 0.0f : (float)output_size * 100.0f / input_size;
+
+    printf("\n--> %s Summary:\n", operation);
+    printf("    Input:  %s (%lu bytes)\n", input_file, input_size);   // Use %lu
+    printf("    Output: %s (%lu bytes)\n", output_file, output_size); // Use %lu
+    // Only show ratio if input size is non-zero
+    if (input_size > 0)
+    {
+        printf("    Ratio:  %.2f%%\n", ratio);
+        // Only show savings if ratio is less than 100%
+        if (ratio < 100.0f && ratio >= 0.0f)
+        { // ensure ratio is not negative (e.g. if output > input)
+            printf("    Saved:  %.2f%%\n", 100.0f - ratio);
+        }
+        else if (ratio > 100.0f)
+        {
+            printf("    Growth: %.2f%%\n", ratio - 100.0f);
+        }
+    }
+    else
+    {
+        printf("    Ratio:  N/A (input size is 0)\n");
+    }
+}
+
+/**
+ * Print a section header
+ */
+void print_section_header(const char *title)
+{
+    printf("\n--- %s ---\n", title);
+}
+
+/**
  * Check if a file exists and is readable
  */
-int file_exists(const char *filename) {
+int file_exists(const char *filename)
+{
     FILE *file = fopen(filename, "rb"); // Open for binary read
-    if (file) {
+    if (file)
+    {
         fclose(file);
         return 1; // File exists and is readable
     }
@@ -236,231 +265,230 @@ int file_exists(const char *filename) {
 /**
  * Create a directory if it doesn't exist (basic cross-platform attempt)
  */
-int ensure_directory_exists(const char *directory) {
-    /* This is a simplified approach using system calls.
-     * A more robust solution might use stat() and mkdir() directly,
-     * but requires platform-specific headers (#ifdef _WIN32 vs POSIX).
-     */
-    char command[MAX_FILENAME * 2]; // Allocate sufficient buffer
+int ensure_directory_exists(const char *directory)
+{
+    char command[MAX_FILENAME * 2];
 
-    // Check if directory is NULL or empty
-    if (directory == NULL || directory[0] == '\0') {
+    if (directory == NULL || directory[0] == '\0')
+    {
         fprintf(stderr, "Error: Invalid directory path provided.\n");
         return -1;
     }
 
-    // Construct the command based on the platform
-    #ifdef _WIN32
-        // Use 'mkdir' on Windows. Redirect errors to nul.
-        // The `2> nul` part suppresses error messages if the directory already exists.
-        snprintf(command, sizeof(command), "mkdir \"%s\" 2> nul", directory);
-    #else
-        // Use 'mkdir -p' on Unix-like systems. Redirect errors to /dev/null.
-        // The '-p' flag ensures parent directories are created if needed,
-        // and it doesn't error if the directory already exists.
-        snprintf(command, sizeof(command), "mkdir -p \"%s\" 2> /dev/null", directory);
-    #endif
-
-    // Execute the command
-    int status = system(command);
-
-    // system() returns 0 on success for many shells when the command executes successfully.
-    // On Windows, mkdir might return non-zero even if it succeeds (if dir exists).
-    // On Linux, mkdir -p returns 0 if the directory exists or was created.
-    // We rely on the error redirection to hide "already exists" errors.
-    // A non-zero status *might* indicate a real error (e.g., permission denied).
-    if (status != 0) {
-        // It's hard to be certain if it was a real error without more checks,
-        // but we can issue a warning.
-        DEBUG_PRINT("system(\"%s\") returned status %d. Directory might not have been created if it didn't exist.\n", command, status);
-        // We won't return -1 here, as the directory might actually exist.
-        // The subsequent fopen() calls will fail if the directory truly doesn't exist and couldn't be created.
+    // Simple check: try to open the directory. This is not a perfect check.
+    // A more robust way involves stat() which is POSIX, or platform specific APIs.
+    // For this project, relying on mkdir's behavior is simpler.
+    FILE *dir_check = fopen(directory, "r");
+    if (dir_check)
+    {
+        fclose(dir_check);
+        // Directory likely exists (or it's a file, mkdir will fail then)
+        return 0;
     }
 
-    return 0; // Assume success or directory already exists
-}
+#ifdef _WIN32
+    snprintf(command, sizeof(command), "mkdir \"%s\"", directory);
+#else // POSIX-like systems
+    snprintf(command, sizeof(command), "mkdir -p \"%s\"", directory);
+#endif
+    command[sizeof(command) - 1] = '\0'; // Ensure null termination
 
+    int status = system(command);
+
+    if (status != 0)
+    {
+        // system() return value is complex. mkdir -p returns 0 if dir exists or created.
+        // On Windows, mkdir returns 0 on success.
+        // A non-zero status might indicate a real error (e.g., permission denied).
+        // We can't be certain without more checks, so we'll proceed and let fopen fail later if needed.
+        DEBUG_PRINT("system(\"%s\") returned status %d. Directory might not have been created if it didn't exist or error occurred.\n", command, status);
+    }
+    return 0; // Assume success or directory already exists/will be handled by fopen
+}
 
 /**
  * Prompt for a password with optional confirmation.
  * Handles potential errors during input.
  */
-int get_password(char *password, size_t max_len, int confirm) {
-    char confirm_password[MAX_PASSWORD]; // Use defined max length
+// Replaced size_t with unsigned long for max_len
+int get_password(char *password, unsigned long max_len, int confirm)
+{
+    char confirm_password[MAX_PASSWORD];
 
-    /* First password prompt */
+    if (max_len == 0)
+        return -1; // Cannot read into zero-length buffer
+
     printf("Enter password: ");
-    fflush(stdout); // Ensure prompt is displayed before input
-    if (fgets(password, max_len, stdin) == NULL) {
-        // Check for EOF or read error
-        if (feof(stdin)) {
+    fflush(stdout);
+    if (fgets(password, (int)max_len, stdin) == NULL)
+    { // fgets expects int for size
+        if (feof(stdin))
+        {
             fprintf(stderr, "\nError: End-of-file reached while reading password.\n");
-        } else {
+        }
+        else
+        {
             fprintf(stderr, "\nError reading password.\n");
         }
-        clearerr(stdin); // Clear error/EOF indicators for potential future input
+        clearerr(stdin);
         return -1;
     }
-
-    /* Remove trailing newline, if present */
     password[strcspn(password, "\n")] = '\0';
 
-    /* Check if password is empty */
-    if (password[0] == '\0') { // More reliable check than strlen
+    if (password[0] == '\0')
+    {
         fprintf(stderr, "Error: Password cannot be empty.\n");
         return -1;
     }
 
-    /* Confirmation prompt if requested */
-    if (confirm) {
+    if (confirm)
+    {
         printf("Confirm password: ");
         fflush(stdout);
-        if (fgets(confirm_password, sizeof(confirm_password), stdin) == NULL) {
-            if (feof(stdin)) {
+        if (fgets(confirm_password, sizeof(confirm_password), stdin) == NULL)
+        {
+            if (feof(stdin))
+            {
                 fprintf(stderr, "\nError: End-of-file reached while reading password confirmation.\n");
-            } else {
+            }
+            else
+            {
                 fprintf(stderr, "\nError reading password confirmation.\n");
             }
             clearerr(stdin);
-            // Clear the first password buffer for security before returning
             memset(password, 0, max_len);
             return -1;
         }
-
-        /* Remove trailing newline */
         confirm_password[strcspn(confirm_password, "\n")] = '\0';
 
-        /* Check if passwords match */
-        if (strcmp(password, confirm_password) != 0) {
+        if (strcmp(password, confirm_password) != 0)
+        {
             fprintf(stderr, "Error: Passwords do not match.\n");
-            // Clear both buffers for security
             memset(password, 0, max_len);
             memset(confirm_password, 0, sizeof(confirm_password));
             return -1;
         }
-        // Clear confirmation buffer immediately after successful comparison
         memset(confirm_password, 0, sizeof(confirm_password));
     }
-
-    return 0; // Success
+    return 0;
 }
 
-
-// --- Helper function to add entry to file list ---
-// Moved list handling logic here to be called from main's switch statement
-int add_entry_to_file_list(const char *output_file, size_t original_size, size_t processed_size, int quiet) {
+// Replaced size_t with unsigned long for original_size and processed_size
+int add_entry_to_file_list(const char *output_file, unsigned long original_size, unsigned long processed_size, int quiet)
+{
     file_list_t file_list;
     file_list_init(&file_list);
 
-    // Attempt to load the existing list. It's okay if it fails (e.g., first run).
-    if (file_list_load(&file_list, DEFAULT_FILE_LIST) != 0) {
+    if (file_list_load(&file_list, DEFAULT_FILE_LIST) != 0)
+    {
         DEBUG_PRINT("Creating new file list or failed to load existing one from %s.\n", DEFAULT_FILE_LIST);
-        // Reset the list just in case loading partially failed
-        file_list_free(&file_list);
-        file_list_init(&file_list);
+        file_list_free(&file_list); // Ensure clean state
+        file_list_init(&file_list); // Re-initialize
     }
 
-    // Add the new entry to the list structure in memory
-    if (file_list_add(&file_list, output_file, original_size, processed_size) != 0) {
-        if (!quiet) {
-            // Use fprintf to stderr for warnings/errors
+    if (file_list_add(&file_list, output_file, original_size, processed_size) != 0)
+    {
+        if (!quiet)
+        {
             fprintf(stderr, "Warning: Failed to add entry '%s' to file list structure in memory.\n", output_file);
         }
-        file_list_free(&file_list); // Clean up memory
-        return -1; // Indicate failure to add
+        file_list_free(&file_list);
+        return -1;
     }
 
-    // Save the updated list structure back to the file
-    if (file_list_save(&file_list, DEFAULT_FILE_LIST) != 0) {
-        if (!quiet) {
+    if (file_list_save(&file_list, DEFAULT_FILE_LIST) != 0)
+    {
+        if (!quiet)
+        {
             fprintf(stderr, "Warning: Failed to save updated file list to %s\n", DEFAULT_FILE_LIST);
         }
-        file_list_free(&file_list); // Clean up memory
-        return -1; // Indicate failure to save
+        file_list_free(&file_list);
+        return -1;
     }
 
-    // Successfully added and saved, now free the list from memory
     file_list_free(&file_list);
-    return 0; // Success
+    return 0;
 }
-
 
 /**
  * Encrypt a file using ChaCha20
- * NOTE: Removed file list handling from this function. It's now done in main.
  * Returns the final size of the encrypted file (including salt) on success, or 0 on failure.
  */
-size_t encrypt_file(const char *input_file, const char *output_file,
-                    const char *password, int iterations, int quiet, size_t *original_size_out) {
+// Replaced size_t with unsigned long
+unsigned long encrypt_file(const char *input_file, const char *output_file,
+                           const char *password, int iterations, int quiet, unsigned long *original_size_out)
+{
     FILE *in = NULL, *out = NULL;
     chacha20_ctx ctx;
-    uint8_t *buffer = NULL, *output_buffer = NULL;
-    uint8_t key[CHACHA20_KEY_SIZE];
-    uint8_t nonce[CHACHA20_NONCE_SIZE];
-    uint8_t salt[DEFAULT_SALT_SIZE];
-    size_t read_size, file_size = 0, original_size = 0;
-    int result = 0; // 0 for success, -1 for failure
-    size_t final_output_size = 0; // Track final size including salt
+    unsigned char *buffer = NULL, *output_buffer = NULL;           // Replaced uint8_t with unsigned char
+    unsigned char key[CHACHA20_KEY_SIZE];                          // Replaced uint8_t with unsigned char
+    unsigned char nonce[CHACHA20_NONCE_SIZE];                      // Replaced uint8_t with unsigned char
+    unsigned char salt[DEFAULT_SALT_SIZE];                         // Replaced uint8_t with unsigned char
+    unsigned long read_size, file_size = 0, original_size_val = 0; // Replaced size_t with unsigned long
+    int result_flag = 0;                                           // 0 for success, -1 for failure
+    unsigned long final_output_size = 0;                           // Track final size including salt // Replaced size_t with unsigned long
 
-    if (!quiet) {
+    if (!quiet)
+    {
         print_section_header("File Encryption");
         printf("Input:  %s\n", input_file);
         printf("Output: %s\n", output_file);
         printf("Using %d iterations for key derivation\n", iterations);
     }
 
-    /* Open input file */
     in = fopen(input_file, "rb");
-    if (in == NULL) {
+    if (in == NULL)
+    {
         fprintf(stderr, "Error: Cannot open input file '%s' for reading.\n", input_file);
-        return 0; // Indicate failure
+        return 0;
     }
 
-    /* Get file size */
-    if (fseek(in, 0, SEEK_END) != 0) {
+    if (fseek(in, 0, SEEK_END) != 0)
+    {
         fprintf(stderr, "Error: Could not seek to end of input file '%s'.\n", input_file);
         fclose(in);
         return 0;
     }
-    original_size = ftell(in);
-    if (fseek(in, 0, SEEK_SET) != 0) {
+    original_size_val = ftell(in); // ftell returns long, assign to unsigned long
+    if (fseek(in, 0, SEEK_SET) != 0)
+    {
         fprintf(stderr, "Error: Could not seek to start of input file '%s'.\n", input_file);
         fclose(in);
         return 0;
     }
-    if (original_size_out) {
-        *original_size_out = original_size; // Pass original size back if pointer provided
+    if (original_size_out)
+    {
+        *original_size_out = original_size_val;
     }
 
-
-    /* Open output file */
     out = fopen(output_file, "wb");
-    if (out == NULL) {
+    if (out == NULL)
+    {
         fprintf(stderr, "Error: Cannot open output file '%s' for writing.\n", output_file);
         fclose(in);
-        return 0; // Indicate failure
+        return 0;
     }
 
-    /* Generate a random salt */
-    if (generate_salt(salt, DEFAULT_SALT_SIZE) != 0) {
+    if (generate_salt(salt, DEFAULT_SALT_SIZE) != 0)
+    {
         fprintf(stderr, "Error: Failed to generate salt.\n");
-        result = -1;
+        result_flag = -1;
         goto cleanup_encrypt;
     }
 
-    /* Write the salt to the output file */
-    if (fwrite(salt, 1, DEFAULT_SALT_SIZE, out) != DEFAULT_SALT_SIZE) {
+    if (fwrite(salt, 1, DEFAULT_SALT_SIZE, out) != DEFAULT_SALT_SIZE)
+    {
         fprintf(stderr, "Error: Failed to write salt to output file '%s'.\n", output_file);
-        result = -1;
+        result_flag = -1;
         goto cleanup_encrypt;
     }
-    final_output_size += DEFAULT_SALT_SIZE; // Add salt size to final output size
+    final_output_size += DEFAULT_SALT_SIZE;
 
-    /* Derive key and nonce from password */
     if (derive_key_and_nonce(password, salt, DEFAULT_SALT_SIZE, iterations,
-                             key, CHACHA20_KEY_SIZE, nonce, CHACHA20_NONCE_SIZE) != 0) {
+                             key, CHACHA20_KEY_SIZE, nonce, CHACHA20_NONCE_SIZE) != 0)
+    {
         fprintf(stderr, "Error: Failed to derive key and nonce from password.\n");
-        result = -1;
+        result_flag = -1;
         goto cleanup_encrypt;
     }
 
@@ -468,1193 +496,1197 @@ size_t encrypt_file(const char *input_file, const char *output_file,
     PRINT_HEX("Derived key", key, CHACHA20_KEY_SIZE);
     PRINT_HEX("Derived nonce", nonce, CHACHA20_NONCE_SIZE);
 
-    /* Initialize ChaCha20 context */
-    if (chacha20_init(&ctx, key, nonce, 1) != 0) { // Start with counter 1 as per RFC recommendation
+    if (chacha20_init(&ctx, key, nonce, 1) != 0)
+    {
         fprintf(stderr, "Error: Failed to initialize ChaCha20 context.\n");
-        result = -1;
+        result_flag = -1;
         goto cleanup_encrypt;
     }
 
-    /* Allocate buffers */
-    buffer = (uint8_t *)malloc(BUFFER_SIZE);
-    output_buffer = (uint8_t *)malloc(BUFFER_SIZE);
+    buffer = (unsigned char *)malloc(BUFFER_SIZE);        // Replaced uint8_t with unsigned char
+    output_buffer = (unsigned char *)malloc(BUFFER_SIZE); // Replaced uint8_t with unsigned char
 
-    if (buffer == NULL || output_buffer == NULL) {
+    if (buffer == NULL || output_buffer == NULL)
+    {
         fprintf(stderr, "Error: Memory allocation failed for buffers.\n");
-        result = -1;
+        result_flag = -1;
         goto cleanup_encrypt;
     }
 
-    /* Process the file in chunks */
-    if (!quiet) {
+    if (!quiet)
+    {
         printf("\nEncrypting file...\n");
-        // Initialize progress bar only if not quiet
-        print_progress_bar(0, original_size, PROGRESS_WIDTH);
+        print_progress_bar(0, original_size_val, PROGRESS_WIDTH);
     }
 
-    while ((read_size = fread(buffer, 1, BUFFER_SIZE, in)) > 0) {
-        /* Encrypt the chunk */
-        if (chacha20_process(&ctx, buffer, output_buffer, read_size) != 0) {
+    while ((read_size = fread(buffer, 1, BUFFER_SIZE, in)) > 0)
+    {
+        if (chacha20_process(&ctx, buffer, output_buffer, read_size) != 0)
+        {
             fprintf(stderr, "\nError: ChaCha20 encryption failed during processing.\n");
-            result = -1;
+            result_flag = -1;
             goto cleanup_encrypt;
         }
-
-        /* Write the encrypted chunk to the output file */
-        if (fwrite(output_buffer, 1, read_size, out) != read_size) {
+        if (fwrite(output_buffer, 1, read_size, out) != read_size)
+        {
             fprintf(stderr, "\nError: Failed to write encrypted data to output file '%s'.\n", output_file);
-            result = -1;
+            result_flag = -1;
             goto cleanup_encrypt;
         }
-
         file_size += read_size;
-
-        /* Update progress bar if not in quiet mode */
-        if (!quiet) {
-            print_progress_bar(file_size, original_size, PROGRESS_WIDTH);
+        if (!quiet)
+        {
+            print_progress_bar(file_size, original_size_val, PROGRESS_WIDTH);
         }
     }
 
-    // Check for read errors after the loop
-    if (ferror(in)) {
+    if (ferror(in))
+    {
         fprintf(stderr, "\nError: Failed reading from input file '%s'.\n", input_file);
-        result = -1;
+        result_flag = -1;
         goto cleanup_encrypt;
     }
+    final_output_size += file_size;
 
-    final_output_size += file_size; // Add encrypted data size
-
-    if (!quiet) {
-        // Ensure progress bar shows 100% if successful and file not empty
-        if (result == 0 && original_size > 0) {
-            print_progress_bar(original_size, original_size, PROGRESS_WIDTH);
+    if (!quiet)
+    {
+        if (result_flag == 0 && original_size_val > 0)
+        {
+            print_progress_bar(original_size_val, original_size_val, PROGRESS_WIDTH);
         }
-        printf("\n"); // Newline after progress bar
-        // Summary is printed in main now
+        printf("\n");
     }
 
 cleanup_encrypt:
-    /* Close files */
-    if (in != NULL) fclose(in);
-    if (out != NULL) fclose(out);
-
-    /* Free allocated memory */
-    if (buffer != NULL) {
-        memset(buffer, 0, BUFFER_SIZE); // Clear buffer content
+    if (in != NULL)
+        fclose(in);
+    if (out != NULL)
+        fclose(out);
+    if (buffer != NULL)
+    {
+        memset(buffer, 0, BUFFER_SIZE);
         free(buffer);
     }
-    if (output_buffer != NULL) {
-        memset(output_buffer, 0, BUFFER_SIZE); // Clear buffer content
+    if (output_buffer != NULL)
+    {
+        memset(output_buffer, 0, BUFFER_SIZE);
         free(output_buffer);
     }
-
-    /* Clear sensitive data */
     chacha20_cleanup(&ctx);
     memset(key, 0, CHACHA20_KEY_SIZE);
     memset(nonce, 0, CHACHA20_NONCE_SIZE);
-    memset(salt, 0, DEFAULT_SALT_SIZE); // Also clear salt buffer
-
-    // If an error occurred, potentially delete partially written output file
-    if (result != 0 && output_file != NULL) {
+    memset(salt, 0, DEFAULT_SALT_SIZE);
+    if (result_flag != 0 && output_file != NULL)
+    {
         remove(output_file);
     }
-
-
-    return (result == 0) ? final_output_size : 0; // Return final size on success, 0 on failure
+    return (result_flag == 0) ? final_output_size : 0;
 }
 
 /**
  * Decrypt a file using ChaCha20
  * Returns the final size of the decrypted file on success, or 0 on failure.
  */
-size_t decrypt_file(const char *input_file, const char *output_file,
-                    const char *password, int iterations, int quiet, size_t *original_size_out) {
+// Replaced size_t with unsigned long
+unsigned long decrypt_file(const char *input_file, const char *output_file,
+                           const char *password, int iterations, int quiet, unsigned long *original_size_out)
+{
     FILE *in = NULL, *out = NULL;
     chacha20_ctx ctx;
-    uint8_t *buffer = NULL, *output_buffer = NULL;
-    uint8_t key[CHACHA20_KEY_SIZE];
-    uint8_t nonce[CHACHA20_NONCE_SIZE];
-    uint8_t salt[DEFAULT_SALT_SIZE];
-    size_t read_size, file_size = 0, total_size = 0;
-    int result = 0; // 0=success, -1=potential decrypt error, -2=definite I/O/mem error
-    size_t final_output_size = 0;
+    unsigned char *buffer = NULL, *output_buffer = NULL;          // Replaced uint8_t with unsigned char
+    unsigned char key[CHACHA20_KEY_SIZE];                         // Replaced uint8_t with unsigned char
+    unsigned char nonce[CHACHA20_NONCE_SIZE];                     // Replaced uint8_t with unsigned char
+    unsigned char salt[DEFAULT_SALT_SIZE];                        // Replaced uint8_t with unsigned char
+    unsigned long read_size, file_size = 0, total_input_size = 0; // Replaced size_t with unsigned long
+    int result_flag = 0;                                          // 0=success, -1=potential decrypt error, -2=definite I/O/mem error
+    unsigned long final_output_size = 0;                          // Replaced size_t with unsigned long
 
-    if (!quiet) {
+    if (!quiet)
+    {
         print_section_header("File Decryption");
         printf("Input:  %s\n", input_file);
         printf("Output: %s\n", output_file);
         printf("Using %d iterations for key derivation\n", iterations);
     }
 
-    /* Open input file */
     in = fopen(input_file, "rb");
-    if (in == NULL) {
+    if (in == NULL)
+    {
         fprintf(stderr, "Error: Cannot open input file '%s' for reading.\n", input_file);
-        return 0; // Indicate failure
+        return 0;
     }
 
-    /* Get file size */
-     if (fseek(in, 0, SEEK_END) != 0) {
+    if (fseek(in, 0, SEEK_END) != 0)
+    {
         fprintf(stderr, "Error: Could not seek to end of input file '%s'.\n", input_file);
         fclose(in);
         return 0;
     }
-    total_size = ftell(in);
-     if (fseek(in, 0, SEEK_SET) != 0) {
+    total_input_size = ftell(in);
+    if (fseek(in, 0, SEEK_SET) != 0)
+    {
         fprintf(stderr, "Error: Could not seek to start of input file '%s'.\n", input_file);
         fclose(in);
         return 0;
     }
-     if (original_size_out) {
-        *original_size_out = total_size; // Pass original (encrypted) size back if pointer provided
+    if (original_size_out)
+    {
+        *original_size_out = total_input_size;
     }
 
-
-    if (total_size <= DEFAULT_SALT_SIZE) {
-        fprintf(stderr, "Error: Input file '%s' is too small (%zu bytes) to be valid encrypted data (requires salt).\n", input_file, total_size);
+    if (total_input_size <= DEFAULT_SALT_SIZE)
+    {
+        fprintf(stderr, "Error: Input file '%s' is too small (%lu bytes) to be valid encrypted data.\n", input_file, total_input_size); // Use %lu
         fclose(in);
-        return 0; // Indicate failure
+        return 0;
     }
 
-    /* Open output file */
     out = fopen(output_file, "wb");
-    if (out == NULL) {
+    if (out == NULL)
+    {
         fprintf(stderr, "Error: Cannot open output file '%s' for writing.\n", output_file);
         fclose(in);
-        return 0; // Indicate failure
+        return 0;
     }
 
-    /* Read the salt from the input file */
-    if (fread(salt, 1, DEFAULT_SALT_SIZE, in) != DEFAULT_SALT_SIZE) {
+    if (fread(salt, 1, DEFAULT_SALT_SIZE, in) != DEFAULT_SALT_SIZE)
+    {
         fprintf(stderr, "Error: Failed to read salt from input file '%s'.\n", input_file);
-        result = -2; // Definite I/O error
+        result_flag = -2;
         goto cleanup_decrypt;
     }
-
     PRINT_HEX("Read salt", salt, DEFAULT_SALT_SIZE);
 
-    /* Derive key and nonce from password */
     if (derive_key_and_nonce(password, salt, DEFAULT_SALT_SIZE, iterations,
-                             key, CHACHA20_KEY_SIZE, nonce, CHACHA20_NONCE_SIZE) != 0) {
+                             key, CHACHA20_KEY_SIZE, nonce, CHACHA20_NONCE_SIZE) != 0)
+    {
         fprintf(stderr, "Error: Failed to derive key and nonce from password.\n");
-        result = -2; // Treat as definite error
+        result_flag = -2;
         goto cleanup_decrypt;
     }
-
     DEBUG_PRINT("Using %d iterations for key derivation\n", iterations);
     PRINT_HEX("Derived key", key, CHACHA20_KEY_SIZE);
     PRINT_HEX("Derived nonce", nonce, CHACHA20_NONCE_SIZE);
 
-    /* Initialize ChaCha20 context */
-    if (chacha20_init(&ctx, key, nonce, 1) != 0) {
+    if (chacha20_init(&ctx, key, nonce, 1) != 0)
+    {
         fprintf(stderr, "Error: Failed to initialize ChaCha20 context.\n");
-        result = -2;
+        result_flag = -2;
         goto cleanup_decrypt;
     }
 
-    /* Allocate buffers */
-    buffer = (uint8_t *)malloc(BUFFER_SIZE);
-    output_buffer = (uint8_t *)malloc(BUFFER_SIZE);
-
-    if (buffer == NULL || output_buffer == NULL) {
+    buffer = (unsigned char *)malloc(BUFFER_SIZE);        // Replaced uint8_t with unsigned char
+    output_buffer = (unsigned char *)malloc(BUFFER_SIZE); // Replaced uint8_t with unsigned char
+    if (buffer == NULL || output_buffer == NULL)
+    {
         fprintf(stderr, "Error: Memory allocation failed for buffers.\n");
-        result = -2;
+        result_flag = -2;
         goto cleanup_decrypt;
     }
 
-    /* Process the file in chunks */
-    if (!quiet) {
+    unsigned long data_to_decrypt_size = total_input_size - DEFAULT_SALT_SIZE; // Replaced size_t with unsigned long
+    if (!quiet)
+    {
         printf("\nDecrypting file...\n");
-         // Initialize progress bar only if not quiet
-        print_progress_bar(0, total_size - DEFAULT_SALT_SIZE, PROGRESS_WIDTH);
+        print_progress_bar(0, data_to_decrypt_size, PROGRESS_WIDTH);
     }
 
-    size_t remaining_size = total_size - DEFAULT_SALT_SIZE;
-    while ((read_size = fread(buffer, 1, (remaining_size < BUFFER_SIZE ? remaining_size : BUFFER_SIZE), in)) > 0) {
-        /* Decrypt the chunk */
-        if (chacha20_process(&ctx, buffer, output_buffer, read_size) != 0) {
-            // This internal error in chacha20_process is unlikely unless parameters are wrong,
-            // but we treat it as a definite failure. Wrong password doesn't cause this.
-            fprintf(stderr, "\nError: ChaCha20 decryption failed during processing (internal error).\n");
-            result = -2; // Mark as definite failure
+    while (file_size < data_to_decrypt_size)
+    {
+        read_size = fread(buffer, 1, (data_to_decrypt_size - file_size < BUFFER_SIZE ? data_to_decrypt_size - file_size : BUFFER_SIZE), in);
+        if (read_size == 0 && feof(in) && file_size < data_to_decrypt_size)
+        {
+            fprintf(stderr, "\nError: Unexpected end of file while reading encrypted data.\n");
+            result_flag = -2;
             goto cleanup_decrypt;
         }
-
-        /* Write the decrypted chunk to the output file */
-        if (fwrite(output_buffer, 1, read_size, out) != read_size) {
-            fprintf(stderr, "\nError: Failed to write decrypted data to output file '%s'.\n", output_file);
-            result = -2; // Mark as definite failure
-            goto cleanup_decrypt; // Stop processing on write error
+        if (read_size == 0 && ferror(in))
+        {
+            fprintf(stderr, "\nError: File read error during decryption.\n");
+            result_flag = -2;
+            goto cleanup_decrypt;
         }
+        if (read_size == 0)
+            break; // Should not happen if logic above is correct
 
+        if (chacha20_process(&ctx, buffer, output_buffer, read_size) != 0)
+        {
+            fprintf(stderr, "\nError: ChaCha20 decryption failed during processing (internal error).\n");
+            result_flag = -2;
+            goto cleanup_decrypt;
+        }
+        if (fwrite(output_buffer, 1, read_size, out) != read_size)
+        {
+            fprintf(stderr, "\nError: Failed to write decrypted data to output file '%s'.\n", output_file);
+            result_flag = -2;
+            goto cleanup_decrypt;
+        }
         file_size += read_size;
-        remaining_size -= read_size;
-
-
-        /* Update progress bar if not in quiet mode */
-        if (!quiet) {
-            print_progress_bar(file_size, total_size - DEFAULT_SALT_SIZE, PROGRESS_WIDTH);
+        if (!quiet)
+        {
+            print_progress_bar(file_size, data_to_decrypt_size, PROGRESS_WIDTH);
         }
     }
 
-     // Check for read errors after the loop
-    if (ferror(in)) {
+    if (ferror(in))
+    {
         fprintf(stderr, "\nError: Failed reading from input file '%s'.\n", input_file);
-        result = -2; // Definite I/O error
+        result_flag = -2;
         goto cleanup_decrypt;
     }
+    final_output_size = file_size;
 
-
-    final_output_size = file_size; // Final size is the decrypted data size
-
-    if (!quiet) {
-         // Ensure progress bar shows 100% if successful and file not empty
-         if (result == 0 && (total_size - DEFAULT_SALT_SIZE) > 0) {
-             print_progress_bar(total_size - DEFAULT_SALT_SIZE, total_size - DEFAULT_SALT_SIZE, PROGRESS_WIDTH);
-         }
-        printf("\n"); // Newline after progress bar
-        // Summary is printed in main now
-        // Note: We can't definitively know if the password was correct here without authenticated encryption.
-        // The output file might contain garbage data if the password was wrong.
+    if (!quiet)
+    {
+        if (result_flag == 0 && data_to_decrypt_size > 0)
+        {
+            print_progress_bar(data_to_decrypt_size, data_to_decrypt_size, PROGRESS_WIDTH);
+        }
+        printf("\n");
     }
 
 cleanup_decrypt:
-    /* Close files */
-    if (in != NULL) fclose(in);
-    if (out != NULL) fclose(out);
-
-    /* Free allocated memory */
-    if (buffer != NULL) {
+    if (in != NULL)
+        fclose(in);
+    if (out != NULL)
+        fclose(out);
+    if (buffer != NULL)
+    {
         memset(buffer, 0, BUFFER_SIZE);
         free(buffer);
     }
-    if (output_buffer != NULL) {
+    if (output_buffer != NULL)
+    {
         memset(output_buffer, 0, BUFFER_SIZE);
         free(output_buffer);
     }
-
-    /* Clear sensitive data */
     chacha20_cleanup(&ctx);
     memset(key, 0, CHACHA20_KEY_SIZE);
     memset(nonce, 0, CHACHA20_NONCE_SIZE);
     memset(salt, 0, DEFAULT_SALT_SIZE);
-
-    // If a definite error occurred, delete potentially corrupted output file
-    if (result == -2 && output_file != NULL) {
-         remove(output_file);
-         final_output_size = 0; // Ensure 0 is returned on definite failure
+    if (result_flag == -2 && output_file != NULL)
+    {
+        remove(output_file);
+        final_output_size = 0;
     }
-
-
-    // Return final size on success or potential password error, 0 on definite failure
-    return (result == -2) ? 0 : final_output_size;
+    return (result_flag == -2) ? 0 : final_output_size;
 }
-
 
 /**
  * Compress a file using Huffman coding
- * NOTE: Removed file list handling from this function. It's now done in main.
- * Uses a single pass for simplicity (reads whole file).
  * Returns the final size of the compressed file (including header) on success, or 0 on failure.
  */
-size_t compress_file(const char *input_file, const char *output_file, int quiet, size_t *original_size_out) {
+// Replaced size_t with unsigned long
+unsigned long compress_file(const char *input_file, const char *output_file, int quiet, unsigned long *original_size_out)
+{
     FILE *in = NULL, *out = NULL;
-    uint8_t *buffer = NULL, *output_buffer = NULL;
-    size_t read_size, output_size, total_size = 0;
-    int result = 0; // 0 for success, -1 for failure
-    size_t total_output_size = 0; // Track final size including header
+    unsigned char *buffer = NULL, *output_buffer = NULL;                    // Replaced uint8_t with unsigned char
+    unsigned long read_size_val, output_size_val, total_input_size_val = 0; // Replaced size_t with unsigned long
+    int result_flag = 0;
+    unsigned long total_output_size_val = 0; // Replaced size_t with unsigned long
 
-    if (!quiet) {
+    if (!quiet)
+    {
         print_section_header("File Compression");
         printf("Input:  %s\n", input_file);
         printf("Output: %s\n", output_file);
     }
 
-    /* Open input file */
     in = fopen(input_file, "rb");
-    if (in == NULL) {
+    if (in == NULL)
+    {
         fprintf(stderr, "Error: Cannot open input file '%s' for reading.\n", input_file);
-        return 0; // Indicate failure
+        return 0;
     }
 
-    /* Get file size */
-    if (fseek(in, 0, SEEK_END) != 0) {
+    if (fseek(in, 0, SEEK_END) != 0)
+    {
         fprintf(stderr, "Error: Could not seek to end of input file '%s'.\n", input_file);
         fclose(in);
         return 0;
     }
-    total_size = ftell(in);
-     if (fseek(in, 0, SEEK_SET) != 0) {
+    total_input_size_val = ftell(in);
+    if (fseek(in, 0, SEEK_SET) != 0)
+    {
         fprintf(stderr, "Error: Could not seek to start of input file '%s'.\n", input_file);
         fclose(in);
         return 0;
     }
-    if (original_size_out) {
-        *original_size_out = total_size; // Pass original size back if pointer provided
+    if (original_size_out)
+    {
+        *original_size_out = total_input_size_val;
     }
 
-    /* Open output file */
     out = fopen(output_file, "wb");
-    if (out == NULL) {
+    if (out == NULL)
+    {
         fprintf(stderr, "Error: Cannot open output file '%s' for writing.\n", output_file);
         fclose(in);
-        return 0; // Indicate failure
+        return 0;
     }
 
-    /* Write the original file size to the output file header */
-    // This header is specific to this implementation's compression format
-    if (fwrite(&total_size, sizeof(size_t), 1, out) != 1) {
+    // Write the original file size to the output file header (as unsigned long)
+    if (fwrite(&total_input_size_val, sizeof(unsigned long), 1, out) != 1)
+    {
         fprintf(stderr, "Error: Failed to write file size header to output file '%s'.\n", output_file);
-        result = -1;
+        result_flag = -1;
         goto cleanup_compress;
     }
-    total_output_size += sizeof(size_t); // Account for the file size header
+    total_output_size_val += sizeof(unsigned long);
 
-    /* Allocate buffer for the entire input file */
-    // Note: For very large files, this is inefficient. A streaming approach would be better.
-    if (total_size > 0) {
-        buffer = (uint8_t *)malloc(total_size);
-        if (buffer == NULL) {
-             fprintf(stderr, "Error: Memory allocation failed for input buffer (%zu bytes).\n", total_size);
-             result = -1;
-             goto cleanup_compress;
+    if (total_input_size_val > 0)
+    {
+        buffer = (unsigned char *)malloc(total_input_size_val); // Replaced uint8_t with unsigned char
+        if (buffer == NULL)
+        {
+            fprintf(stderr, "Error: Memory allocation failed for input buffer (%lu bytes).\n", total_input_size_val); // Use %lu
+            result_flag = -1;
+            goto cleanup_compress;
         }
-        // Read the entire file
-        read_size = fread(buffer, 1, total_size, in);
-        if (read_size != total_size || ferror(in)) {
+        read_size_val = fread(buffer, 1, total_input_size_val, in);
+        if (read_size_val != total_input_size_val || ferror(in))
+        {
             fprintf(stderr, "Error: Failed to read entire input file '%s'.\n", input_file);
-            result = -1;
+            result_flag = -1;
             goto cleanup_compress;
         }
-    } else {
-        // Handle empty file case
-        buffer = NULL; // No buffer needed
-        read_size = 0;
+    }
+    else
+    {
+        buffer = NULL;
+        read_size_val = 0;
     }
 
-
-    /* Allocate output buffer (worst-case size) */
-    size_t output_max_len = huffman_worst_case_size(read_size);
-    // Ensure allocation size is at least 1 to avoid malloc(0) issues
-    output_buffer = (uint8_t *)malloc(output_max_len > 0 ? output_max_len : 1);
-
-    if (output_buffer == NULL) {
+    unsigned long output_max_len_val = huffman_worst_case_size(read_size_val);                // Replaced size_t with unsigned long
+    output_buffer = (unsigned char *)malloc(output_max_len_val > 0 ? output_max_len_val : 1); // Replaced uint8_t with unsigned char
+    if (output_buffer == NULL)
+    {
         fprintf(stderr, "Error: Memory allocation failed for output buffer.\n");
-        result = -1;
+        result_flag = -1;
         goto cleanup_compress;
     }
 
-
-    /* Process the file */
-    if (!quiet) {
+    if (!quiet)
+    {
         printf("\nCompressing file...\n");
-        // Since we read the whole file, show immediate progress
-        print_progress_bar(0, total_size, PROGRESS_WIDTH);
+        print_progress_bar(0, total_input_size_val, PROGRESS_WIDTH);
     }
 
-    /* Compress the entire buffer */
-    if (huffman_compress(buffer, read_size, output_buffer,
-                         output_max_len, &output_size) != 0) {
+    if (huffman_compress(buffer, read_size_val, output_buffer,
+                         output_max_len_val, &output_size_val) != 0)
+    {
         fprintf(stderr, "\nError: Huffman compression failed.\n");
-        result = -1;
+        result_flag = -1;
         goto cleanup_compress;
     }
 
-    /* Write the compressed data to the output file */
-    if (output_size > 0) { // Only write if there's compressed data
-        if (fwrite(output_buffer, 1, output_size, out) != output_size) {
+    if (output_size_val > 0)
+    {
+        if (fwrite(output_buffer, 1, output_size_val, out) != output_size_val)
+        {
             fprintf(stderr, "\nError: Failed to write compressed data to output file '%s'.\n", output_file);
-            result = -1;
+            result_flag = -1;
             goto cleanup_compress;
         }
     }
-    total_output_size += output_size; // Add compressed data size
+    total_output_size_val += output_size_val;
 
-    if (!quiet) {
-        // Show 100% progress
-        print_progress_bar(total_size, total_size, PROGRESS_WIDTH);
-        printf("\n"); // Newline after progress bar
-        // Summary is printed in main now
+    if (!quiet)
+    {
+        print_progress_bar(total_input_size_val, total_input_size_val, PROGRESS_WIDTH);
+        printf("\n");
     }
 
 cleanup_compress:
-    /* Close files */
-    if (in != NULL) fclose(in);
-    if (out != NULL) fclose(out);
-
-    /* Free allocated memory */
-    if (buffer != NULL) free(buffer);
-    if (output_buffer != NULL) free(output_buffer);
-
-     // If an error occurred, potentially delete partially written output file
-    if (result != 0 && output_file != NULL) {
+    if (in != NULL)
+        fclose(in);
+    if (out != NULL)
+        fclose(out);
+    if (buffer != NULL)
+        free(buffer);
+    if (output_buffer != NULL)
+        free(output_buffer);
+    if (result_flag != 0 && output_file != NULL)
+    {
         remove(output_file);
     }
-
-    return (result == 0) ? total_output_size : 0; // Return final size on success, 0 on failure
+    return (result_flag == 0) ? total_output_size_val : 0;
 }
-
 
 /**
  * Decompress a file that was compressed using Huffman coding
- * Uses a single pass (reads whole compressed file).
  * Returns the final size of the decompressed file on success, or 0 on failure.
  */
-size_t decompress_file(const char *input_file, const char *output_file, int quiet, size_t *original_size_out) {
+// Replaced size_t with unsigned long
+unsigned long decompress_file(const char *input_file, const char *output_file, int quiet, unsigned long *original_size_out)
+{
     FILE *in = NULL, *out = NULL;
-    uint8_t *buffer = NULL, *output_buffer = NULL;
-    size_t compressed_size, output_size, original_size = 0; // original_size is the expected decompressed size
-    int result = 0; // 0 for success, -1 for failure
-    size_t input_actual_size = 0; // Size of the compressed input file
+    unsigned char *buffer = NULL, *output_buffer = NULL;                             // Replaced uint8_t with unsigned char
+    unsigned long compressed_data_size, output_size_val, expected_original_size = 0; // Replaced size_t with unsigned long
+    int result_flag = 0;
+    unsigned long input_actual_file_size = 0; // Replaced size_t with unsigned long
 
-    if (!quiet) {
+    if (!quiet)
+    {
         print_section_header("File Decompression");
         printf("Input:  %s\n", input_file);
         printf("Output: %s\n", output_file);
     }
 
-    /* Open input file */
     in = fopen(input_file, "rb");
-    if (in == NULL) {
+    if (in == NULL)
+    {
         fprintf(stderr, "Error: Cannot open input file '%s' for reading.\n", input_file);
-        return 0; // Indicate failure
+        return 0;
     }
 
-     /* Get the actual size of the input file */
-    if (fseek(in, 0, SEEK_END) != 0) {
+    if (fseek(in, 0, SEEK_END) != 0)
+    {
         fprintf(stderr, "Error: Could not seek to end of input file '%s'.\n", input_file);
         fclose(in);
         return 0;
     }
-    input_actual_size = ftell(in);
-    if (fseek(in, 0, SEEK_SET) != 0) {
+    input_actual_file_size = ftell(in);
+    if (fseek(in, 0, SEEK_SET) != 0)
+    {
         fprintf(stderr, "Error: Could not seek to start of input file '%s'.\n", input_file);
         fclose(in);
         return 0;
     }
-    if (original_size_out) {
-        *original_size_out = input_actual_size; // Pass compressed size back if pointer provided
+    if (original_size_out)
+    {
+        *original_size_out = input_actual_file_size;
     }
 
-    // Check if file is large enough for the header
-    if (input_actual_size < sizeof(size_t)) {
-         fprintf(stderr, "Error: Input file '%s' is too small (%zu bytes) to contain header.\n", input_file, input_actual_size);
-         fclose(in);
-         return 0;
+    if (input_actual_file_size < sizeof(unsigned long))
+    {
+        fprintf(stderr, "Error: Input file '%s' is too small (%lu bytes) to contain header.\n", input_file, input_actual_file_size); // Use %lu
+        fclose(in);
+        return 0;
     }
 
-    /* Read the original (decompressed) file size from the input file header */
-    if (fread(&original_size, sizeof(size_t), 1, in) != 1) {
+    if (fread(&expected_original_size, sizeof(unsigned long), 1, in) != 1)
+    {
         fprintf(stderr, "Error: Failed to read original file size header from input file '%s'.\n", input_file);
         fclose(in);
-        return 0; // Indicate failure
+        return 0;
     }
 
-    /* Open output file */
     out = fopen(output_file, "wb");
-    if (out == NULL) {
+    if (out == NULL)
+    {
         fprintf(stderr, "Error: Cannot open output file '%s' for writing.\n", output_file);
         fclose(in);
-        return 0; // Indicate failure
+        return 0;
     }
 
-    /* Allocate buffer for the compressed data */
-    compressed_size = input_actual_size - sizeof(size_t);
-    // Ensure allocation size is at least 1 to avoid malloc(0) issues
-    if (compressed_size > 0) {
-        buffer = (uint8_t *)malloc(compressed_size);
-        if (buffer == NULL) {
-             fprintf(stderr, "Error: Memory allocation failed for compressed data buffer (%zu bytes).\n", compressed_size);
-             result = -1;
-             goto cleanup_decompress;
-        }
-        // Read the compressed data
-        if (fread(buffer, 1, compressed_size, in) != compressed_size || ferror(in)) {
-            fprintf(stderr, "Error: Failed to read compressed data from input file '%s'.\n", input_file);
-            result = -1;
+    compressed_data_size = input_actual_file_size - sizeof(unsigned long);
+    if (compressed_data_size > 0)
+    {
+        buffer = (unsigned char *)malloc(compressed_data_size); // Replaced uint8_t with unsigned char
+        if (buffer == NULL)
+        {
+            fprintf(stderr, "Error: Memory allocation failed for compressed data buffer (%lu bytes).\n", compressed_data_size); // Use %lu
+            result_flag = -1;
             goto cleanup_decompress;
         }
-    } else {
-        // Handle case where compressed data size is 0 (e.g., original file was empty)
+        if (fread(buffer, 1, compressed_data_size, in) != compressed_data_size || ferror(in))
+        {
+            fprintf(stderr, "Error: Failed to read compressed data from input file '%s'.\n", input_file);
+            result_flag = -1;
+            goto cleanup_decompress;
+        }
+    }
+    else if (expected_original_size > 0)
+    { // Header says there should be data, but no compressed data found
+        fprintf(stderr, "Error: Compressed file format error - header indicates %lu original bytes, but no compressed data found.\n", expected_original_size);
+        result_flag = -1;
+        goto cleanup_decompress;
+    }
+    else
+    { // expected_original_size is 0 and compressed_data_size is 0
         buffer = NULL;
     }
 
-
-    /* Allocate output buffer for decompressed data */
-     // Ensure allocation size is at least 1 to avoid malloc(0) issues
-    output_buffer = (uint8_t *)malloc(original_size > 0 ? original_size : 1);
-    if (output_buffer == NULL) {
-        fprintf(stderr, "Error: Memory allocation failed for output buffer (%zu bytes).\n", original_size);
-        result = -1;
+    output_buffer = (unsigned char *)malloc(expected_original_size > 0 ? expected_original_size : 1); // Replaced uint8_t with unsigned char
+    if (output_buffer == NULL)
+    {
+        fprintf(stderr, "Error: Memory allocation failed for output buffer (%lu bytes).\n", expected_original_size); // Use %lu
+        result_flag = -1;
         goto cleanup_decompress;
     }
 
-    /* Process the file */
-    if (!quiet) {
+    if (!quiet)
+    {
         printf("\nDecompressing file...\n");
-         // Show immediate progress
-        print_progress_bar(0, original_size, PROGRESS_WIDTH);
+        print_progress_bar(0, expected_original_size, PROGRESS_WIDTH);
     }
 
-    /* Decompress the entire buffer */
-    if (huffman_decompress(buffer, compressed_size, output_buffer, original_size, &output_size) != 0) {
+    if (huffman_decompress(buffer, compressed_data_size, output_buffer, expected_original_size, &output_size_val) != 0)
+    {
         fprintf(stderr, "\nError: Huffman decompression failed. Input file might be corrupted or not compressed with this tool.\n");
-        result = -1;
+        result_flag = -1;
         goto cleanup_decompress;
     }
 
-    /* Check if decompressed size matches expected size from header */
-    if (output_size != original_size) {
-         fprintf(stderr, "\nError: Decompressed size (%zu) does not match expected size from header (%zu). File might be corrupted.\n", output_size, original_size);
-         result = -1;
-         // Don't write potentially corrupted data
-         goto cleanup_decompress;
+    if (output_size_val != expected_original_size)
+    {
+        fprintf(stderr, "\nError: Decompressed size (%lu) does not match expected size from header (%lu). File might be corrupted.\n", output_size_val, expected_original_size); // Use %lu
+        result_flag = -1;
+        goto cleanup_decompress;
     }
 
-
-    /* Write the decompressed data to the output file */
-    if (output_size > 0) { // Only write if there is data
-        if (fwrite(output_buffer, 1, output_size, out) != output_size) {
+    if (output_size_val > 0)
+    {
+        if (fwrite(output_buffer, 1, output_size_val, out) != output_size_val)
+        {
             fprintf(stderr, "\nError: Failed to write decompressed data to output file '%s'.\n", output_file);
-            result = -1;
+            result_flag = -1;
             goto cleanup_decompress;
         }
     }
 
-    if (!quiet) {
-        // Show 100% progress
-        print_progress_bar(original_size, original_size, PROGRESS_WIDTH);
-        printf("\n"); // Newline after progress bar
-       // Summary is printed in main now
+    if (!quiet)
+    {
+        print_progress_bar(expected_original_size, expected_original_size, PROGRESS_WIDTH);
+        printf("\n");
     }
 
 cleanup_decompress:
-    /* Close files */
-    if (in != NULL) fclose(in);
-    if (out != NULL) fclose(out);
-
-    /* Free allocated memory */
-    if (buffer != NULL) free(buffer);
-    if (output_buffer != NULL) free(output_buffer);
-
-     // If an error occurred, potentially delete partially written output file
-    if (result != 0 && output_file != NULL) {
+    if (in != NULL)
+        fclose(in);
+    if (out != NULL)
+        fclose(out);
+    if (buffer != NULL)
+        free(buffer);
+    if (output_buffer != NULL)
+        free(output_buffer);
+    if (result_flag != 0 && output_file != NULL)
+    {
         remove(output_file);
     }
-
-    // Return final (decompressed) size on success, 0 on failure
-    return (result == 0) ? original_size : 0;
+    return (result_flag == 0) ? expected_original_size : 0;
 }
-
 
 /**
  * Process a file (compress and encrypt)
  * Returns the final size of the processed file on success, or 0 on failure.
  */
-size_t process_file(const char *input_file, const char *output_file,
-                    const char *password, int iterations, int quiet, size_t *original_size_out) {
+// Replaced size_t with unsigned long
+unsigned long process_file(const char *input_file, const char *output_file,
+                           const char *password, int iterations, int quiet, unsigned long *original_size_out)
+{
     char temp_file[MAX_FILENAME];
-    size_t compressed_size = 0;
-    size_t final_size = 0;
-    size_t original_input_size = 0; // Size of the very first input file
+    unsigned long compressed_size_val = 0;     // Replaced size_t with unsigned long
+    unsigned long final_size_val = 0;          // Replaced size_t with unsigned long
+    unsigned long original_input_size_val = 0; // Replaced size_t with unsigned long
 
-    /* Create a temporary filename */
-    // Using snprintf for safety against buffer overflows
-    snprintf(temp_file, sizeof(temp_file), "%s.tmp", output_file);
-    // Ensure null termination even if output_file was too long
+    snprintf(temp_file, sizeof(temp_file), "%s.tmp_compress", output_file); // More specific temp name
     temp_file[sizeof(temp_file) - 1] = '\0';
 
-
-    if (!quiet) {
+    if (!quiet)
+    {
         print_section_header("File Processing (Compress + Encrypt)");
-        // No need to print details here, sub-functions will do it if not quiet
     }
 
-    /* --- Step 1: Compress the file --- */
-    if (!quiet) printf("\n--- Compression Step ---\n");
-    compressed_size = compress_file(input_file, temp_file, quiet, &original_input_size);
-
-    // Check if compression failed (returns 0 on failure)
-    // Also handle the case where the input file was empty (original_input_size == 0)
-    // In that case, compress_file should succeed and return the header size.
-    if (compressed_size == 0 && original_input_size > 0) {
+    if (!quiet)
+        printf("\n--- Compression Step ---\n");
+    compressed_size_val = compress_file(input_file, temp_file, quiet, &original_input_size_val);
+    if (original_size_out)
+    {
+        *original_size_out = original_input_size_val;
+    }
+    // compress_file returns 0 on failure, or size of compressed file (which can be >0 even for empty original file due to header)
+    if (compressed_size_val == 0 && original_input_size_val > 0)
+    { // Failed if original was not empty but compressed is 0
         fprintf(stderr, "Error: Compression step failed for input '%s'.\n", input_file);
-        remove(temp_file); // Clean up temp file on failure
-        return 0; // Indicate overall failure
+        remove(temp_file);
+        return 0;
     }
-     if (original_size_out) {
-        *original_size_out = original_input_size; // Pass original size back if pointer provided
-    }
+    // If original was empty, compressed_size_val will be header size (non-zero). This is success.
 
-
-    /* --- Step 2: Encrypt the compressed file --- */
-    if (!quiet) printf("\n--- Encryption Step ---\n");
-    // Note: The 'original_size' for encrypt_file here is the *compressed* size,
-    // which we don't need to pass back out, so the last arg is NULL.
-    final_size = encrypt_file(temp_file, output_file, password, iterations, quiet, NULL);
-
-    // Check if encryption failed (returns 0 on failure)
-    // Also handle the case where the compressed file was empty (e.g., only header)
-    if (final_size == 0 && compressed_size > 0) {
+    if (!quiet)
+        printf("\n--- Encryption Step ---\n");
+    final_size_val = encrypt_file(temp_file, output_file, password, iterations, quiet, NULL); // Last arg NULL as we don't need compressed size out
+    if (final_size_val == 0 && compressed_size_val > 0)
+    { // Failed if compressed was not empty but final is 0
         fprintf(stderr, "Error: Encryption step failed for temporary file '%s'.\n", temp_file);
-        remove(temp_file); // Clean up temp file
-        remove(output_file); // Clean up potentially partial final file
-        return 0; // Indicate overall failure
+        remove(temp_file);
+        remove(output_file);
+        return 0;
     }
 
-    /* Remove the temporary file */
-    if (remove(temp_file) != 0) {
-         // Don't treat failure to remove temp file as critical error, but warn
-         if (!quiet) {
-             fprintf(stderr, "Warning: Could not remove temporary file '%s'.\n", temp_file);
-         }
-    }
+    remove(temp_file);
 
-
-    if (!quiet) {
-        printf("\n"); // Add spacing before summary
+    if (!quiet)
+    {
+        printf("\n");
         print_processing_summary("Process (Compress+Encrypt)", input_file, output_file,
-                                 original_input_size, final_size);
-        print_operation_result(0, "File processing (compress + encrypt)"); // Assuming success if we got here
+                                 original_input_size_val, final_size_val);
+        print_operation_result(0, "File processing (compress + encrypt)");
     }
-
-    return final_size; // Return final processed size
+    return final_size_val;
 }
 
 /**
  * Extract a file (decrypt and decompress)
  * Returns the final size of the extracted file on success, or 0 on failure.
  */
-size_t extract_file(const char *input_file, const char *output_file,
-                    const char *password, int iterations, int quiet, size_t *original_size_out) {
+// Replaced size_t with unsigned long
+unsigned long extract_file(const char *input_file, const char *output_file,
+                           const char *password, int iterations, int quiet, unsigned long *original_size_out)
+{
     char temp_file[MAX_FILENAME];
-    size_t decrypted_size = 0;
-    size_t final_size = 0;
-    size_t original_input_size = 0; // Size of the encrypted input file
+    unsigned long decrypted_size_val = 0;      // Replaced size_t with unsigned long
+    unsigned long final_size_val = 0;          // Replaced size_t with unsigned long
+    unsigned long original_input_size_val = 0; // Replaced size_t with unsigned long
 
-    /* Create a temporary filename */
-    snprintf(temp_file, sizeof(temp_file), "%s.tmp", output_file);
-    temp_file[sizeof(temp_file) - 1] = '\0'; // Ensure null termination
+    snprintf(temp_file, sizeof(temp_file), "%s.tmp_decrypt", output_file); // More specific temp name
+    temp_file[sizeof(temp_file) - 1] = '\0';
 
-
-    if (!quiet) {
+    if (!quiet)
+    {
         print_section_header("File Extraction (Decrypt + Decompress)");
-         // No need to print details here, sub-functions will do it if not quiet
     }
 
-    /* --- Step 1: Decrypt the file --- */
-     if (!quiet) printf("\n--- Decryption Step ---\n");
-    decrypted_size = decrypt_file(input_file, temp_file, password, iterations, quiet, &original_input_size);
-
-    // Check for definite failure (I/O, memory), not just potential password error
-    // If original_input_size was large enough to hold salt, a 0 return is a definite error.
-    if (decrypted_size == 0 && original_input_size > DEFAULT_SALT_SIZE) {
+    if (!quiet)
+        printf("\n--- Decryption Step ---\n");
+    decrypted_size_val = decrypt_file(input_file, temp_file, password, iterations, quiet, &original_input_size_val);
+    if (original_size_out)
+    {
+        *original_size_out = original_input_size_val;
+    }
+    // decrypt_file returns 0 on definite I/O/mem error, or if input too small.
+    // It returns >0 (decrypted size) on success or potential password error.
+    if (decrypted_size_val == 0 && original_input_size_val > DEFAULT_SALT_SIZE)
+    {
         fprintf(stderr, "Error: Decryption step failed for input '%s' (I/O or memory error).\n", input_file);
-        remove(temp_file); // Clean up temp file on failure
-        return 0; // Indicate overall failure
+        remove(temp_file);
+        return 0;
     }
-     if (original_size_out) {
-        *original_size_out = original_input_size; // Pass original encrypted size back if pointer provided
-    }
+    // If original_input_size_val <= DEFAULT_SALT_SIZE, decrypt_file already returned 0 for "too small" error.
 
-
-    /* --- Step 2: Decompress the decrypted file --- */
-     if (!quiet) printf("\n--- Decompression Step ---\n");
-    // Note: The 'original_size' for decompress_file here is the *decrypted* size.
-    final_size = decompress_file(temp_file, output_file, quiet, NULL); // Don't need original size from decompress
-
-    // Check if decompression failed (returns 0 on failure)
-    // Also handle case where decrypted file was empty (decrypted_size might be 0 or just header size)
-    if (final_size == 0 && decrypted_size > sizeof(size_t)) { // Check if decrypted size had at least the header
+    if (!quiet)
+        printf("\n--- Decompression Step ---\n");
+    final_size_val = decompress_file(temp_file, output_file, quiet, NULL); // Last arg NULL
+    // decompress_file returns 0 on failure.
+    // If decrypted_size_val was just header (e.g. empty original file was compressed then encrypted),
+    // decompress should handle this and return 0 (final_size_val).
+    if (final_size_val == 0 && decrypted_size_val > sizeof(unsigned long))
+    { // Failed if decrypted had data but final is 0
         fprintf(stderr, "Error: Decompression step failed for temporary file '%s'. Decrypted data might be corrupted.\n", temp_file);
-        remove(temp_file); // Clean up temp file
-        remove(output_file); // Clean up potentially partial final file
-        return 0; // Indicate overall failure
+        remove(temp_file);
+        remove(output_file);
+        return 0;
     }
 
-    /* Remove the temporary file */
-    if (remove(temp_file) != 0) {
-        if (!quiet) {
-             fprintf(stderr, "Warning: Could not remove temporary file '%s'.\n", temp_file);
-         }
-    }
+    remove(temp_file);
 
-    if (!quiet) {
-        printf("\n"); // Add spacing before summary
+    if (!quiet)
+    {
+        printf("\n");
         print_processing_summary("Extract (Decrypt+Decompress)", input_file, output_file,
-                                 original_input_size, final_size);
-        print_operation_result(0, "File extraction (decrypt + decompress)"); // Assuming success if we got here
+                                 original_input_size_val, final_size_val);
+        print_operation_result(0, "File extraction (decrypt + decompress)");
     }
-
-    return final_size; // Return final extracted size
+    return final_size_val;
 }
-
 
 /**
  * Handle file list operations (list, find)
  */
-int handle_file_list(const char *command, const char *filename_pattern, int quiet) {
+int handle_file_list(const char *command, const char *filename_pattern, int quiet)
+{
     file_list_t file_list;
-    file_entry_t *found;
-    int result = 0; // 0 for success
+    file_entry_t *found_entry; // Renamed to avoid conflict
+    int op_result = 0;         // 0 for success
 
-    /* Initialize the file list */
     file_list_init(&file_list);
 
-    /* Load the file list */
-    if (file_list_load(&file_list, DEFAULT_FILE_LIST) != 0) {
-        // It's not necessarily an error if the list doesn't exist yet
-        if (!quiet) {
-            printf("Info: File list '%s' not found or is empty.\n", DEFAULT_FILE_LIST);
-        }
-        // If the command was 'find', we report no matches found.
-        // If the command was 'list', we proceed to print the empty list info.
-        if (strcmp(command, "find") == 0) {
-             if (!quiet) print_section_header("File Search");
-             printf("Pattern: '%s'\n\n", filename_pattern ? filename_pattern : "");
-             printf("No matching file found (list is empty or not found).\n");
-             return 0; // Not an error state, just no matches
+    if (file_list_load(&file_list, DEFAULT_FILE_LIST) != 0)
+    {
+        // This is not an error if the file doesn't exist, it means an empty list.
+        // file_list_load should handle this gracefully and initialize an empty list.
+        // Or, if it returns error, we assume list is empty.
+        if (!quiet)
+        {
+            DEBUG_PRINT("Info: File list '%s' not found or is empty/corrupted. Proceeding with empty list.\n", DEFAULT_FILE_LIST);
+            // Ensure list is truly empty if load failed badly
+            file_list_free(&file_list);
+            file_list_init(&file_list);
         }
     }
 
-    /* Execute the command */
-    if (strcmp(command, "list") == 0) {
-        /* List all files */
-        if (!quiet) {
+    if (strcmp(command, "list") == 0)
+    {
+        if (!quiet)
             print_section_header("File List Contents");
-        }
         printf("Source: %s\n", DEFAULT_FILE_LIST);
-        printf("Total entries found: %zu\n", file_list.count);
-        if (file_list.count > 0) {
-             printf("\n");
-             file_list_print(&file_list); // Use the utility print function
-        } else {
-            printf("(List is empty)\n");
-        }
-
-    } else if (strcmp(command, "find") == 0) {
-        /* Find a file */
-        if (filename_pattern == NULL || filename_pattern[0] == '\0') {
+        file_list_print(&file_list); // Uses %lu for list.count
+    }
+    else if (strcmp(command, "find") == 0)
+    {
+        if (filename_pattern == NULL || filename_pattern[0] == '\0')
+        {
             fprintf(stderr, "Error: No filename pattern specified for find command.\n");
-            result = -1; // Error state
-        } else {
-            if (!quiet) {
-                 print_section_header("File Search");
-                 printf("Pattern: '%s'\n\n", filename_pattern);
+            op_result = -1;
+        }
+        else
+        {
+            if (!quiet)
+            {
+                print_section_header("File Search");
+                printf("Pattern: '%s'\n\n", filename_pattern);
             }
-
-            found = file_list_find(&file_list, filename_pattern);
-
-            if (found) {
+            found_entry = file_list_find(&file_list, filename_pattern);
+            if (found_entry)
+            {
                 printf("Found matching file:\n");
-                // Print details using a similar format as file_list_print
-                printf("--> Filename: %s\n", found->filename);
-                printf("    Sequence: #%lu\n", found->sequence_num);
-                printf("    Original size: %zu bytes\n", found->original_size);
-                printf("    Processed size: %zu bytes\n", found->processed_size);
-                // Avoid division by zero for ratio
-                if (found->original_size > 0) {
+                printf("--> Filename: %s\n", found_entry->filename);
+                printf("    Sequence: #%lu\n", found_entry->sequence_num);              // %lu
+                printf("    Original size: %lu bytes\n", found_entry->original_size);   // %lu
+                printf("    Processed size: %lu bytes\n", found_entry->processed_size); // %lu
+                if (found_entry->original_size > 0)
+                {
                     printf("    Compression ratio: %.2f%%\n",
-                           (float)found->processed_size * 100.0f / found->original_size);
-                } else {
+                           (float)found_entry->processed_size * 100.0f / found_entry->original_size);
+                }
+                else
+                {
                     printf("    Compression ratio: N/A\n");
                 }
-            } else {
+            }
+            else
+            {
                 printf("No matching file found in the list for pattern '%s'.\n", filename_pattern);
             }
         }
-    } else {
+    }
+    else
+    {
         fprintf(stderr, "Error: Unknown internal file list command: %s\n", command);
-        result = -1; // Error state
+        op_result = -1;
     }
 
-    /* Free the file list memory */
     file_list_free(&file_list);
-
-    return result; // 0 on success, -1 on error
+    return op_result;
 }
 
 /**
  * Process multiple files in batch mode (Compress + Encrypt)
- * NOTE: Updated to use new function return values and list handling
  */
-int batch_process(char *filenames[], int num_files, const char *output_dir,
-                  const char *password, int iterations, int quiet) {
-    char output_file[MAX_FILENAME];
-    char *filename_only;
-    int overall_result = 0; // Overall result for the batch (0=all success, -1=any failure)
+int batch_process(char *filenames[], int num_files, const char *output_dir_path, // Renamed output_dir
+                  const char *password, int iterations, int quiet)
+{
+    char output_file_path[MAX_FILENAME]; // Renamed output_file
+    char *current_filename_only;         // Renamed filename_only
+    int overall_op_result = 0;           // Renamed overall_result
     int i, success_count = 0;
-    size_t original_size, processed_size;
+    unsigned long original_file_size, processed_file_size; // Renamed and type changed // Replaced size_t with unsigned long
 
-    if (!quiet) {
+    if (!quiet)
+    {
         print_section_header("Batch Processing (Compress + Encrypt)");
         printf("Files to process: %d\n", num_files);
-        printf("Output directory: %s\n", output_dir);
+        printf("Output directory: %s\n", output_dir_path);
         printf("Using %d iterations for key derivation\n", iterations);
     }
 
-    /* Ensure output directory exists */
-    if (ensure_directory_exists(output_dir) != 0) {
-        // ensure_directory_exists now prints its own error, but we still return
+    if (ensure_directory_exists(output_dir_path) != 0)
+    {
+        // Error already printed by ensure_directory_exists
         return -1;
     }
 
-    /* Process each file */
-    for (i = 0; i < num_files; i++) {
-        // --- Construct output path ---
-        // Find last path separator (works for / and \)
-        filename_only = strrchr(filenames[i], '/');
-        char *filename_only_bs = strrchr(filenames[i], '\\');
-        if (filename_only_bs > filename_only) { // Check if backslash is later
-             filename_only = filename_only_bs;
+    for (i = 0; i < num_files; i++)
+    {
+        current_filename_only = strrchr(filenames[i], '/');
+        char *current_filename_only_bs = strrchr(filenames[i], '\\');
+        if (current_filename_only_bs > current_filename_only)
+        {
+            current_filename_only = current_filename_only_bs;
+        }
+        current_filename_only = (current_filename_only == NULL) ? filenames[i] : current_filename_only + 1;
+
+        if (*current_filename_only == '\0')
+        {
+            fprintf(stderr, "\n[%d/%d] Skipping invalid input filename: '%s'\n", i + 1, num_files, filenames[i]);
+            overall_op_result = -1;
+            continue;
         }
 
-        if (filename_only == NULL) {
-            filename_only = filenames[i]; // No separator, use the whole name
-        } else {
-            filename_only++; /* Move past the separator */
-        }
+        snprintf(output_file_path, sizeof(output_file_path), "%s/%s.sec", output_dir_path, current_filename_only);
+        output_file_path[sizeof(output_file_path) - 1] = '\0';
 
-        // Check for empty filename after stripping path
-        if (*filename_only == '\0') {
-             fprintf(stderr, "\n[%d/%d] Skipping invalid input filename: '%s'\n", i + 1, num_files, filenames[i]);
-             overall_result = -1; // Mark batch as failed
-             continue;
-        }
-
-
-        /* Create output filename path */
-        snprintf(output_file, sizeof(output_file), "%s/%s.sec", output_dir, filename_only);
-        output_file[sizeof(output_file)-1] = '\0'; // Ensure null termination
-
-        if (!quiet) {
+        if (!quiet)
+        {
             printf("\n[%d/%d] Processing file:\n", i + 1, num_files);
             printf("    Input:  %s\n", filenames[i]);
-            printf("    Output: %s\n", output_file);
+            printf("    Output: %s\n", output_file_path);
         }
 
-        /* Check if input file exists before processing */
-         if (!file_exists(filenames[i])) {
-             fprintf(stderr, "    Status: Failed (Input file '%s' not found)\n", filenames[i]);
-             overall_result = -1; // Mark batch as failed
-             continue; // Skip to next file
-         }
+        if (!file_exists(filenames[i]))
+        {
+            fprintf(stderr, "    Status: Failed (Input file '%s' not found)\n", filenames[i]);
+            overall_op_result = -1;
+            continue;
+        }
 
-
-        /* Process the file (Compress + Encrypt) */
-        processed_size = process_file(filenames[i], output_file, password, iterations, quiet, &original_size);
-
-        if (processed_size > 0) {
+        processed_file_size = process_file(filenames[i], output_file_path, password, iterations, quiet, &original_file_size);
+        if (processed_file_size > 0)
+        { // process_file returns 0 on failure
             success_count++;
-             if (!quiet) {
-                 // process_file already prints summary and result if not quiet
-                 // printf("    Status: Success\n"); // Redundant if not quiet
-             }
-            // Add entry to file list for successful processing
-            if (add_entry_to_file_list(output_file, original_size, processed_size, quiet) != 0) {
-                 if (!quiet) {
-                     // Use stderr for warnings
-                     fprintf(stderr, "    Warning: Failed to add '%s' to file list '%s'.\n", output_file, DEFAULT_FILE_LIST);
-                 }
-                 // Don't mark the whole batch as failed just for list error
+            if (add_entry_to_file_list(output_file_path, original_file_size, processed_file_size, quiet) != 0)
+            {
+                if (!quiet)
+                {
+                    fprintf(stderr, "    Warning: Failed to add '%s' to file list '%s'.\n", output_file_path, DEFAULT_FILE_LIST);
+                }
             }
-        } else {
-            // process_file already prints errors if not quiet
-            overall_result = -1; // Mark batch as failed if any file fails
-            if (!quiet) {
-                 // fprintf(stderr, "    Status: Failed\n"); // Redundant if not quiet
-            }
-            // Don't add to list if processing failed
         }
-    } // End of loop through files
+        else
+        {
+            overall_op_result = -1;
+        }
+    }
 
-    if (!quiet) {
+    if (!quiet)
+    {
         print_section_header("Batch Processing Summary");
         printf("Total files attempted: %d\n", num_files);
         printf("Successful:            %d\n", success_count);
         printf("Failed:                %d\n", num_files - success_count);
-
-        if (overall_result == 0) {
+        if (overall_op_result == 0)
+        {
             printf("\nAll files processed successfully!\n");
-        } else {
+        }
+        else
+        {
             printf("\nSome files failed to process. Check the output above for details.\n");
         }
     }
-
-    return overall_result; // 0 if all succeeded, -1 if any failed
+    return overall_op_result;
 }
 
+int main(int argc, char *argv[])
+{
+    int operation_mode = MODE_HELP;                            // Renamed mode
+    char *input_file_arg = NULL, *output_file_arg = NULL;      // Renamed
+    char current_password[MAX_PASSWORD];                       // Renamed password
+    int key_iterations = DEFAULT_KEY_ITERATIONS;               // Renamed iterations
+    int quiet_operation = 0;                                   // Renamed quiet_mode
+    char *batch_input_files[MAX_BATCH_FILES];                  // Renamed batch_files
+    int num_batch_input_files = 0;                             // Renamed num_batch_files
+    char *batch_output_dir = DEFAULT_OUTPUT_DIR;               // Renamed output_dir
+    int final_result = 0;                                      // Renamed result
+    unsigned long original_op_size = 0, processed_op_size = 0; // Renamed and type changed // Replaced size_t with unsigned long
 
-int main(int argc, char *argv[]) {
-    int mode = MODE_HELP; // Default to showing help
-    char *input_file = NULL, *output_file = NULL;
-    char password[MAX_PASSWORD];
-    int iterations = DEFAULT_KEY_ITERATIONS;
-    int quiet_mode = 0;
-    char *batch_files[MAX_BATCH_FILES];
-    int num_batch_files = 0;
-    // Initialise output_dir with the default value
-    char *output_dir = DEFAULT_OUTPUT_DIR;
-    int result = 0; // Use 0 for success, non-zero for failure convention
-    size_t original_size=0, processed_size=0; // For list adding in main scope
-
-    /* --- Argument Parsing --- */
-    if (argc < 2) {
+    if (argc < 2)
+    {
         print_usage(argv[0]);
-        return 1; // Exit if no arguments provided
+        return 1;
     }
 
-    // Determine mode based on the first argument
-    if (strcmp(argv[1], "-e") == 0) { mode = MODE_ENCRYPT; }
-    else if (strcmp(argv[1], "-d") == 0) { mode = MODE_DECRYPT; }
-    else if (strcmp(argv[1], "-c") == 0) { mode = MODE_COMPRESS; }
-    else if (strcmp(argv[1], "-x") == 0) { mode = MODE_DECOMPRESS; }
-    else if (strcmp(argv[1], "-p") == 0) { mode = MODE_PROCESS; }
-    else if (strcmp(argv[1], "-u") == 0) { mode = MODE_EXTRACT; }
-    else if (strcmp(argv[1], "-l") == 0) { mode = MODE_LIST; }
-    else if (strcmp(argv[1], "-f") == 0) { mode = MODE_FIND; }
-    else if (strcmp(argv[1], "-b") == 0) { mode = MODE_BATCH; }
-    else if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) { mode = MODE_HELP; }
-    else {
+    if (strcmp(argv[1], "-e") == 0)
+    {
+        operation_mode = MODE_ENCRYPT;
+    }
+    else if (strcmp(argv[1], "-d") == 0)
+    {
+        operation_mode = MODE_DECRYPT;
+    }
+    else if (strcmp(argv[1], "-c") == 0)
+    {
+        operation_mode = MODE_COMPRESS;
+    }
+    else if (strcmp(argv[1], "-x") == 0)
+    {
+        operation_mode = MODE_DECOMPRESS;
+    }
+    else if (strcmp(argv[1], "-p") == 0)
+    {
+        operation_mode = MODE_PROCESS;
+    }
+    else if (strcmp(argv[1], "-u") == 0)
+    {
+        operation_mode = MODE_EXTRACT;
+    }
+    else if (strcmp(argv[1], "-l") == 0)
+    {
+        operation_mode = MODE_LIST;
+    }
+    else if (strcmp(argv[1], "-f") == 0)
+    {
+        operation_mode = MODE_FIND;
+    }
+    else if (strcmp(argv[1], "-b") == 0)
+    {
+        operation_mode = MODE_BATCH;
+    }
+    else if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)
+    {
+        operation_mode = MODE_HELP;
+    }
+    else
+    {
         fprintf(stderr, "Error: Unknown mode or option: %s\n", argv[1]);
         print_usage(argv[0]);
         return 1;
     }
 
-    // --- Argument Validation and Assignment based on Mode ---
-    int file_arg_start_index = 2; // Default starting index for options/files
+    int arg_parse_index = 2; // Renamed file_arg_start_index
 
-    switch (mode) {
-        case MODE_COMPRESS:
-        case MODE_DECOMPRESS:
-        case MODE_ENCRYPT:
-        case MODE_DECRYPT:
-        case MODE_PROCESS:
-        case MODE_EXTRACT:
-            if (argc < 4) {
-                fprintf(stderr, "Error: Missing <input> and <output> file arguments for mode '%s'.\n", argv[1]);
-                print_usage(argv[0]);
-                return 1;
-            }
-            input_file = argv[2];
-            output_file = argv[3];
-            file_arg_start_index = 4;
-            break;
-        case MODE_FIND:
-            if (argc < 3) {
-                fprintf(stderr, "Error: Missing <pattern> argument for find mode '-f'.\n");
-                print_usage(argv[0]);
-                return 1;
-            }
-            input_file = argv[2]; // Use input_file to store the pattern
-            file_arg_start_index = 3;
-            break;
-        case MODE_BATCH:
-             if (argc < 4) {
-                 fprintf(stderr, "Error: Missing <outdir> and at least one <file> argument for batch mode '-b'.\n");
-                 print_usage(argv[0]);
-                 return 1;
-             }
-             output_dir = argv[2]; // Overwrite default if provided
-             file_arg_start_index = 3; // Files/options start from index 3
-             // Batch file list gathering happens in the next loop
-             break;
-        case MODE_LIST:
-        case MODE_HELP:
-             file_arg_start_index = 2; // Options start from index 2
-             break;
-        // No default needed as initial check caught unknown modes
+    switch (operation_mode)
+    {
+    case MODE_COMPRESS:
+    case MODE_DECOMPRESS:
+    case MODE_ENCRYPT:
+    case MODE_DECRYPT:
+    case MODE_PROCESS:
+    case MODE_EXTRACT:
+        if (argc < 4)
+        {
+            fprintf(stderr, "Error: Missing <input> and <output> file arguments for mode '%s'.\n", argv[1]);
+            print_usage(argv[0]);
+            return 1;
+        }
+        input_file_arg = argv[2];
+        output_file_arg = argv[3];
+        arg_parse_index = 4;
+        break;
+    case MODE_FIND:
+        if (argc < 3)
+        {
+            fprintf(stderr, "Error: Missing <pattern> argument for find mode '-f'.\n");
+            print_usage(argv[0]);
+            return 1;
+        }
+        input_file_arg = argv[2];
+        arg_parse_index = 3;
+        break;
+    case MODE_BATCH:
+        if (argc < 4)
+        {
+            fprintf(stderr, "Error: Missing <outdir> and at least one <file> argument for batch mode '-b'.\n");
+            print_usage(argv[0]);
+            return 1;
+        }
+        batch_output_dir = argv[2];
+        arg_parse_index = 3;
+        break;
+    case MODE_LIST:
+    case MODE_HELP:
+        arg_parse_index = 2;
+        break;
     }
 
-    /* --- Parse Options and Gather Batch Files --- */
-    for (int i = file_arg_start_index; i < argc; i++) {
-        if (strcmp(argv[i], "-i") == 0) {
-            if (++i < argc) { // Increment i *before* checking bounds and accessing argv[i]
-                iterations = atoi(argv[i]);
-                if (iterations <= 0) {
+    for (int i = arg_parse_index; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-i") == 0)
+        {
+            if (++i < argc)
+            {
+                key_iterations = atoi(argv[i]);
+                if (key_iterations <= 0)
+                {
                     fprintf(stderr, "Error: Invalid number of iterations '%s'. Must be positive.\n", argv[i]);
                     return 1;
                 }
-            } else {
-                 fprintf(stderr, "Error: Missing argument for -i option.\n");
-                 print_usage(argv[0]);
-                 return 1;
             }
-        } else if (strcmp(argv[i], "-q") == 0) {
-            quiet_mode = 1;
-        } else if (mode == MODE_BATCH) {
-             // If in batch mode, treat non-option arguments as input files
-             if (num_batch_files < MAX_BATCH_FILES) {
-                 batch_files[num_batch_files++] = argv[i];
-             } else {
-                 // Only warn if not quiet
-                 if (!quiet_mode) {
-                     fprintf(stderr, "Warning: Exceeded maximum number of batch files (%d). Ignoring '%s' and subsequent files.\n", MAX_BATCH_FILES, argv[i]);
-                 }
-                 break; // Stop processing further arguments as files
-             }
-        } else {
-             // If not in batch mode, any other argument is an error
-             fprintf(stderr, "Error: Unknown option or unexpected argument: %s\n", argv[i]);
-             print_usage(argv[0]);
-             return 1;
+            else
+            {
+                fprintf(stderr, "Error: Missing argument for -i option.\n");
+                print_usage(argv[0]);
+                return 1;
+            }
+        }
+        else if (strcmp(argv[i], "-q") == 0)
+        {
+            quiet_operation = 1;
+        }
+        else if (operation_mode == MODE_BATCH)
+        {
+            if (num_batch_input_files < MAX_BATCH_FILES)
+            {
+                batch_input_files[num_batch_input_files++] = argv[i];
+            }
+            else
+            {
+                if (!quiet_operation)
+                {
+                    fprintf(stderr, "Warning: Exceeded maximum number of batch files (%d). Ignoring '%s' and subsequent files.\n", MAX_BATCH_FILES, argv[i]);
+                }
+                break;
+            }
+        }
+        else
+        {
+            fprintf(stderr, "Error: Unknown option or unexpected argument: %s\n", argv[i]);
+            print_usage(argv[0]);
+            return 1;
         }
     }
 
-     // Final check for batch mode: ensure at least one file was provided
-    if (mode == MODE_BATCH && num_batch_files == 0) {
+    if (operation_mode == MODE_BATCH && num_batch_input_files == 0)
+    {
         fprintf(stderr, "Error: No input files specified after <outdir> for batch mode '-b'.\n");
         print_usage(argv[0]);
         return 1;
     }
 
-
-    /* --- Execute Selected Mode --- */
-    switch (mode) {
-        case MODE_COMPRESS:
-             if (!file_exists(input_file)) {
-                 fprintf(stderr, "Error: Input file '%s' does not exist or cannot be read.\n", input_file);
-                 return 1;
-             }
-            processed_size = compress_file(input_file, output_file, quiet_mode, &original_size);
-             // Allow success for empty file (processed_size will be header size)
-             if (processed_size > 0 || original_size == 0) {
-                 result = 0; // Success
-                 // Add to list after successful operation
-                 if (add_entry_to_file_list(output_file, original_size, processed_size, quiet_mode) != 0) {
-                     // Warning handled by helper
-                 }
-             } else {
-                 result = 1; // Failure
-             }
-            // print_operation_result handled by compress_file if not quiet
-            break;
-
-        case MODE_DECOMPRESS:
-             if (!file_exists(input_file)) {
-                 fprintf(stderr, "Error: Input file '%s' does not exist or cannot be read.\n", input_file);
-                 return 1;
-             }
-            processed_size = decompress_file(input_file, output_file, quiet_mode, &original_size);
-             // Check for definite failure (return 0 when input size > header size)
-             if (processed_size == 0 && original_size > sizeof(size_t)) {
-                 result = 1; // Failure
-                 if (!quiet_mode) fprintf(stderr, "Decompression failed (corrupted file or I/O error).\n");
-             } else {
-                 result = 0; // Success (includes empty file case)
-                 // We don't add decompressed files to the list by default
-             }
-            // print_operation_result handled by decompress_file if not quiet
-            break;
-
-        case MODE_ENCRYPT:
-            if (get_password(password, sizeof(password), 1) != 0) return 1; // Request confirmation
-            if (!file_exists(input_file)) {
-                fprintf(stderr, "Error: Input file '%s' does not exist or cannot be read.\n", input_file);
-                memset(password, 0, sizeof(password)); // Clear password before exiting
-                return 1;
+    switch (operation_mode)
+    {
+    case MODE_COMPRESS:
+        if (!file_exists(input_file_arg))
+        {
+            fprintf(stderr, "Error: Input file '%s' does not exist or cannot be read.\n", input_file_arg);
+            return 1;
+        }
+        processed_op_size = compress_file(input_file_arg, output_file_arg, quiet_operation, &original_op_size);
+        if (processed_op_size > 0 || original_op_size == 0)
+        {
+            final_result = 0;
+            if (add_entry_to_file_list(output_file_arg, original_op_size, processed_op_size, quiet_operation) != 0)
+            { /* Warned by helper */
             }
-            processed_size = encrypt_file(input_file, output_file, password, iterations, quiet_mode, &original_size);
-            memset(password, 0, sizeof(password)); // Clear password immediately after use
+        }
+        else
+        {
+            final_result = 1;
+        }
+        break;
 
-            if (processed_size > 0) {
-                result = 0; // Success
-                // Add to list after successful operation
-                if (add_entry_to_file_list(output_file, original_size, processed_size, quiet_mode) != 0) {
-                     // Warning already printed by helper function if not quiet
-                }
-            } else {
-                result = 1; // Failure indicated by encrypt_file returning 0
+    case MODE_DECOMPRESS:
+        if (!file_exists(input_file_arg))
+        {
+            fprintf(stderr, "Error: Input file '%s' does not exist or cannot be read.\n", input_file_arg);
+            return 1;
+        }
+        processed_op_size = decompress_file(input_file_arg, output_file_arg, quiet_operation, &original_op_size);
+        if (processed_op_size == 0 && original_op_size > sizeof(unsigned long))
+        { // sizeof(unsigned long) is header size
+            final_result = 1;
+            if (!quiet_operation)
+                fprintf(stderr, "Decompression failed (corrupted file or I/O error).\n");
+        }
+        else
+        {
+            final_result = 0;
+        }
+        break;
+
+    case MODE_ENCRYPT:
+        if (get_password(current_password, sizeof(current_password), 1) != 0)
+            return 1;
+        if (!file_exists(input_file_arg))
+        {
+            fprintf(stderr, "Error: Input file '%s' does not exist or cannot be read.\n", input_file_arg);
+            memset(current_password, 0, sizeof(current_password));
+            return 1;
+        }
+        processed_op_size = encrypt_file(input_file_arg, output_file_arg, current_password, key_iterations, quiet_operation, &original_op_size);
+        memset(current_password, 0, sizeof(current_password));
+        if (processed_op_size > 0)
+        {
+            final_result = 0;
+            if (add_entry_to_file_list(output_file_arg, original_op_size, processed_op_size, quiet_operation) != 0)
+            { /* Warned by helper */
             }
-            // print_operation_result handled by encrypt_file if not quiet
-            break;
+        }
+        else
+        {
+            final_result = 1;
+        }
+        break;
 
-        case MODE_DECRYPT:
-            if (get_password(password, sizeof(password), 0) != 0) return 1;
-             if (!file_exists(input_file)) {
-                 fprintf(stderr, "Error: Input file '%s' does not exist or cannot be read.\n", input_file);
-                 memset(password, 0, sizeof(password));
-                 return 1;
-             }
-            processed_size = decrypt_file(input_file, output_file, password, iterations, quiet_mode, &original_size);
-            memset(password, 0, sizeof(password));
+    case MODE_DECRYPT:
+        if (get_password(current_password, sizeof(current_password), 0) != 0)
+            return 1;
+        if (!file_exists(input_file_arg))
+        {
+            fprintf(stderr, "Error: Input file '%s' does not exist or cannot be read.\n", input_file_arg);
+            memset(current_password, 0, sizeof(current_password));
+            return 1;
+        }
+        processed_op_size = decrypt_file(input_file_arg, output_file_arg, current_password, key_iterations, quiet_operation, &original_op_size);
+        memset(current_password, 0, sizeof(current_password));
+        if (processed_op_size == 0 && original_op_size > DEFAULT_SALT_SIZE)
+        {
+            final_result = 1;
+            if (!quiet_operation)
+                fprintf(stderr, "Decryption failed (I/O error or file too small).\n");
+        }
+        else
+        {
+            final_result = 0;
+        }
+        break;
 
-            // Check for definite failure (return 0 when input size > salt size)
-            if (processed_size == 0 && original_size > DEFAULT_SALT_SIZE) {
-                 result = 1; // Definite failure
-                 if (!quiet_mode) fprintf(stderr, "Decryption failed (I/O error or file too small).\n");
-            } else {
-                 // Assume success otherwise (might be garbage output on wrong password)
-                 result = 0;
-                 // We don't add decrypted files to the list by default
+    case MODE_PROCESS:
+        if (get_password(current_password, sizeof(current_password), 1) != 0)
+            return 1;
+        if (!file_exists(input_file_arg))
+        {
+            fprintf(stderr, "Error: Input file '%s' does not exist or cannot be read.\n", input_file_arg);
+            memset(current_password, 0, sizeof(current_password));
+            return 1;
+        }
+        processed_op_size = process_file(input_file_arg, output_file_arg, current_password, key_iterations, quiet_operation, &original_op_size);
+        memset(current_password, 0, sizeof(current_password));
+        if (processed_op_size > 0)
+        {
+            final_result = 0;
+            if (add_entry_to_file_list(output_file_arg, original_op_size, processed_op_size, quiet_operation) != 0)
+            { /* Warned by helper */
             }
-            // print_operation_result handled by decrypt_file if not quiet
-            break;
+        }
+        else
+        {
+            final_result = 1;
+        }
+        break;
 
-        case MODE_PROCESS: // Compress + Encrypt
-            if (get_password(password, sizeof(password), 1) != 0) return 1; // Request confirmation
-             if (!file_exists(input_file)) {
-                 fprintf(stderr, "Error: Input file '%s' does not exist or cannot be read.\n", input_file);
-                 memset(password, 0, sizeof(password));
-                 return 1;
-             }
-            processed_size = process_file(input_file, output_file, password, iterations, quiet_mode, &original_size);
-            memset(password, 0, sizeof(password)); // Clear password
+    case MODE_EXTRACT:
+        if (get_password(current_password, sizeof(current_password), 0) != 0)
+            return 1;
+        if (!file_exists(input_file_arg))
+        {
+            fprintf(stderr, "Error: Input file '%s' does not exist or cannot be read.\n", input_file_arg);
+            memset(current_password, 0, sizeof(current_password));
+            return 1;
+        }
+        processed_op_size = extract_file(input_file_arg, output_file_arg, current_password, key_iterations, quiet_operation, &original_op_size);
+        memset(current_password, 0, sizeof(current_password));
+        if (processed_op_size == 0 && original_op_size > DEFAULT_SALT_SIZE + sizeof(unsigned long))
+        { // Salt + huffman header
+            final_result = 1;
+            if (!quiet_operation)
+                fprintf(stderr, "Extraction failed (decryption or decompression error).\n");
+        }
+        else
+        {
+            final_result = 0;
+        }
+        break;
 
-             if (processed_size > 0) {
-                 result = 0; // Success
-                 // Add to list after successful operation
-                 if (add_entry_to_file_list(output_file, original_size, processed_size, quiet_mode) != 0) {
-                     // Warning handled by helper
-                 }
-             } else {
-                 result = 1; // Failure
-             }
-            // process_file prints its own summary and result if not quiet
-            break;
-
-        case MODE_EXTRACT: // Decrypt + Decompress
-            if (get_password(password, sizeof(password), 0) != 0) return 1;
-             if (!file_exists(input_file)) {
-                 fprintf(stderr, "Error: Input file '%s' does not exist or cannot be read.\n", input_file);
-                 memset(password, 0, sizeof(password));
-                 return 1;
-             }
-            processed_size = extract_file(input_file, output_file, password, iterations, quiet_mode, &original_size);
-            memset(password, 0, sizeof(password)); // Clear password
-
-             // Check for definite failure
-             if (processed_size == 0 && original_size > DEFAULT_SALT_SIZE + sizeof(size_t)) {
-                 result = 1; // Failure
-                 if (!quiet_mode) fprintf(stderr, "Extraction failed (decryption or decompression error).\n");
-             } else {
-                 result = 0; // Assume success otherwise
-                 // We don't add extracted files to the list by default
-             }
-            // extract_file prints its own summary and result if not quiet
-            break;
-
-        case MODE_LIST:
-            result = handle_file_list("list", NULL, quiet_mode);
-            break;
-
-        case MODE_FIND:
-            result = handle_file_list("find", input_file, quiet_mode); // input_file holds the pattern here
-            break;
-
-        case MODE_BATCH:
-            if (get_password(password, sizeof(password), 1) != 0) return 1; // Request confirmation
-            result = batch_process(batch_files, num_batch_files, output_dir, password, iterations, quiet_mode);
-            memset(password, 0, sizeof(password)); // Clear password
-            // batch_process prints its own summary and result if not quiet
-            break;
-
-        case MODE_HELP:
-        default: // Should not be reached if initial mode check is correct
-            print_usage(argv[0]);
-            result = (mode == MODE_HELP) ? 0 : 1; // Showing help isn't an error
-            break;
+    case MODE_LIST:
+        final_result = handle_file_list("list", NULL, quiet_operation);
+        break;
+    case MODE_FIND:
+        final_result = handle_file_list("find", input_file_arg, quiet_operation);
+        break;
+    case MODE_BATCH:
+        if (get_password(current_password, sizeof(current_password), 1) != 0)
+            return 1;
+        final_result = batch_process(batch_input_files, num_batch_input_files, batch_output_dir, current_password, key_iterations, quiet_operation);
+        memset(current_password, 0, sizeof(current_password));
+        break;
+    case MODE_HELP:
+    default:
+        print_usage(argv[0]);
+        final_result = (operation_mode == MODE_HELP) ? 0 : 1;
+        break;
     }
 
-    return (result == 0) ? EXIT_SUCCESS : EXIT_FAILURE; // Use standard exit codes
+    return (final_result == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
