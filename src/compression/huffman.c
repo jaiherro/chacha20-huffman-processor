@@ -98,13 +98,29 @@ static huffman_node *build_tree(unsigned long freq[MAX_SYMBOLS])
         return NULL;
     if (pq.count == 1)
     {
-        /* Single symbol case - create dummy parent */
+        /* Single symbol case: create a root with two children of the same symbol */
+        huffman_node *leaf = pq_extract_min(&pq);
         huffman_node *root = malloc(sizeof(huffman_node));
         if (!root)
+        {
+            free(leaf);
             return NULL;
-        root->left = pq_extract_min(&pq);
-        root->right = NULL;
-        root->frequency = root->left->frequency;
+        }
+        huffman_node *leaf2 = malloc(sizeof(huffman_node));
+        if (!leaf2)
+        {
+            free(root);
+            free(leaf);
+            return NULL;
+        }
+        /* Clone the single leaf */
+        leaf2->symbol = leaf->symbol;
+        leaf2->frequency = leaf->frequency;
+        leaf2->left = leaf2->right = NULL;
+        /* Create internal root */
+        root->left = leaf;
+        root->right = leaf2;
+        root->frequency = leaf->frequency * 2;
         return root;
     }
 
