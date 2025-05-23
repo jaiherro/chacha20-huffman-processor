@@ -1,31 +1,12 @@
 /**
- * chacha20.c - Implementation of the ChaCha20 stream cipher
- * * This file implements the ChaCha20 stream cipher as defined in RFC 8439.
- * https://datatracker.ietf.org/doc/html/rfc8439
- * * Only uses the following standard C libraries as required:
- * - stdio.h (only used in debug mode)
- * - stdlib.h (not used in this file)
- * - string.h (for memcpy, memset)
- * - math.h (not used in this file)
+ * chacha20.c - ChaCha20 stream cipher implementation (RFC 8439)
  */
 
 #include "encryption/chacha20.h"
-#include <string.h> /* For memcpy, memset */
+#include <string.h>
 
-/* Debug printing support */
-#ifdef CHACHA20_DEBUG
-#include <stdio.h> /* For printf in debug mode */
-#define DEBUG_PRINT(...) printf("[ChaCha20] " __VA_ARGS__)
-#define DEBUG_PRINT_STATE(label, state) debug_print_state(label, state)
-#define DEBUG_PRINT_BYTES(label, bytes, len) debug_print_bytes(label, bytes, len)
-#else
-#define DEBUG_PRINT(...)
-#define DEBUG_PRINT_STATE(label, state)
-#define DEBUG_PRINT_BYTES(label, bytes, len)
-#endif
+#define ROTL32(v, c) (((v) << (c)) | ((v) >> (32 - (c))))
 
-/* Helper macros for ChaCha20 */
-#define ROTL32(v, c) (((v) << (c)) | ((v) >> (32 - (c)))) // Assumes unsigned int is 32-bit
 #define U32TO8_LITTLE(p, v)              \
     (p)[0] = (unsigned char)((v));       \
     (p)[1] = (unsigned char)((v) >> 8);  \
@@ -38,45 +19,12 @@
      ((unsigned int)((p)[2]) << 16) | \
      ((unsigned int)((p)[3]) << 24))
 
-/* ChaCha20 constants - "expand 32-byte k" in ASCII */
-static const unsigned int CHACHA20_CONSTANTS[4] = { // Replaced uint32_t with unsigned int
+/* ChaCha20 constants: "expand 32-byte k" */
+static const unsigned int CONSTANTS[4] = {
     0x61707865, 0x3320646e, 0x79622d32, 0x6b206574};
 
-#ifdef CHACHA20_DEBUG
-/* Debug helper function to print state matrix */
-static void debug_print_state(const char *label, const unsigned int *state)
-{ // Replaced uint32_t with unsigned int
-    printf("[ChaCha20] %s:\n", label);
-    for (int i = 0; i < 4; i++)
-    {
-        printf("[ChaCha20]   ");
-        for (int j = 0; j < 4; j++)
-        {
-            printf("0x%08x ", state[i * 4 + j]);
-        }
-        printf("\n");
-    }
-}
-
-/* Debug helper function to print byte array */
-static void debug_print_bytes(const char *label, const unsigned char *bytes, unsigned long len)
-{ // Replaced uint8_t with unsigned char, size_t with unsigned long
-    printf("[ChaCha20] %s: ", label);
-    for (unsigned long i = 0; i < len && i < 32; i++)
-    { /* Limit to first 32 bytes */ // Replaced size_t with unsigned long
-        printf("%02x", bytes[i]);
-        if ((i + 1) % 4 == 0)
-            printf(" ");
-    }
-    if (len > 32)
-        printf("... (%lu bytes total)", len); // Use %lu for unsigned long
-    printf("\n");
-}
-#endif
-
-void chacha20_quarterround(int a, int b, int c, int d, unsigned int *state)
-{ // Replaced uint32_t with unsigned int
-    /* Implements the ChaCha20 quarter round function */
+static void quarterround(int a, int b, int c, int d, unsigned int *state)
+{
     state[a] += state[b];
     state[d] ^= state[a];
     state[d] = ROTL32(state[d], 16);
@@ -91,161 +39,110 @@ void chacha20_quarterround(int a, int b, int c, int d, unsigned int *state)
     state[b] = ROTL32(state[b], 7);
 }
 
-int chacha20_block(chacha20_ctx *ctx)
+static int generate_block(chacha20_ctx *ctx)
 {
-    unsigned int x[16]; // Replaced uint32_t with unsigned int
+    unsigned int x[16];
     int i;
 
-    if (ctx == NULL)
-    {
+    if (!ctx)
         return -1;
-    }
 
-    DEBUG_PRINT("Generating block for counter: %u\n", ctx->state[12]);
-    DEBUG_PRINT_STATE("Initial state", ctx->state);
+    memcpy(x, ctx->state, sizeof(ctx->state));
 
-    /* Create a copy of the current state */
-    memcpy(x, ctx->state, sizeof(ctx->state)); // sizeof(ctx->state) is 16 * sizeof(unsigned int)
-
-    /* Apply 20 rounds of ChaCha20 (10 column rounds + 10 diagonal rounds) */
+    /* 20 rounds (10 pairs of column/diagonal rounds) */
     for (i = 0; i < 10; i++)
-    { // RFC specifies 20 rounds, which is 10 pairs of column/diagonal rounds
+    {
         /* Column rounds */
-        chacha20_quarterround(0, 4, 8, 12, x);
-        chacha20_quarterround(1, 5, 9, 13, x);
-        chacha20_quarterround(2, 6, 10, 14, x);
-        chacha20_quarterround(3, 7, 11, 15, x);
+        quarterround(0, 4, 8, 12, x);
+        quarterround(1, 5, 9, 13, x);
+        quarterround(2, 6, 10, 14, x);
+        quarterround(3, 7, 11, 15, x);
 
         /* Diagonal rounds */
-        chacha20_quarterround(0, 5, 10, 15, x);
-        chacha20_quarterround(1, 6, 11, 12, x);
-        chacha20_quarterround(2, 7, 8, 13, x);
-        chacha20_quarterround(3, 4, 9, 14, x);
-
-        DEBUG_PRINT("After round %d\n", (i * 2) + 2); // Each loop iteration is 2 rounds
+        quarterround(0, 5, 10, 15, x);
+        quarterround(1, 6, 11, 12, x);
+        quarterround(2, 7, 8, 13, x);
+        quarterround(3, 4, 9, 14, x);
     }
 
-    DEBUG_PRINT_STATE("After 20 rounds", x);
-
-    /* Add the original state to the result */
+    /* Add original state */
     for (i = 0; i < 16; i++)
     {
         x[i] += ctx->state[i];
     }
 
-    DEBUG_PRINT_STATE("After final addition", x);
-
-    /* Convert to little-endian bytes and store in keystream */
+    /* Convert to little-endian bytes */
     for (i = 0; i < 16; i++)
     {
         U32TO8_LITTLE(ctx->keystream + (i * 4), x[i]);
     }
 
-    DEBUG_PRINT_BYTES("Generated keystream", ctx->keystream, CHACHA20_BLOCK_SIZE);
-
-    /* Increment counter for next block and handle overflow */
-    ctx->state[12]++;
-    if (ctx->state[12] == 0)
+    /* Increment counter */
+    if (++ctx->state[12] == 0)
     {
-        /* Counter overflow - increment the next word */
         ctx->state[13]++;
-        DEBUG_PRINT("WARNING: Counter overflow, incrementing next word\n");
-        // Note: RFC 8439 does not specify behavior for 96-bit nonce if state[13] overflows.
-        // This implementation follows the common practice for 64-bit block counter.
     }
 
-    /* Reset position in keystream */
     ctx->position = 0;
-
-    /* Clear sensitive data from the stack */
     memset(x, 0, sizeof(x));
-
     return 0;
 }
 
-int chacha20_init(chacha20_ctx *ctx, const unsigned char *key, const unsigned char *nonce, unsigned int counter)
-{ // Replaced uint8_t with unsigned char, uint32_t with unsigned int
+int chacha20_init(chacha20_ctx *ctx, const unsigned char *key,
+                  const unsigned char *nonce, unsigned int counter)
+{
     int i;
 
-    if (ctx == NULL || key == NULL || nonce == NULL)
-    {
+    if (!ctx || !key || !nonce)
         return -1;
+
+    /* Constants */
+    for (i = 0; i < 4; i++)
+    {
+        ctx->state[i] = CONSTANTS[i];
     }
 
-    DEBUG_PRINT("Initializing ChaCha20 with counter=%u\n", counter);
-    DEBUG_PRINT_BYTES("Key", key, CHACHA20_KEY_SIZE);
-    DEBUG_PRINT_BYTES("Nonce", nonce, CHACHA20_NONCE_SIZE);
-
-    /* Set up the initial state (4x4 matrix of 32-bit words) */
-
-    /* First row: ChaCha20 constants */
-    ctx->state[0] = CHACHA20_CONSTANTS[0];
-    ctx->state[1] = CHACHA20_CONSTANTS[1];
-    ctx->state[2] = CHACHA20_CONSTANTS[2];
-    ctx->state[3] = CHACHA20_CONSTANTS[3];
-
-    /* Second and third rows: 256-bit key */
+    /* Key (256 bits) */
     for (i = 0; i < 8; i++)
     {
         ctx->state[4 + i] = U8TO32_LITTLE(key + (i * 4));
     }
 
-    /* Fourth row: Counter and nonce */
+    /* Counter and nonce */
     ctx->state[12] = counter;
-    ctx->state[13] = U8TO32_LITTLE(nonce + 0); // Nonce word 0
-    ctx->state[14] = U8TO32_LITTLE(nonce + 4); // Nonce word 1
-    ctx->state[15] = U8TO32_LITTLE(nonce + 8); // Nonce word 2
+    ctx->state[13] = U8TO32_LITTLE(nonce);
+    ctx->state[14] = U8TO32_LITTLE(nonce + 4);
+    ctx->state[15] = U8TO32_LITTLE(nonce + 8);
 
-    DEBUG_PRINT_STATE("Initial state", ctx->state);
-
-    /* Initialize position to force generation of first block */
-    ctx->position = CHACHA20_BLOCK_SIZE;
-
+    ctx->position = CHACHA20_BLOCK_SIZE; /* Force block generation */
     return 0;
 }
 
-int chacha20_process(chacha20_ctx *ctx, const unsigned char *input, unsigned char *output, unsigned long input_len)
-{                    // Replaced uint8_t with unsigned char, size_t with unsigned long
-    unsigned long i; // Replaced size_t with unsigned long
+int chacha20_process(chacha20_ctx *ctx, const unsigned char *input,
+                     unsigned char *output, unsigned long len)
+{
+    unsigned long i;
 
-    if (ctx == NULL || (input == NULL && input_len > 0) || output == NULL)
-    {
+    if (!ctx || (!input && len > 0) || !output)
         return -1;
-    }
 
-    DEBUG_PRINT("Processing %lu bytes of data\n", input_len); // Use %lu for unsigned long
-    DEBUG_PRINT_BYTES("Input data (first bytes)", input, input_len > 32 ? 32 : input_len);
-
-    for (i = 0; i < input_len; i++)
+    for (i = 0; i < len; i++)
     {
-        /* Generate new block if needed */
         if (ctx->position >= CHACHA20_BLOCK_SIZE)
-        { // Use >= for safety
-            if (chacha20_block(ctx) != 0)
-            {
-                return -1; // Error generating block
-            }
+        {
+            if (generate_block(ctx) != 0)
+                return -1;
         }
-
-        /* XOR input with keystream to produce output */
         output[i] = input[i] ^ ctx->keystream[ctx->position++];
     }
-
-    DEBUG_PRINT_BYTES("Output data (first bytes)", output, input_len > 32 ? 32 : input_len);
-    DEBUG_PRINT("Processing complete\n");
 
     return 0;
 }
 
 void chacha20_cleanup(chacha20_ctx *ctx)
 {
-    if (ctx != NULL)
+    if (ctx)
     {
-        /* Zero out the entire context to prevent sensitive data leakage */
-        memset(ctx->state, 0, sizeof(ctx->state));
-        memset(ctx->keystream, 0, sizeof(ctx->keystream));
-        ctx->position = 0;
-
-        DEBUG_PRINT("Context cleared\n");
+        memset(ctx, 0, sizeof(*ctx));
     }
 }

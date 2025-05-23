@@ -6,32 +6,27 @@ typedef struct huffman_node huffman_node;
 struct huffman_node
 {
     unsigned char symbol;
-    unsigned long frequency; // Replaced size_t with unsigned long for frequency, assuming it represents a count/size
+    unsigned long frequency;
     huffman_node *left;
     huffman_node *right;
 };
 
 typedef struct
 {
-    unsigned char symbol;    // uint8_t equivalent
-    unsigned char code[256]; // Assuming codes are represented by bytes
-    unsigned int code_len;   // Length of the code
+    unsigned char symbol;
+    unsigned char code[256];
+    unsigned int code_len;
 } huffman_code;
 
 // Function to calculate worst-case size for compressed data
-// Replaced size_t with unsigned long for lengths/sizes
 unsigned long huffman_worst_case_size(unsigned long input_len);
 
 // Compress data using Huffman coding
-// Replaced uint8_t with unsigned char for byte data
-// Replaced size_t with unsigned long for lengths/sizes
 int huffman_compress(const unsigned char *input, unsigned long input_len,
                      unsigned char *output, unsigned long output_max_len,
                      unsigned long *output_len);
 
 // Decompress data using Huffman coding
-// Replaced uint8_t with unsigned char for byte data
-// Replaced size_t with unsigned long for lengths/sizes
 int huffman_decompress(const unsigned char *input, unsigned long input_len,
                        unsigned char *output, unsigned long output_max_len,
                        unsigned long *output_len);

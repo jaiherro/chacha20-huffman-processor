@@ -6,7 +6,6 @@ TEST_DIR = test
 # Compiler settings
 CC ?= gcc
 CFLAGS = -Wall -Wextra -pedantic -std=c99 -I$(INCLUDE_DIR)
-DEBUG_FLAGS = -DDEBUG -g -DCHACHA20_DEBUG -DKDF_DEBUG -DHUFFMAN_DEBUG -DFILE_LIST_DEBUG
 
 # Use -Werror for submission builds if required:
 # BASE_CFLAGS = -Wall -Werror -pedantic -std=c99 -I$(INCLUDE_DIR)
@@ -29,25 +28,21 @@ TEST_TARGET = run_tests
 # Default target
 all: $(TARGET)
 
-# Debug build
-debug: CFLAGS += $(DEBUG_FLAGS)
-debug: $(TARGET)
-
 # Build main executable
 $(TARGET): $(APP_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ -lm
 
 # Build test executable  
 $(TEST_TARGET): $(TEST_OBJS) $(LIB_OBJS)
-	$(CC) $(CFLAGS) $(DEBUG_FLAGS) -o $@ $^ -lm
+	$(CC) $(CFLAGS) -o $@ $^ -lm
 
 # Generic compilation rule for all source files
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Test object files use debug flags
+# Test object files
 $(TEST_DIR)/%.o: $(TEST_DIR)/%.c
-	$(CC) $(CFLAGS) $(DEBUG_FLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 # Run tests
 test: $(TEST_TARGET)
@@ -58,4 +53,4 @@ clean:
 	rm -f $(SRC_DIR)/*.o $(SRC_DIR)/*/*.o $(TEST_DIR)/*.o
 	rm -f $(TARGET) $(TEST_TARGET) $(TARGET).exe $(TEST_TARGET).exe $(TEST_DIR)/test_list.dat
 
-.PHONY: all debug test clean
+.PHONY: all test clean
