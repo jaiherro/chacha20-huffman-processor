@@ -1,13 +1,5 @@
 /**
  * main.c - Secure File Processor with ChaCha20 encryption and Huffman compression
- *
- * This program provides:
- * 1. ChaCha20 encryption/decryption (RFC 8439)
- * 2. Huffman compression/decompression
- * 3. Password-based key derivation
- * 4. File tracking using linked lists
- *
- * Only uses standard C libraries: stdio.h, stdlib.h, string.h, math.h
  */
 
 #include <stdio.h>

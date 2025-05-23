@@ -44,7 +44,7 @@ void print_progress_bar(unsigned long current, unsigned long total, unsigned lon
 {
     // Avoid division by zero if total is 0 (e.g., empty file)
     float percent = (total == 0) ? 1.0f : (float)current / total;
-    // Ensure percent doesn't exceed 1.0 due to potential rounding issues
+    // Ensure percent doesn't exceed 1.0
     if (percent > 1.0f)
         percent = 1.0f;
 
@@ -75,12 +75,12 @@ void print_progress_bar(unsigned long current, unsigned long total, unsigned lon
 
     /* Print percentage */
     printf("] %5.1f%% (%lu/%lu bytes)", percent * 100.0f, current, total);
-    fflush(stdout); // Ensure progress bar updates immediately
+    fflush(stdout); // Ensure progress bar updates
 }
 
 void print_operation_result(int result, const char *operation)
 {
-    // Add newline before result for better spacing if progress bar was used
+    // Add newline before result for better spacing
     printf("\n");
     if (result == 0)
     {

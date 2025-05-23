@@ -11,7 +11,6 @@
 #define MAX_SYMBOLS 256
 #define MAX_CODE_LEN 256
 
-/* Simplified priority queue using sorted array */
 typedef struct
 {
     huffman_node *nodes[MAX_SYMBOLS];

@@ -31,7 +31,6 @@ int ensure_directory_exists(const char *directory)
     }
 
     // Create directory using system command
-    // Note: This is a simple approach given standard library constraints
 #ifdef _WIN32
     snprintf(command, sizeof(command), "mkdir \"%s\" 2>nul", directory);
 #else
