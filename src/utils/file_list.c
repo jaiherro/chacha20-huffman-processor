@@ -249,34 +249,67 @@ void file_list_print(file_list_t *list)
 {
     if (!list)
     {
-        printf("File list is NULL\n");
+        printf("ERROR: File list is null\n");
         return;
     }
 
-    printf("File list (%lu entries, next sequence #%lu):\n",
-           list->count, list->next_sequence_num);
+    printf("File Processing History\n");
+    printf("Total entries: %lu\n", list->count);
 
     if (list->count == 0)
     {
-        printf("  (empty)\n");
+        printf("No files have been processed yet.\n");
         return;
     }
+
+    printf("\n");
+    printf("%-4s %-30s %-30s %-12s %-12s %-10s\n",
+           "ID", "Input File", "Output File", "Original", "Processed", "Ratio");
+    printf("%-4s %-30s %-30s %-12s %-12s %-10s\n",
+           "----", "------------------------------", "------------------------------",
+           "------------", "------------", "----------");
+
     for (file_entry_t *current = list->head; current; current = current->next)
     {
-        printf("--> Input: %s\n", current->input_filename);
-        printf("    Output: %s\n", current->output_filename);
-        printf("    Sequence: #%lu\n", current->sequence_num);
-        printf("    Original size: %lu bytes\n", current->original_size);
-        printf("    Processed size: %lu bytes\n", current->processed_size);
-
-        if (current->original_size > 0)
+        // Truncate long filenames for display
+        char input_display[31], output_display[31];
+        if (strlen(current->input_filename) > 30)
         {
-            printf("    Compression ratio: %.2f%%\n",
-                   100.0 * (double)current->processed_size / (double)current->original_size);
+            strncpy(input_display, current->input_filename, 27);
+            strcpy(input_display + 27, "...");
         }
         else
         {
-            printf("    Compression ratio: N/A (original size is 0)\n");
+            strcpy(input_display, current->input_filename);
+        }
+
+        if (strlen(current->output_filename) > 30)
+        {
+            strncpy(output_display, current->output_filename, 27);
+            strcpy(output_display + 27, "...");
+        }
+        else
+        {
+            strcpy(output_display, current->output_filename);
+        }
+
+        printf("%-4lu %-30s %-30s %-12lu %-12lu ",
+               current->sequence_num,
+               input_display,
+               output_display,
+               current->original_size,
+               current->processed_size);
+
+        if (current->original_size > 0)
+        {
+            float ratio = 100.0f * (float)current->processed_size / (float)current->original_size;
+            printf("%-10.2f%%\n", ratio);
+        }
+        else
+        {
+            printf("%-10s\n", "N/A");
         }
     }
+
+    printf("\nNote: Ratio shows processed size as percentage of original size.\n");
 }

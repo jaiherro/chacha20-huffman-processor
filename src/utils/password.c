@@ -19,11 +19,11 @@ int get_password(char *password, unsigned long max_len, int confirm)
     { // fgets expects int for size
         if (feof(stdin))
         {
-            fprintf(stderr, "\nError: End-of-file reached while reading password.\n");
+            fprintf(stderr, "\nERROR: End-of-file reached while reading password.\n");
         }
         else
         {
-            fprintf(stderr, "\nError reading password.\n");
+            fprintf(stderr, "\nERROR: Failed to read password input.\n");
         }
         clearerr(stdin);
         return -1;
@@ -32,7 +32,7 @@ int get_password(char *password, unsigned long max_len, int confirm)
 
     if (password[0] == '\0')
     {
-        fprintf(stderr, "Error: Password cannot be empty.\n");
+        fprintf(stderr, "ERROR: Password cannot be empty.\n");
         return -1;
     }
 
@@ -44,11 +44,11 @@ int get_password(char *password, unsigned long max_len, int confirm)
         {
             if (feof(stdin))
             {
-                fprintf(stderr, "\nError: End-of-file reached while reading password confirmation.\n");
+                fprintf(stderr, "\nERROR: End-of-file reached while reading password confirmation.\n");
             }
             else
             {
-                fprintf(stderr, "\nError reading password confirmation.\n");
+                fprintf(stderr, "\nERROR: Failed to read password confirmation.\n");
             }
             clearerr(stdin);
             memset(password, 0, max_len);
@@ -58,7 +58,7 @@ int get_password(char *password, unsigned long max_len, int confirm)
 
         if (strcmp(password, confirm_password) != 0)
         {
-            fprintf(stderr, "Error: Passwords do not match.\n");
+            fprintf(stderr, "ERROR: Password confirmation does not match.\n");
             memset(password, 0, max_len);
             memset(confirm_password, 0, sizeof(confirm_password));
             return -1;

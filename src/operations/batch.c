@@ -23,7 +23,7 @@ int batch_process(char *input_files[], int num_files, const char *output_dir,
     {
         print_section_header("Batch Processing");
         printf("Processing %d files to directory: %s\n", num_files, output_dir);
-        printf("Operation: Compress + Encrypt\n\n");
+        printf("Operation: Compress and Encrypt\n\n");
     }
 
     for (int i = 0; i < num_files; i++)
@@ -32,7 +32,7 @@ int batch_process(char *input_files[], int num_files, const char *output_dir,
         {
             if (!quiet)
             {
-                fprintf(stderr, "Warning: Input file '%s' does not exist or cannot be read. Skipping.\n",
+                fprintf(stderr, "WARNING: Input file '%s' does not exist or cannot be read. Skipping.\n",
                         input_files[i]);
             }
             failure_count++;
@@ -60,7 +60,7 @@ int batch_process(char *input_files[], int num_files, const char *output_dir,
 
         if (!quiet)
         {
-            printf("Processing file %d/%d: %s\n", i + 1, num_files, input_files[i]);
+            printf("Processing file %d of %d: %s\n", i + 1, num_files, input_files[i]);
         }
 
         processed_size = process_file(input_files[i], output_path, password, quiet, &original_size);
@@ -70,13 +70,14 @@ int batch_process(char *input_files[], int num_files, const char *output_dir,
             success_count++;
             if (!quiet)
             {
-                printf("✓ Successfully processed: %s → %s\n", input_files[i], output_path);
-            } // Add to file list
+                printf("SUCCESS: Processed %s -> %s\n", input_files[i], output_path);
+            }
+            // Add to file list
             if (add_entry_to_file_list(input_files[i], output_path, original_size, processed_size, quiet) != 0)
             {
                 if (!quiet)
                 {
-                    fprintf(stderr, "Warning: Failed to add '%s -> %s' to file list.\n", input_files[i], output_path);
+                    fprintf(stderr, "WARNING: Failed to add '%s -> %s' to file list.\n", input_files[i], output_path);
                 }
             }
         }
@@ -85,7 +86,7 @@ int batch_process(char *input_files[], int num_files, const char *output_dir,
             failure_count++;
             if (!quiet)
             {
-                fprintf(stderr, "✗ Failed to process: %s\n", input_files[i]);
+                fprintf(stderr, "FAILED: Unable to process %s\n", input_files[i]);
             }
         }
 
@@ -109,7 +110,7 @@ int batch_process(char *input_files[], int num_files, const char *output_dir,
         }
         else
         {
-            print_operation_result(1, "Batch processing (some failures occurred)");
+            print_operation_result(1, "Batch processing (some operations failed)");
         }
     }
 

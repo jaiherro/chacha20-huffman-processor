@@ -8,7 +8,8 @@
 
 void print_usage(const char *program_name)
 {
-    printf("Secure File Processor\n\n");
+    printf("Secure File Processor v1.0\n");
+    printf("Professional file compression and encryption utility\n\n");
 
     printf("USAGE:\n");
     printf("  %s [MODE] [OPTIONS] [FILE(S)]\n\n", program_name);
@@ -26,18 +27,24 @@ void print_usage(const char *program_name)
     printf("  -h, --help             Show this help information\n\n");
 
     printf("OPTIONS:\n");
-    printf("  -q                       Quiet mode (minimal output, suppresses progress bars and summaries)\n\n");
+    printf("  -q                     Quiet mode (minimal output)\n\n");
 
     printf("EXAMPLES:\n");
-    printf("  %s -e document.txt document.enc                   # Encrypt a file\n", program_name);
-    printf("  %s -d document.enc document.txt                   # Decrypt a file\n", program_name);
-    printf("  %s -p report.pdf report.pdf.sec -i 20000          # Compress and encrypt with more iterations\n", program_name);
-    printf("  %s -u report.pdf.sec report.pdf                   # Decrypt and decompress\n", program_name);
-    printf("  %s -b secure_files file1.txt image.jpg            # Batch process files into 'secure_files' dir\n", program_name);
-    printf("  %s -l                                             # List all processed files\n", program_name);
-    printf("  %s -f report                                      # Find files containing 'report' in the list\n\n", program_name);
+    printf("  %s -e document.txt document.enc\n", program_name);
+    printf("    Encrypt document.txt and save as document.enc\n\n");
+    printf("  %s -d document.enc document.txt\n", program_name);
+    printf("    Decrypt document.enc and save as document.txt\n\n");
+    printf("  %s -p report.pdf report.secure\n", program_name);
+    printf("    Compress and encrypt report.pdf\n\n");
+    printf("  %s -u report.secure report.pdf\n", program_name);
+    printf("    Decrypt and decompress report.secure\n\n");
+    printf("  %s -b secure_files file1.txt file2.pdf file3.jpg\n", program_name);
+    printf("    Batch process multiple files to secure_files directory\n\n");
+    printf("  %s -l\n", program_name);
+    printf("    List all previously processed files\n\n");
 
-    printf("Note: For operations requiring encryption/decryption (-e, -d, -p, -u, -b), you will be prompted for a password.\n");
+    printf("NOTE: Operations requiring encryption/decryption will prompt for a password.\n");
+    printf("      Use strong passwords for optimal security.\n");
 }
 
 void print_progress_bar(unsigned long current, unsigned long total, unsigned long width)
@@ -51,7 +58,7 @@ void print_progress_bar(unsigned long current, unsigned long total, unsigned lon
     unsigned long filled_width = (unsigned long)(width * percent);
 
     printf(CLEAR_LINE); // Clear the current line
-    printf("[");
+    printf("Progress: [");
 
     /* Print filled portion */
     unsigned long i;
@@ -84,12 +91,12 @@ void print_operation_result(int result, const char *operation)
     printf("\n");
     if (result == 0)
     {
-        printf("--> %s completed successfully.\n", operation);
+        printf("RESULT: %s completed successfully.\n", operation);
     }
     else
     {
         // Use fprintf to stderr for errors
-        fprintf(stderr, "--> ERROR: %s failed.\n", operation);
+        fprintf(stderr, "ERROR: %s failed.\n", operation);
     }
 }
 
@@ -99,30 +106,33 @@ void print_processing_summary(const char *operation, const char *input_file, con
     // Avoid division by zero for ratio calculation
     float ratio = (input_size == 0) ? 0.0f : (float)output_size * 100.0f / input_size;
 
-    printf("\n--> %s Summary:\n", operation);
-    printf("    Input:  %s (%lu bytes)\n", input_file, input_size);
-    printf("    Output: %s (%lu bytes)\n", output_file, output_size);
+    printf("\n");
+    print_section_header("Processing Summary");
+    printf("Operation: %s\n", operation);
+    printf("Input file:  %s (%lu bytes)\n", input_file, input_size);
+    printf("Output file: %s (%lu bytes)\n", output_file, output_size);
+
     // Only show ratio if input size is non-zero
     if (input_size > 0)
     {
-        printf("    Ratio:  %.2f%%\n", ratio);
+        printf("Size ratio:  %.2f%%\n", ratio);
         // Only show savings if ratio is less than 100%
         if (ratio < 100.0f && ratio >= 0.0f)
         {
-            printf("    Saved:  %.2f%%\n", 100.0f - ratio);
+            printf("Space saved: %.2f%%\n", 100.0f - ratio);
         }
         else if (ratio > 100.0f)
         {
-            printf("    Growth: %.2f%%\n", ratio - 100.0f);
+            printf("Size increase: %.2f%%\n", ratio - 100.0f);
         }
     }
     else
     {
-        printf("    Ratio:  N/A (input size is 0)\n");
+        printf("Size ratio:  N/A (input size is 0)\n");
     }
 }
 
 void print_section_header(const char *title)
 {
-    printf("\n--- %s ---\n", title);
+    printf("\n=== %s ===\n", title);
 }

@@ -120,8 +120,9 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
     if (!quiet)
     {
         print_section_header("File Encryption");
-        printf("Input:  %s\n", input_file);
-        printf("Output: %s\n", output_file);
+        printf("Input file:  %s\n", input_file);
+        printf("Output file: %s\n", output_file);
+        printf("Encryption:  ChaCha20 (256-bit)\n");
     }
 
     in = fopen(input_file, "rb");
@@ -283,8 +284,9 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
     if (!quiet)
     {
         print_section_header("File Decryption");
-        printf("Input:  %s\n", input_file);
-        printf("Output: %s\n", output_file);
+        printf("Input file:  %s\n", input_file);
+        printf("Output file: %s\n", output_file);
+        printf("Decryption:  ChaCha20 (256-bit)\n");
     }
 
     in = fopen(input_file, "rb");
@@ -466,8 +468,9 @@ unsigned long compress_file(const char *input_file, const char *output_file, int
     if (!quiet)
     {
         print_section_header("File Compression");
-        printf("Input:  %s\n", input_file);
-        printf("Output: %s\n", output_file);
+        printf("Input file:  %s\n", input_file);
+        printf("Output file: %s\n", output_file);
+        printf("Algorithm:   Huffman Coding\n");
     }
 
     in = fopen(input_file, "rb");
@@ -607,8 +610,9 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
     if (!quiet)
     {
         print_section_header("File Decompression");
-        printf("Input:  %s\n", input_file);
-        printf("Output: %s\n", output_file);
+        printf("Input file:  %s\n", input_file);
+        printf("Output file: %s\n", output_file);
+        printf("Algorithm:   Huffman Coding\n");
     }
 
     in = fopen(input_file, "rb");
@@ -775,7 +779,10 @@ unsigned long process_file(const char *input_file, const char *output_file,
 
     if (!quiet)
     {
-        print_section_header("File Processing (Compress + Encrypt)");
+        print_section_header("File Processing");
+        printf("Operation: Compress and Encrypt\n");
+        printf("Input file: %s\n", input_file);
+        printf("Output file: %s\n", output_file);
     }
 
     if (!quiet)
@@ -828,7 +835,10 @@ unsigned long extract_file(const char *input_file, const char *output_file,
 
     if (!quiet)
     {
-        print_section_header("File Extraction (Decrypt + Decompress)");
+        print_section_header("File Extraction");
+        printf("Operation: Decrypt and Decompress\n");
+        printf("Input file: %s\n", input_file);
+        printf("Output file: %s\n", output_file);
     }
 
     if (!quiet)
@@ -887,52 +897,52 @@ int handle_file_list(const char *command, const char *filename_pattern, int quie
     if (strcmp(command, "list") == 0)
     {
         if (!quiet)
-            print_section_header("File List Contents");
-        printf("Source: %s\n", DEFAULT_FILE_LIST);
+            print_section_header("File Processing History");
+        printf("Data source: %s\n\n", DEFAULT_FILE_LIST);
         file_list_print(&file_list);
     }
     else if (strcmp(command, "find") == 0)
     {
         if (!filename_pattern || filename_pattern[0] == '\0')
         {
-            fprintf(stderr, "Error: No filename pattern specified for find command.\n");
+            fprintf(stderr, "ERROR: No search pattern specified.\n");
             file_list_free(&file_list);
             return -1;
         }
 
         if (!quiet)
         {
-            print_section_header("File Search");
-            printf("Pattern: '%s'\n\n", filename_pattern);
+            print_section_header("File Search Results");
+            printf("Search pattern: '%s'\n\n", filename_pattern);
         }
 
         found_entry = file_list_find(&file_list, filename_pattern);
         if (found_entry)
         {
-            printf("Found matching file:\n");
-            printf("--> Input: %s\n", found_entry->input_filename);
-            printf("    Output: %s\n", found_entry->output_filename);
-            printf("    Sequence: #%lu\n", found_entry->sequence_num);
-            printf("    Original size: %lu bytes\n", found_entry->original_size);
-            printf("    Processed size: %lu bytes\n", found_entry->processed_size);
+            printf("MATCH FOUND:\n");
+            printf("Input file:     %s\n", found_entry->input_filename);
+            printf("Output file:    %s\n", found_entry->output_filename);
+            printf("Sequence ID:    %lu\n", found_entry->sequence_num);
+            printf("Original size:  %lu bytes\n", found_entry->original_size);
+            printf("Processed size: %lu bytes\n", found_entry->processed_size);
             if (found_entry->original_size > 0)
             {
-                printf("    Compression ratio: %.2f%%\n",
+                printf("Size ratio:     %.2f%%\n",
                        (float)found_entry->processed_size * 100.0f / found_entry->original_size);
             }
             else
             {
-                printf("    Compression ratio: N/A\n");
+                printf("Size ratio:     N/A\n");
             }
         }
         else
         {
-            printf("No matching file found in the list for pattern '%s'.\n", filename_pattern);
+            printf("NO MATCH: No files found matching pattern '%s'\n", filename_pattern);
         }
     }
     else
     {
-        fprintf(stderr, "Error: Unknown internal file list command: %s\n", command);
+        fprintf(stderr, "ERROR: Unknown internal file list command: %s\n", command);
         file_list_free(&file_list);
         return -1;
     }

@@ -37,7 +37,7 @@ static int validate_file_input(const char *filename)
 {
     if (!file_exists(filename))
     {
-        fprintf(stderr, "Error: Input file '%s' does not exist or cannot be read.\n", filename);
+        fprintf(stderr, "ERROR: Input file '%s' does not exist or cannot be accessed.\n", filename);
         return -1;
     }
     return 0;
@@ -192,7 +192,7 @@ static int parse_command_line(int argc, char *argv[], int *mode, char **input_fi
         *mode = MODE_HELP;
     else
     {
-        fprintf(stderr, "Error: Unknown mode or option: %s\n", argv[1]);
+        fprintf(stderr, "ERROR: Unknown command '%s'. Use -h for help.\n", argv[1]);
         return -1;
     }
 
@@ -209,7 +209,8 @@ static int parse_command_line(int argc, char *argv[], int *mode, char **input_fi
     case MODE_EXTRACT:
         if (argc < 4)
         {
-            fprintf(stderr, "Error: Missing <input> and <output> file arguments for mode '%s'.\n", argv[1]);
+            fprintf(stderr, "ERROR: Mode '%s' requires both input and output file arguments.\n", argv[1]);
+            fprintf(stderr, "Usage: %s %s <input_file> <output_file>\n", argv[0], argv[1]);
             return -1;
         }
         *input_file = argv[2];
@@ -220,7 +221,8 @@ static int parse_command_line(int argc, char *argv[], int *mode, char **input_fi
     case MODE_FIND:
         if (argc < 3)
         {
-            fprintf(stderr, "Error: Missing <pattern> argument for find mode '-f'.\n");
+            fprintf(stderr, "ERROR: Find mode requires a search pattern.\n");
+            fprintf(stderr, "Usage: %s -f <search_pattern>\n", argv[0]);
             return -1;
         }
         *input_file = argv[2];
@@ -230,7 +232,8 @@ static int parse_command_line(int argc, char *argv[], int *mode, char **input_fi
     case MODE_BATCH:
         if (argc < 4)
         {
-            fprintf(stderr, "Error: Missing <outdir> and at least one <file> argument for batch mode '-b'.\n");
+            fprintf(stderr, "ERROR: Batch mode requires output directory and at least one input file.\n");
+            fprintf(stderr, "Usage: %s -b <output_directory> <file1> [file2] ...\n", argv[0]);
             return -1;
         }
         *batch_output_dir = argv[2];
@@ -262,15 +265,15 @@ static int parse_command_line(int argc, char *argv[], int *mode, char **input_fi
             {
                 if (!*quiet)
                 {
-                    fprintf(stderr, "Warning: Exceeded maximum number of batch files (%d). Ignoring '%s' and subsequent files.\n",
-                            MAX_BATCH_FILES, argv[i]);
+                    fprintf(stderr, "WARNING: Maximum batch file limit (%d) exceeded.\n", MAX_BATCH_FILES);
+                    fprintf(stderr, "         Ignoring '%s' and subsequent files.\n", argv[i]);
                 }
                 break;
             }
         }
         else
         {
-            fprintf(stderr, "Error: Unknown option or unexpected argument: %s\n", argv[i]);
+            fprintf(stderr, "ERROR: Unknown option '%s'. Use -h for help.\n", argv[i]);
             return -1;
         }
     }
@@ -278,7 +281,8 @@ static int parse_command_line(int argc, char *argv[], int *mode, char **input_fi
     /* Validate batch mode arguments */
     if (*mode == MODE_BATCH && *num_batch_files == 0)
     {
-        fprintf(stderr, "Error: No input files specified after <outdir> for batch mode '-b'.\n");
+        fprintf(stderr, "ERROR: No input files specified for batch processing.\n");
+        fprintf(stderr, "Usage: %s -b <output_directory> <file1> [file2] ...\n", argv[0]);
         return -1;
     }
 
