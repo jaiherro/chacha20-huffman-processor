@@ -17,7 +17,7 @@ static void derive_key(const char *password, const unsigned char *salt,
     unsigned char hash[64]; // Smaller working buffer
     unsigned long i, j;
 
-    // Initialize with password
+    // Initialise with password
     for (i = 0; i < sizeof(hash); i++)
     {
         hash[i] = (i < password_len) ? password[i] : 0;

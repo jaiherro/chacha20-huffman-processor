@@ -7,18 +7,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Debug printing support */
-#ifdef DEBUG
-#define DEBUG_PRINT(fmt, ...) printf("[FileSystem] " fmt, ##__VA_ARGS__)
-#else
-#define DEBUG_PRINT(fmt, ...) ((void)0)
-#endif
-
 #define MAX_FILENAME 256
 
 int file_exists(const char *filename)
 {
-    FILE *file = fopen(filename, "rb"); // Open for binary read
+    FILE *file = fopen(filename, "rb");
     if (file)
     {
         fclose(file);
@@ -37,33 +30,18 @@ int ensure_directory_exists(const char *directory)
         return -1;
     }
 
-    // Simple check: try to open the directory. This is not a perfect check.
-    // A more robust way involves stat() which is POSIX, or platform specific APIs.
-    // For this project, relying on mkdir's behavior is simpler.
-    FILE *dir_check = fopen(directory, "r");
-    if (dir_check)
-    {
-        fclose(dir_check);
-        // Directory likely exists (or it's a file, mkdir will fail then)
-        return 0;
-    }
-
+    // Create directory using system command
+    // Note: This is a simple approach given standard library constraints
 #ifdef _WIN32
-    snprintf(command, sizeof(command), "mkdir \"%s\"", directory);
-#else // POSIX-like systems
-    snprintf(command, sizeof(command), "mkdir -p \"%s\"", directory);
+    snprintf(command, sizeof(command), "mkdir \"%s\" 2>nul", directory);
+#else
+    snprintf(command, sizeof(command), "mkdir -p \"%s\" 2>/dev/null", directory);
 #endif
-    command[sizeof(command) - 1] = '\0'; // Ensure null termination
+    command[sizeof(command) - 1] = '\0';
 
-    int status = system(command);
+    // Execute command - ignore return value as directory may already exist
+    // Let subsequent file operations handle any real failures
+    system(command);
 
-    if (status != 0)
-    {
-        // system() return value is complex. mkdir -p returns 0 if dir exists or created.
-        // On Windows, mkdir returns 0 on success.
-        // A non-zero status might indicate a real error (e.g., permission denied).
-        // We can't be certain without more checks, so we'll proceed and let fopen fail later if needed.
-        DEBUG_PRINT("system(\"%s\") returned status %d. Directory might not have been created if it didn't exist or error occurred.\n", command, status);
-    }
-    return 0; // Assume success or directory already exists/will be handled by fopen
+    return 0;
 }

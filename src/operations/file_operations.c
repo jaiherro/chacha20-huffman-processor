@@ -12,14 +12,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Debug printing support */
-#ifdef DEBUG
-#define DEBUG_PRINT(fmt, ...) printf("[FileOps] " fmt, ##__VA_ARGS__)
-#define PRINT_HEX(label, data, len) print_hex(label, data, len)
-#else
-#define DEBUG_PRINT(fmt, ...) ((void)0)
-#define PRINT_HEX(label, data, len) ((void)0)
-#endif
+/* Fixed number of iterations for key derivation */
+#define KEY_DERIVATION_ITERATIONS 100000
 
 int add_entry_to_file_list(const char *output_file, unsigned long original_size, unsigned long processed_size, int quiet)
 {
@@ -28,9 +22,8 @@ int add_entry_to_file_list(const char *output_file, unsigned long original_size,
 
     if (file_list_load(&file_list, DEFAULT_FILE_LIST) != 0)
     {
-        DEBUG_PRINT("Creating new file list or failed to load existing one from %s.\n", DEFAULT_FILE_LIST);
         file_list_free(&file_list); // Ensure clean state
-        file_list_init(&file_list); // Re-initialize
+        file_list_init(&file_list); // Re-initialise
     }
 
     if (file_list_add(&file_list, output_file, original_size, processed_size) != 0)
@@ -58,7 +51,7 @@ int add_entry_to_file_list(const char *output_file, unsigned long original_size,
 }
 
 unsigned long encrypt_file(const char *input_file, const char *output_file,
-                           const char *password, int iterations, int quiet, unsigned long *original_size_out)
+                           const char *password, int quiet, unsigned long *original_size_out)
 {
     FILE *in = NULL, *out = NULL;
     chacha20_ctx ctx;
@@ -75,7 +68,6 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
         print_section_header("File Encryption");
         printf("Input:  %s\n", input_file);
         printf("Output: %s\n", output_file);
-        printf("Using %d iterations for key derivation\n", iterations);
     }
 
     in = fopen(input_file, "rb");
@@ -126,7 +118,7 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
     }
     final_output_size += DEFAULT_SALT_SIZE;
 
-    if (derive_key_and_nonce(password, salt, DEFAULT_SALT_SIZE, iterations,
+    if (derive_key_and_nonce(password, salt, DEFAULT_SALT_SIZE, KEY_DERIVATION_ITERATIONS,
                              key, CHACHA20_KEY_SIZE, nonce, CHACHA20_NONCE_SIZE) != 0)
     {
         fprintf(stderr, "Error: Failed to derive key and nonce from password.\n");
@@ -134,13 +126,9 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
         goto cleanup_encrypt;
     }
 
-    DEBUG_PRINT("Using %d iterations for key derivation\n", iterations);
-    PRINT_HEX("Derived key", key, CHACHA20_KEY_SIZE);
-    PRINT_HEX("Derived nonce", nonce, CHACHA20_NONCE_SIZE);
-
     if (chacha20_init(&ctx, key, nonce, 1) != 0)
     {
-        fprintf(stderr, "Error: Failed to initialize ChaCha20 context.\n");
+        fprintf(stderr, "Error: Failed to initialise ChaCha20 context.\n");
         result_flag = -1;
         goto cleanup_encrypt;
     }
@@ -226,7 +214,7 @@ cleanup_encrypt:
 }
 
 unsigned long decrypt_file(const char *input_file, const char *output_file,
-                           const char *password, int iterations, int quiet, unsigned long *original_size_out)
+                           const char *password, int quiet, unsigned long *original_size_out)
 {
     FILE *in = NULL, *out = NULL;
     chacha20_ctx ctx;
@@ -243,7 +231,6 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
         print_section_header("File Decryption");
         printf("Input:  %s\n", input_file);
         printf("Output: %s\n", output_file);
-        printf("Using %d iterations for key derivation\n", iterations);
     }
 
     in = fopen(input_file, "rb");
@@ -292,22 +279,18 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
         result_flag = -2;
         goto cleanup_decrypt;
     }
-    PRINT_HEX("Read salt", salt, DEFAULT_SALT_SIZE);
 
-    if (derive_key_and_nonce(password, salt, DEFAULT_SALT_SIZE, iterations,
+    if (derive_key_and_nonce(password, salt, DEFAULT_SALT_SIZE, KEY_DERIVATION_ITERATIONS,
                              key, CHACHA20_KEY_SIZE, nonce, CHACHA20_NONCE_SIZE) != 0)
     {
         fprintf(stderr, "Error: Failed to derive key and nonce from password.\n");
         result_flag = -2;
         goto cleanup_decrypt;
     }
-    DEBUG_PRINT("Using %d iterations for key derivation\n", iterations);
-    PRINT_HEX("Derived key", key, CHACHA20_KEY_SIZE);
-    PRINT_HEX("Derived nonce", nonce, CHACHA20_NONCE_SIZE);
 
     if (chacha20_init(&ctx, key, nonce, 1) != 0)
     {
-        fprintf(stderr, "Error: Failed to initialize ChaCha20 context.\n");
+        fprintf(stderr, "Error: Failed to initialise ChaCha20 context.\n");
         result_flag = -2;
         goto cleanup_decrypt;
     }
@@ -696,7 +679,7 @@ cleanup_decompress:
 }
 
 unsigned long process_file(const char *input_file, const char *output_file,
-                           const char *password, int iterations, int quiet, unsigned long *original_size_out)
+                           const char *password, int quiet, unsigned long *original_size_out)
 {
     char temp_file[MAX_FILENAME];
     unsigned long compressed_size_val = 0;
@@ -727,7 +710,7 @@ unsigned long process_file(const char *input_file, const char *output_file,
 
     if (!quiet)
         printf("\n--- Encryption Step ---\n");
-    final_size_val = encrypt_file(temp_file, output_file, password, iterations, quiet, NULL);
+    final_size_val = encrypt_file(temp_file, output_file, password, quiet, NULL);
     if (final_size_val == 0 && compressed_size_val > 0)
     {
         fprintf(stderr, "Error: Encryption step failed for temporary file '%s'.\n", temp_file);
@@ -749,7 +732,7 @@ unsigned long process_file(const char *input_file, const char *output_file,
 }
 
 unsigned long extract_file(const char *input_file, const char *output_file,
-                           const char *password, int iterations, int quiet, unsigned long *original_size_out)
+                           const char *password, int quiet, unsigned long *original_size_out)
 {
     char temp_file[MAX_FILENAME];
     unsigned long decrypted_size_val = 0;
@@ -766,7 +749,7 @@ unsigned long extract_file(const char *input_file, const char *output_file,
 
     if (!quiet)
         printf("\n--- Decryption Step ---\n");
-    decrypted_size_val = decrypt_file(input_file, temp_file, password, iterations, quiet, &original_input_size_val);
+    decrypted_size_val = decrypt_file(input_file, temp_file, password, quiet, &original_input_size_val);
     if (original_size_out)
     {
         *original_size_out = original_input_size_val;
@@ -813,7 +796,6 @@ int handle_file_list(const char *command, const char *filename_pattern, int quie
     {
         if (!quiet)
         {
-            DEBUG_PRINT("Info: File list '%s' not found or is empty/corrupted. Proceeding with empty list.\n", DEFAULT_FILE_LIST);
             file_list_free(&file_list);
             file_list_init(&file_list);
         }

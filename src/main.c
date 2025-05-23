@@ -19,13 +19,6 @@
 #include "utils/password.h"
 #include "utils/filesystem.h"
 
-/* Debug mode can be enabled via makefile (make debug) */
-#ifdef DEBUG
-#define DEBUG_PRINT(fmt, ...) printf("[Main] " fmt, ##__VA_ARGS__)
-#else
-#define DEBUG_PRINT(fmt, ...) ((void)0)
-#endif
-
 /* Program modes */
 #define MODE_COMPRESS 1   /* Compress a file */
 #define MODE_DECOMPRESS 2 /* Decompress a file */
@@ -43,7 +36,6 @@ int main(int argc, char *argv[])
     int operation_mode = MODE_HELP;
     char *input_file_arg = NULL, *output_file_arg = NULL;
     char current_password[MAX_PASSWORD];
-    int key_iterations = DEFAULT_KEY_ITERATIONS;
     int quiet_operation = 0;
     char *batch_input_files[MAX_BATCH_FILES];
     int num_batch_input_files = 0;
@@ -155,25 +147,7 @@ int main(int argc, char *argv[])
     /* Parse optional arguments */
     for (int i = arg_parse_index; i < argc; i++)
     {
-        if (strcmp(argv[i], "-i") == 0)
-        {
-            if (++i < argc)
-            {
-                key_iterations = atoi(argv[i]);
-                if (key_iterations <= 0)
-                {
-                    fprintf(stderr, "Error: Invalid number of iterations '%s'. Must be positive.\n", argv[i]);
-                    return 1;
-                }
-            }
-            else
-            {
-                fprintf(stderr, "Error: Missing argument for -i option.\n");
-                print_usage(argv[0]);
-                return 1;
-            }
-        }
-        else if (strcmp(argv[i], "-q") == 0)
+        if (strcmp(argv[i], "-q") == 0)
         {
             quiet_operation = 1;
         }
@@ -259,7 +233,7 @@ int main(int argc, char *argv[])
             memset(current_password, 0, sizeof(current_password));
             return 1;
         }
-        processed_op_size = encrypt_file(input_file_arg, output_file_arg, current_password, key_iterations, quiet_operation, &original_op_size);
+        processed_op_size = encrypt_file(input_file_arg, output_file_arg, current_password, quiet_operation, &original_op_size);
         memset(current_password, 0, sizeof(current_password));
         if (processed_op_size > 0)
         {
@@ -283,7 +257,7 @@ int main(int argc, char *argv[])
             memset(current_password, 0, sizeof(current_password));
             return 1;
         }
-        processed_op_size = decrypt_file(input_file_arg, output_file_arg, current_password, key_iterations, quiet_operation, &original_op_size);
+        processed_op_size = decrypt_file(input_file_arg, output_file_arg, current_password, quiet_operation, &original_op_size);
         memset(current_password, 0, sizeof(current_password));
         if (processed_op_size == 0 && original_op_size > DEFAULT_SALT_SIZE)
         {
@@ -306,7 +280,7 @@ int main(int argc, char *argv[])
             memset(current_password, 0, sizeof(current_password));
             return 1;
         }
-        processed_op_size = process_file(input_file_arg, output_file_arg, current_password, key_iterations, quiet_operation, &original_op_size);
+        processed_op_size = process_file(input_file_arg, output_file_arg, current_password, quiet_operation, &original_op_size);
         memset(current_password, 0, sizeof(current_password));
         if (processed_op_size > 0)
         {
@@ -330,7 +304,7 @@ int main(int argc, char *argv[])
             memset(current_password, 0, sizeof(current_password));
             return 1;
         }
-        processed_op_size = extract_file(input_file_arg, output_file_arg, current_password, key_iterations, quiet_operation, &original_op_size);
+        processed_op_size = extract_file(input_file_arg, output_file_arg, current_password, quiet_operation, &original_op_size);
         memset(current_password, 0, sizeof(current_password));
         if (processed_op_size == 0 && original_op_size > DEFAULT_SALT_SIZE + sizeof(unsigned long))
         {
@@ -355,7 +329,7 @@ int main(int argc, char *argv[])
     case MODE_BATCH:
         if (get_password(current_password, sizeof(current_password), 1) != 0)
             return 1;
-        final_result = batch_process(batch_input_files, num_batch_input_files, batch_output_dir, current_password, key_iterations, quiet_operation);
+        final_result = batch_process(batch_input_files, num_batch_input_files, batch_output_dir, current_password, quiet_operation);
         memset(current_password, 0, sizeof(current_password));
         break;
 

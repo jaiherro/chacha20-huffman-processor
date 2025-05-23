@@ -6,32 +6,6 @@
 #include <stdio.h>
 #include <string.h>
 
-/* Debug printing support */
-#ifdef DEBUG
-#define DEBUG_PRINT(fmt, ...) printf("[UI] " fmt, ##__VA_ARGS__)
-#else
-#define DEBUG_PRINT(fmt, ...) ((void)0)
-#endif
-
-#ifdef DEBUG
-void print_hex(const char *label, const unsigned char *data, unsigned long len)
-{
-    unsigned long i;
-    printf("[UI] %s: ", label);
-    // Limit printing for very long data to avoid excessive output
-    unsigned long print_len = (len > 64) ? 64 : len;
-    for (i = 0; i < print_len; i++)
-    {
-        printf("%02x", data[i]);
-        if ((i + 1) % 4 == 0 && i + 1 < print_len)
-            printf(" ");
-    }
-    if (len > 64)
-        printf("... (%lu bytes total)", len);
-    printf("\n");
-}
-#endif
-
 void print_usage(const char *program_name)
 {
     printf("Secure File Processor\n\n");
@@ -52,7 +26,6 @@ void print_usage(const char *program_name)
     printf("  -h, --help             Show this help information\n\n");
 
     printf("OPTIONS:\n");
-    printf("  -i <num>                 Number of iterations for key derivation (default: 10000)\n");
     printf("  -q                       Quiet mode (minimal output, suppresses progress bars and summaries)\n\n");
 
     printf("EXAMPLES:\n");

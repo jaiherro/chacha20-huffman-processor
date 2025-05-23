@@ -13,15 +13,6 @@
 #define PROGRESS_WIDTH 30
 
 /**
- * Print binary data in hexadecimal format (debug mode only)
- */
-#ifdef DEBUG
-void print_hex(const char *label, const unsigned char *data, unsigned long len);
-#else
-#define print_hex(label, data, len) ((void)0)
-#endif
-
-/**
  * Print program usage instructions
  */
 void print_usage(const char *program_name);

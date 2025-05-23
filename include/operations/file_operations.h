@@ -9,7 +9,6 @@
 #define FILE_OPERATIONS_H
 
 /* Constants */
-#define DEFAULT_KEY_ITERATIONS 10000      /* Default iterations for key derivation */
 #define DEFAULT_SALT_SIZE 16              /* Default salt size in bytes */
 #define DEFAULT_FILE_LIST "file_list.dat" /* Default file list filename */
 #define MAX_FILENAME 256                  /* Maximum filename length */
@@ -33,13 +32,12 @@ int add_entry_to_file_list(const char *output_file, unsigned long original_size,
  * @param input_file Path to the input file
  * @param output_file Path to the output file
  * @param password Password for encryption
- * @param iterations Number of iterations for key derivation
  * @param quiet If non-zero, suppress output
  * @param original_size_out Pointer to store the original file size (can be NULL)
  * @return Final size of encrypted file on success, 0 on failure
  */
 unsigned long encrypt_file(const char *input_file, const char *output_file,
-                           const char *password, int iterations, int quiet,
+                           const char *password, int quiet,
                            unsigned long *original_size_out);
 
 /**
@@ -48,13 +46,12 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
  * @param input_file Path to the input file
  * @param output_file Path to the output file
  * @param password Password for decryption
- * @param iterations Number of iterations for key derivation
  * @param quiet If non-zero, suppress output
  * @param original_size_out Pointer to store the original file size (can be NULL)
  * @return Final size of decrypted file on success, 0 on failure
  */
 unsigned long decrypt_file(const char *input_file, const char *output_file,
-                           const char *password, int iterations, int quiet,
+                           const char *password, int quiet,
                            unsigned long *original_size_out);
 
 /**
@@ -87,13 +84,12 @@ unsigned long decompress_file(const char *input_file, const char *output_file,
  * @param input_file Path to the input file
  * @param output_file Path to the output file
  * @param password Password for encryption
- * @param iterations Number of iterations for key derivation
  * @param quiet If non-zero, suppress output
  * @param original_size_out Pointer to store the original file size (can be NULL)
  * @return Final size of processed file on success, 0 on failure
  */
 unsigned long process_file(const char *input_file, const char *output_file,
-                           const char *password, int iterations, int quiet,
+                           const char *password, int quiet,
                            unsigned long *original_size_out);
 
 /**
@@ -102,13 +98,12 @@ unsigned long process_file(const char *input_file, const char *output_file,
  * @param input_file Path to the input file
  * @param output_file Path to the output file
  * @param password Password for decryption
- * @param iterations Number of iterations for key derivation
  * @param quiet If non-zero, suppress output
  * @param original_size_out Pointer to store the original file size (can be NULL)
  * @return Final size of extracted file on success, 0 on failure
  */
 unsigned long extract_file(const char *input_file, const char *output_file,
-                           const char *password, int iterations, int quiet,
+                           const char *password, int quiet,
                            unsigned long *original_size_out);
 
 /**

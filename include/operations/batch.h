@@ -18,11 +18,10 @@
  * @param num_files Number of files to process
  * @param output_dir Output directory for processed files
  * @param password Password for encryption
- * @param iterations Number of iterations for key derivation
  * @param quiet If non-zero, suppress output
  * @return 0 on success (all files processed), -1 if any files failed
  */
 int batch_process(char *filenames[], int num_files, const char *output_dir,
-                  const char *password, int iterations, int quiet);
+                  const char *password, int quiet);
 
 #endif /* BATCH_H */
