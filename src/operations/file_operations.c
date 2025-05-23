@@ -16,6 +16,8 @@
 #define KEY_DERIVATION_ITERATIONS 100000
 #define MIN_ENCRYPTED_FILE_SIZE (DEFAULT_SALT_SIZE + 1)
 #define MIN_COMPRESSED_FILE_SIZE (sizeof(unsigned long) + 1)
+#define ENCRYPTION_MAGIC "SFPv1"
+#define ENCRYPTION_MAGIC_LEN 5
 
 /* Helper function prototypes */
 static int get_file_size(FILE *file, unsigned long *size);
@@ -180,6 +182,25 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
         return 0;
     }
 
+    // Write encrypted magic header to detect wrong password on decryption
+    {
+        unsigned char magic_plain[ENCRYPTION_MAGIC_LEN] = ENCRYPTION_MAGIC;
+        unsigned char magic_cipher[ENCRYPTION_MAGIC_LEN];
+        if (chacha20_process(&ctx, magic_plain, magic_cipher, ENCRYPTION_MAGIC_LEN) != 0)
+        {
+            fprintf(stderr, "Error: Failed to encrypt magic header.\n");
+            cleanup_crypto_operation(in, out, NULL, NULL, &ctx, output_file, 1);
+            return 0;
+        }
+        if (fwrite(magic_cipher, 1, ENCRYPTION_MAGIC_LEN, out) != ENCRYPTION_MAGIC_LEN)
+        {
+            fprintf(stderr, "Error: Failed to write magic header to output file '%s'.\n", output_file);
+            cleanup_crypto_operation(in, out, NULL, NULL, &ctx, output_file, 1);
+            return 0;
+        }
+        file_size += ENCRYPTION_MAGIC_LEN;
+    }
+
     // Allocate buffers
     buffer = malloc(BUFFER_SIZE);
     output_buffer = malloc(BUFFER_SIZE);
@@ -334,7 +355,39 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
         return 0;
     }
 
+    // Verify encrypted magic header to detect wrong password
     data_to_decrypt_size = total_input_size - DEFAULT_SALT_SIZE;
+    if (data_to_decrypt_size < ENCRYPTION_MAGIC_LEN)
+    {
+        fprintf(stderr, "Error: Encrypted file too small to contain magic header.\n");
+        cleanup_crypto_operation(in, out, buffer, output_buffer, &ctx, output_file, 1);
+        return 0;
+    }
+    {
+        unsigned char magic_cipher[ENCRYPTION_MAGIC_LEN];
+        unsigned char magic_plain[ENCRYPTION_MAGIC_LEN];
+        if (fread(magic_cipher, 1, ENCRYPTION_MAGIC_LEN, in) != ENCRYPTION_MAGIC_LEN)
+        {
+            fprintf(stderr, "Error: Failed to read magic header from input file '%s'.\n", input_file);
+            cleanup_crypto_operation(in, out, buffer, output_buffer, &ctx, output_file, 1);
+            return 0;
+        }
+        if (chacha20_process(&ctx, magic_cipher, magic_plain, ENCRYPTION_MAGIC_LEN) != 0)
+        {
+            fprintf(stderr, "Error: Failed to decrypt magic header.\n");
+            cleanup_crypto_operation(in, out, buffer, output_buffer, &ctx, output_file, 1);
+            return 0;
+        }
+        if (memcmp(magic_plain, ENCRYPTION_MAGIC, ENCRYPTION_MAGIC_LEN) != 0)
+        {
+            if (!quiet)
+                fprintf(stderr, "Error: Incorrect password or corrupted file.\n");
+            cleanup_crypto_operation(in, out, buffer, output_buffer, &ctx, output_file, 1);
+            return 0;
+        }
+        // Reduce data to decrypt by magic header length
+        data_to_decrypt_size -= ENCRYPTION_MAGIC_LEN;
+    }
 
     if (!quiet)
     {
