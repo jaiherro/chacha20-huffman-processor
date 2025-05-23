@@ -1,94 +1,137 @@
-# Secure File Processor - ChaCha20 Encryption and Huffman Compression
+# Secure File Processor
 
-This C implementation provides a secure and efficient file processing solution that combines ChaCha20 encryption (RFC 8439) with Huffman compression. The program satisfies the project requirements, implementing both encryption and compression while using only the allowed libraries: stdio.h, stdlib.h, string.h, and math.h.
+A C implementation combining ChaCha20 encryption (RFC 8439) with Huffman compression for secure file processing.
 
 ## Features
 
-- **ChaCha20 Encryption and Decryption**: Implements the ChaCha20 stream cipher according to RFC 8439.
-- **Huffman Compression and Decompression**: Efficiently compresses data by replacing sequences of identical bytes.
-- **Secure Password-Based Key Derivation**: Uses a salt and multiple iterations to derive keys securely from passwords.
-- **File Management**: Maintains a list of processed files using a linked list data structure.
-- **Multiple Operation Modes**: Supports encryption, decryption, compression, decompression and combinations.
-- **Batch Processing**: Process multiple files at once in quiet mode.
-- **Comprehensive Testing**: Includes test vectors from RFC 8439 to verify correctness.
-- **Debug Mode**: Optional verbose debugging information at compile-time.
+- **ChaCha20 Encryption**: RFC 8439 compliant stream cipher implementation
+- **Huffman Compression**: Lossless data compression using frequency-based encoding
+- **Key Derivation**: Password-based key generation with salt and iterations  
+- **File Tracking**: Linked list-based processing history
+- **Batch Processing**: Multiple file operations with single password entry
+- **Comprehensive Testing**: Includes RFC 8439 test vectors
 
-## Compilation
-
-To compile the program, use the provided makefile:
+## Build
 
 ```bash
-# Standard build
-make
-
-# Debug build with verbose output
-make debug
-
-# Run tests
-make test
-
-# Clean build files
-make clean
+make              # Build main executable
+make test         # Build and run tests
+make clean        # Clean build artifacts
 ```
 
 ## Usage
 
-The program supports various operation modes:
+### Basic Operations
+```bash
+# Encrypt file
+./secure_compress -e input.txt output.enc
 
+# Decrypt file  
+./secure_compress -d input.enc output.txt
+
+# Compress file
+./secure_compress -c input.txt output.huf
+
+# Decompress file
+./secure_compress -x input.huf output.txt
 ```
-# Run a demonstration
-./secure_processor
 
-# Encrypt a file (will prompt for password)
-./secure_processor -e infile outfile
+### Combined Operations
+```bash
+# Compress then encrypt
+./secure_compress -p document.pdf document.secure
 
-# Decrypt a file (will prompt for password)
-./secure_processor -d infile outfile
+# Decrypt then decompress
+./secure_compress -u document.secure document.pdf
+```
 
-# Compress a file
-./secure_processor -c infile outfile
-
-# Decompress a file
-./secure_processor -x infile outfile
-
-# Process a file (encrypt+compress)
-./secure_processor -p infile outfile
-
-# Extract a file (decompress+decrypt)
-./secure_processor -u infile outfile
-
-# Run built-in tests
-./secure_processor -t
-
+### File Management
+```bash
 # List processed files
-./secure_processor -l
+./secure_compress -l
 
-# Find a file in the list
-./secure_processor -f filename
-
-# Batch process multiple files
-./secure_processor -b output_dir file1 file2 file3
+# Find files by pattern
+./secure_compress -f report
 ```
 
-Additional options:
-- `-i iterations` - Specify the number of iterations for key derivation (default: 10000)
-- `-q` - Quiet mode (minimal output)
+### Batch Processing
+```bash
+# Process multiple files
+./secure_compress -b output_dir file1.txt file2.pdf file3.jpg
+
+# Quiet mode (minimal output)
+./secure_compress -p input.txt output.sec -q
+```
+
+## Command Reference
+
+| Mode | Arguments | Description |
+|------|-----------|-------------|
+| `-c` | `<input> <output>` | Compress file |
+| `-x` | `<input> <output>` | Decompress file |
+| `-e` | `<input> <output>` | Encrypt file |
+| `-d` | `<input> <output>` | Decrypt file |
+| `-p` | `<input> <output>` | Process (compress + encrypt) |
+| `-u` | `<input> <output>` | Extract (decrypt + decompress) |
+| `-l` | | List processed files |
+| `-f` | `<pattern>` | Find files by pattern |
+| `-b` | `<outdir> <files...>` | Batch process files |
+| `-q` | | Quiet mode |
+| `-h` | | Show help |
+
+## Implementation Details
+
+### Encryption
+- **Algorithm**: ChaCha20 with 256-bit keys and 96-bit nonces
+- **Key Derivation**: Password + salt with 100,000 iterations
+- **Salt**: 16-byte random salt per file
+
+### Compression  
+- **Algorithm**: Huffman coding with frequency analysis
+- **Format**: Original size header + tree structure + compressed data
+- **Efficiency**: Optimised for repetitive data patterns
+
+### File Format
+- **Encrypted**: `[16-byte salt][encrypted data]`
+- **Compressed**: `[8-byte size][tree structure][compressed data]`
+- **Processed**: Compressed format encrypted with salt prefix
 
 ## Project Structure
 
 ```
-├── include/               # Header files
-│   ├── compression/       # Compression algorithms
-│   ├── encryption/        # Encryption algorithms
-│   └── utils/             # Utility functions
-├── src/                   # Source files
-│   ├── compression/       # Compression implementations
-│   ├── encryption/        # Encryption implementations
-│   ├── utils/             # Utility implementations
-│   └── main.c             # Main program entry point
-├── test/                  # Test files
-│   ├── test_compression.c # Huffman tests
-│   └── test_encryption.c  # ChaCha20 tests
-├── makefile               # Build configuration
-└── README.md              # This file
+├── include/           # Header files
+│   ├── compression/   # Huffman compression
+│   ├── encryption/    # ChaCha20 and key derivation  
+│   ├── operations/    # File and batch operations
+│   └── utils/         # Utilities and UI
+├── src/              # Source implementations
+├── test/             # Test suites
+└── makefile          # Build configuration
 ```
+
+## Dependencies
+
+- Standard C libraries only: `stdio.h`, `stdlib.h`, `string.h`, `math.h`
+- C99 standard
+- POSIX-compatible filesystem operations
+
+## Testing
+
+The test suite includes:
+- RFC 8439 ChaCha20 test vectors
+- Huffman compression/decompression validation
+- Key derivation consistency checks
+- File list operations testing
+
+Run tests with `make test` to verify implementation correctness.
+
+## Security Notes
+
+- Passwords are cleared from memory after use
+- Salt generation uses pseudo-random number generation
+- Key derivation uses 100,000 iterations for resistance against brute force
+- ChaCha20 implementation follows RFC 8439 specifications
+
+## License
+
+This project is provided as-is for educational and development purposes.
