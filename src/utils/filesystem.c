@@ -26,7 +26,7 @@ int ensure_directory_exists(const char *directory)
 
     if (directory == NULL || directory[0] == '\0')
     {
-        fprintf(stderr, "Error: Invalid directory path provided.\n");
+        fprintf(stderr, "ERROR: Invalid directory path provided.\n");
         return -1;
     }
 

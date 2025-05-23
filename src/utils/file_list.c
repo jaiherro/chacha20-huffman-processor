@@ -249,7 +249,7 @@ void file_list_print(file_list_t *list)
 {
     if (!list)
     {
-        printf("ERROR: File list is null\n");
+        fprintf(stderr, "ERROR: File list is null\n");
         return;
     }
 

@@ -128,13 +128,13 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
     in = fopen(input_file, "rb");
     if (!in)
     {
-        fprintf(stderr, "Error: Cannot open input file '%s' for reading.\n", input_file);
+        fprintf(stderr, "ERROR: Cannot open input file '%s' for reading.\n", input_file);
         return 0;
     }
 
     if (get_file_size(in, &original_size) != 0)
     {
-        fprintf(stderr, "Error: Could not determine size of input file '%s'.\n", input_file);
+        fprintf(stderr, "ERROR: Could not determine size of input file '%s'.\n", input_file);
         fclose(in);
         return 0;
     }
@@ -145,7 +145,7 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
     out = fopen(output_file, "wb");
     if (!out)
     {
-        fprintf(stderr, "Error: Cannot open output file '%s' for writing.\n", output_file);
+        fprintf(stderr, "ERROR: Cannot open output file '%s' for writing.\n", output_file);
         fclose(in);
         return 0;
     }
@@ -153,14 +153,14 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
     // Generate and write salt
     if (generate_salt(salt, DEFAULT_SALT_SIZE) != 0)
     {
-        fprintf(stderr, "Error: Failed to generate salt.\n");
+        fprintf(stderr, "ERROR: Failed to generate salt.\n");
         cleanup_crypto_operation(in, out, NULL, NULL, NULL, output_file, 1);
         return 0;
     }
 
     if (fwrite(salt, 1, DEFAULT_SALT_SIZE, out) != DEFAULT_SALT_SIZE)
     {
-        fprintf(stderr, "Error: Failed to write salt to output file '%s'.\n", output_file);
+        fprintf(stderr, "ERROR: Failed to write salt to output file '%s'.\n", output_file);
         cleanup_crypto_operation(in, out, NULL, NULL, NULL, output_file, 1);
         return 0;
     }
@@ -170,7 +170,7 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
     if (derive_key_and_nonce(password, salt, DEFAULT_SALT_SIZE, KEY_DERIVATION_ITERATIONS,
                              key, CHACHA20_KEY_SIZE, nonce, CHACHA20_NONCE_SIZE) != 0)
     {
-        fprintf(stderr, "Error: Failed to derive key and nonce from password.\n");
+        fprintf(stderr, "ERROR: Failed to derive key and nonce from password.\n");
         cleanup_crypto_operation(in, out, NULL, NULL, NULL, output_file, 1);
         return 0;
     }
@@ -178,7 +178,7 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
     // Initialise ChaCha20
     if (chacha20_init(&ctx, key, nonce, 1) != 0)
     {
-        fprintf(stderr, "Error: Failed to initialise ChaCha20 context.\n");
+        fprintf(stderr, "ERROR: Failed to initialise ChaCha20 context.\n");
         cleanup_crypto_operation(in, out, NULL, NULL, NULL, output_file, 1);
         return 0;
     }
@@ -189,13 +189,13 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
         unsigned char magic_cipher[ENCRYPTION_MAGIC_LEN];
         if (chacha20_process(&ctx, magic_plain, magic_cipher, ENCRYPTION_MAGIC_LEN) != 0)
         {
-            fprintf(stderr, "Error: Failed to encrypt magic header.\n");
+            fprintf(stderr, "ERROR: Failed to encrypt magic header.\n");
             cleanup_crypto_operation(in, out, NULL, NULL, &ctx, output_file, 1);
             return 0;
         }
         if (fwrite(magic_cipher, 1, ENCRYPTION_MAGIC_LEN, out) != ENCRYPTION_MAGIC_LEN)
         {
-            fprintf(stderr, "Error: Failed to write magic header to output file '%s'.\n", output_file);
+            fprintf(stderr, "ERROR: Failed to write magic header to output file '%s'.\n", output_file);
             cleanup_crypto_operation(in, out, NULL, NULL, &ctx, output_file, 1);
             return 0;
         }
@@ -207,7 +207,7 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
     output_buffer = malloc(BUFFER_SIZE);
     if (!buffer || !output_buffer)
     {
-        fprintf(stderr, "Error: Memory allocation failed for buffers.\n");
+        fprintf(stderr, "ERROR: Memory allocation failed for buffers.\n");
         cleanup_crypto_operation(in, out, buffer, output_buffer, &ctx, output_file, 1);
         return 0;
     }
@@ -223,14 +223,14 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
     {
         if (chacha20_process(&ctx, buffer, output_buffer, read_size) != 0)
         {
-            fprintf(stderr, "\nError: ChaCha20 encryption failed during processing.\n");
+            fprintf(stderr, "\nERROR: ChaCha20 encryption failed during processing.\n");
             cleanup_crypto_operation(in, out, buffer, output_buffer, &ctx, output_file, 1);
             return 0;
         }
 
         if (fwrite(output_buffer, 1, read_size, out) != read_size)
         {
-            fprintf(stderr, "\nError: Failed to write encrypted data to output file '%s'.\n", output_file);
+            fprintf(stderr, "\nERROR: Failed to write encrypted data to output file '%s'.\n", output_file);
             cleanup_crypto_operation(in, out, buffer, output_buffer, &ctx, output_file, 1);
             return 0;
         }
@@ -244,7 +244,7 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
 
     if (ferror(in))
     {
-        fprintf(stderr, "\nError: Failed reading from input file '%s'.\n", input_file);
+        fprintf(stderr, "\nERROR: Failed reading from input file '%s'.\n", input_file);
         cleanup_crypto_operation(in, out, buffer, output_buffer, &ctx, output_file, 1);
         return 0;
     }
@@ -292,13 +292,13 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
     in = fopen(input_file, "rb");
     if (!in)
     {
-        fprintf(stderr, "Error: Cannot open input file '%s' for reading.\n", input_file);
+        fprintf(stderr, "ERROR: Cannot open input file '%s' for reading.\n", input_file);
         return 0;
     }
 
     if (get_file_size(in, &total_input_size) != 0)
     {
-        fprintf(stderr, "Error: Could not determine size of input file '%s'.\n", input_file);
+        fprintf(stderr, "ERROR: Could not determine size of input file '%s'.\n", input_file);
         fclose(in);
         return 0;
     }
@@ -308,7 +308,7 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
 
     if (total_input_size < MIN_ENCRYPTED_FILE_SIZE)
     {
-        fprintf(stderr, "Error: Input file '%s' is too small (%lu bytes) to be valid encrypted data.\n",
+        fprintf(stderr, "ERROR: Input file '%s' is too small (%lu bytes) to be valid encrypted data.\n",
                 input_file, total_input_size);
         fclose(in);
         return 0;
@@ -317,7 +317,7 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
     out = fopen(output_file, "wb");
     if (!out)
     {
-        fprintf(stderr, "Error: Cannot open output file '%s' for writing.\n", output_file);
+        fprintf(stderr, "ERROR: Cannot open output file '%s' for writing.\n", output_file);
         fclose(in);
         return 0;
     }
@@ -325,7 +325,7 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
     // Read salt
     if (fread(salt, 1, DEFAULT_SALT_SIZE, in) != DEFAULT_SALT_SIZE)
     {
-        fprintf(stderr, "Error: Failed to read salt from input file '%s'.\n", input_file);
+        fprintf(stderr, "ERROR: Failed to read salt from input file '%s'.\n", input_file);
         cleanup_crypto_operation(in, out, NULL, NULL, NULL, output_file, 1);
         return 0;
     }
@@ -334,7 +334,7 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
     if (derive_key_and_nonce(password, salt, DEFAULT_SALT_SIZE, KEY_DERIVATION_ITERATIONS,
                              key, CHACHA20_KEY_SIZE, nonce, CHACHA20_NONCE_SIZE) != 0)
     {
-        fprintf(stderr, "Error: Failed to derive key and nonce from password.\n");
+        fprintf(stderr, "ERROR: Failed to derive key and nonce from password.\n");
         cleanup_crypto_operation(in, out, NULL, NULL, NULL, output_file, 1);
         return 0;
     }
@@ -342,7 +342,7 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
     // Initialise ChaCha20
     if (chacha20_init(&ctx, key, nonce, 1) != 0)
     {
-        fprintf(stderr, "Error: Failed to initialise ChaCha20 context.\n");
+        fprintf(stderr, "ERROR: Failed to initialise ChaCha20 context.\n");
         cleanup_crypto_operation(in, out, NULL, NULL, NULL, output_file, 1);
         return 0;
     }
@@ -352,7 +352,7 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
     output_buffer = malloc(BUFFER_SIZE);
     if (!buffer || !output_buffer)
     {
-        fprintf(stderr, "Error: Memory allocation failed for buffers.\n");
+        fprintf(stderr, "ERROR: Memory allocation failed for buffers.\n");
         cleanup_crypto_operation(in, out, buffer, output_buffer, &ctx, output_file, 1);
         return 0;
     }
@@ -361,7 +361,7 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
     data_to_decrypt_size = total_input_size - DEFAULT_SALT_SIZE;
     if (data_to_decrypt_size < ENCRYPTION_MAGIC_LEN)
     {
-        fprintf(stderr, "Error: Encrypted file too small to contain magic header.\n");
+        fprintf(stderr, "ERROR: Encrypted file too small to contain magic header.\n");
         cleanup_crypto_operation(in, out, buffer, output_buffer, &ctx, output_file, 1);
         return 0;
     }
@@ -370,20 +370,20 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
         unsigned char magic_plain[ENCRYPTION_MAGIC_LEN];
         if (fread(magic_cipher, 1, ENCRYPTION_MAGIC_LEN, in) != ENCRYPTION_MAGIC_LEN)
         {
-            fprintf(stderr, "Error: Failed to read magic header from input file '%s'.\n", input_file);
+            fprintf(stderr, "ERROR: Failed to read magic header from input file '%s'.\n", input_file);
             cleanup_crypto_operation(in, out, buffer, output_buffer, &ctx, output_file, 1);
             return 0;
         }
         if (chacha20_process(&ctx, magic_cipher, magic_plain, ENCRYPTION_MAGIC_LEN) != 0)
         {
-            fprintf(stderr, "Error: Failed to decrypt magic header.\n");
+            fprintf(stderr, "ERROR: Failed to decrypt magic header.\n");
             cleanup_crypto_operation(in, out, buffer, output_buffer, &ctx, output_file, 1);
             return 0;
         }
         if (memcmp(magic_plain, ENCRYPTION_MAGIC, ENCRYPTION_MAGIC_LEN) != 0)
         {
             if (!quiet)
-                fprintf(stderr, "Error: Incorrect password or corrupted file.\n");
+                fprintf(stderr, "ERROR: Incorrect password or corrupted file.\n");
             cleanup_crypto_operation(in, out, buffer, output_buffer, &ctx, output_file, 1);
             return 0;
         }
@@ -407,11 +407,11 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
         {
             if (feof(in) && file_size < data_to_decrypt_size)
             {
-                fprintf(stderr, "\nError: Unexpected end of file while reading encrypted data.\n");
+                fprintf(stderr, "\nERROR: Unexpected end of file while reading encrypted data.\n");
             }
             else if (ferror(in))
             {
-                fprintf(stderr, "\nError: File read error during decryption.\n");
+                fprintf(stderr, "\nERROR: File read error during decryption.\n");
             }
             cleanup_crypto_operation(in, out, buffer, output_buffer, &ctx, output_file, 1);
             return 0;
@@ -419,14 +419,14 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
 
         if (chacha20_process(&ctx, buffer, output_buffer, read_size) != 0)
         {
-            fprintf(stderr, "\nError: ChaCha20 decryption failed during processing.\n");
+            fprintf(stderr, "\nERROR: ChaCha20 decryption failed during processing.\n");
             cleanup_crypto_operation(in, out, buffer, output_buffer, &ctx, output_file, 1);
             return 0;
         }
 
         if (fwrite(output_buffer, 1, read_size, out) != read_size)
         {
-            fprintf(stderr, "\nError: Failed to write decrypted data to output file '%s'.\n", output_file);
+            fprintf(stderr, "\nERROR: Failed to write decrypted data to output file '%s'.\n", output_file);
             cleanup_crypto_operation(in, out, buffer, output_buffer, &ctx, output_file, 1);
             return 0;
         }
@@ -476,13 +476,13 @@ unsigned long compress_file(const char *input_file, const char *output_file, int
     in = fopen(input_file, "rb");
     if (!in)
     {
-        fprintf(stderr, "Error: Cannot open input file '%s' for reading.\n", input_file);
+        fprintf(stderr, "ERROR: Cannot open input file '%s' for reading.\n", input_file);
         return 0;
     }
 
     if (get_file_size(in, &total_input_size) != 0)
     {
-        fprintf(stderr, "Error: Could not determine size of input file '%s'.\n", input_file);
+        fprintf(stderr, "ERROR: Could not determine size of input file '%s'.\n", input_file);
         fclose(in);
         return 0;
     }
@@ -493,7 +493,7 @@ unsigned long compress_file(const char *input_file, const char *output_file, int
     out = fopen(output_file, "wb");
     if (!out)
     {
-        fprintf(stderr, "Error: Cannot open output file '%s' for writing.\n", output_file);
+        fprintf(stderr, "ERROR: Cannot open output file '%s' for writing.\n", output_file);
         fclose(in);
         return 0;
     }
@@ -501,7 +501,7 @@ unsigned long compress_file(const char *input_file, const char *output_file, int
     // Write the original file size to the output file header
     if (fwrite(&total_input_size, sizeof(unsigned long), 1, out) != 1)
     {
-        fprintf(stderr, "Error: Failed to write file size header to output file '%s'.\n", output_file);
+        fprintf(stderr, "ERROR: Failed to write file size header to output file '%s'.\n", output_file);
         fclose(in);
         fclose(out);
         remove(output_file);
@@ -514,7 +514,7 @@ unsigned long compress_file(const char *input_file, const char *output_file, int
         buffer = malloc(total_input_size);
         if (!buffer)
         {
-            fprintf(stderr, "Error: Memory allocation failed for input buffer (%lu bytes).\n", total_input_size);
+            fprintf(stderr, "ERROR: Memory allocation failed for input buffer (%lu bytes).\n", total_input_size);
             fclose(in);
             fclose(out);
             remove(output_file);
@@ -524,7 +524,7 @@ unsigned long compress_file(const char *input_file, const char *output_file, int
         read_size = fread(buffer, 1, total_input_size, in);
         if (read_size != total_input_size || ferror(in))
         {
-            fprintf(stderr, "Error: Failed to read entire input file '%s'.\n", input_file);
+            fprintf(stderr, "ERROR: Failed to read entire input file '%s'.\n", input_file);
             free(buffer);
             fclose(in);
             fclose(out);
@@ -542,7 +542,7 @@ unsigned long compress_file(const char *input_file, const char *output_file, int
     output_buffer = malloc(output_max_len > 0 ? output_max_len : 1);
     if (!output_buffer)
     {
-        fprintf(stderr, "Error: Memory allocation failed for output buffer.\n");
+        fprintf(stderr, "ERROR: Memory allocation failed for output buffer.\n");
         if (buffer)
             free(buffer);
         fclose(in);
@@ -559,7 +559,7 @@ unsigned long compress_file(const char *input_file, const char *output_file, int
 
     if (huffman_compress(buffer, read_size, output_buffer, output_max_len, &output_size) != 0)
     {
-        fprintf(stderr, "\nError: Huffman compression failed.\n");
+        fprintf(stderr, "\nERROR: Huffman compression failed.\n");
         if (buffer)
             free(buffer);
         free(output_buffer);
@@ -573,7 +573,7 @@ unsigned long compress_file(const char *input_file, const char *output_file, int
     {
         if (fwrite(output_buffer, 1, output_size, out) != output_size)
         {
-            fprintf(stderr, "\nError: Failed to write compressed data to output file '%s'.\n", output_file);
+            fprintf(stderr, "\nERROR: Failed to write compressed data to output file '%s'.\n", output_file);
             if (buffer)
                 free(buffer);
             free(output_buffer);
@@ -618,13 +618,13 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
     in = fopen(input_file, "rb");
     if (!in)
     {
-        fprintf(stderr, "Error: Cannot open input file '%s' for reading.\n", input_file);
+        fprintf(stderr, "ERROR: Cannot open input file '%s' for reading.\n", input_file);
         return 0;
     }
 
     if (get_file_size(in, &input_actual_file_size) != 0)
     {
-        fprintf(stderr, "Error: Could not determine size of input file '%s'.\n", input_file);
+        fprintf(stderr, "ERROR: Could not determine size of input file '%s'.\n", input_file);
         fclose(in);
         return 0;
     }
@@ -634,7 +634,7 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
 
     if (input_actual_file_size < MIN_COMPRESSED_FILE_SIZE)
     {
-        fprintf(stderr, "Error: Input file '%s' is too small (%lu bytes) to contain header.\n",
+        fprintf(stderr, "ERROR: Input file '%s' is too small (%lu bytes) to contain header.\n",
                 input_file, input_actual_file_size);
         fclose(in);
         return 0;
@@ -642,7 +642,7 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
 
     if (fread(&expected_original_size, sizeof(unsigned long), 1, in) != 1)
     {
-        fprintf(stderr, "Error: Failed to read original file size header from input file '%s'.\n", input_file);
+        fprintf(stderr, "ERROR: Failed to read original file size header from input file '%s'.\n", input_file);
         fclose(in);
         return 0;
     }
@@ -650,7 +650,7 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
     out = fopen(output_file, "wb");
     if (!out)
     {
-        fprintf(stderr, "Error: Cannot open output file '%s' for writing.\n", output_file);
+        fprintf(stderr, "ERROR: Cannot open output file '%s' for writing.\n", output_file);
         fclose(in);
         return 0;
     }
@@ -662,7 +662,7 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
         buffer = malloc(compressed_data_size);
         if (!buffer)
         {
-            fprintf(stderr, "Error: Memory allocation failed for compressed data buffer (%lu bytes).\n", compressed_data_size);
+            fprintf(stderr, "ERROR: Memory allocation failed for compressed data buffer (%lu bytes).\n", compressed_data_size);
             fclose(in);
             fclose(out);
             remove(output_file);
@@ -671,7 +671,7 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
 
         if (fread(buffer, 1, compressed_data_size, in) != compressed_data_size || ferror(in))
         {
-            fprintf(stderr, "Error: Failed to read compressed data from input file '%s'.\n", input_file);
+            fprintf(stderr, "ERROR: Failed to read compressed data from input file '%s'.\n", input_file);
             free(buffer);
             fclose(in);
             fclose(out);
@@ -681,7 +681,7 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
     }
     else if (expected_original_size > 0)
     {
-        fprintf(stderr, "Error: Compressed file format error - header indicates %lu original bytes, but no compressed data found.\n",
+        fprintf(stderr, "ERROR: Compressed file format error - header indicates %lu original bytes, but no compressed data found.\n",
                 expected_original_size);
         fclose(in);
         fclose(out);
@@ -696,7 +696,7 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
     output_buffer = malloc(expected_original_size > 0 ? expected_original_size : 1);
     if (!output_buffer)
     {
-        fprintf(stderr, "Error: Memory allocation failed for output buffer (%lu bytes).\n", expected_original_size);
+        fprintf(stderr, "ERROR: Memory allocation failed for output buffer (%lu bytes).\n", expected_original_size);
         if (buffer)
             free(buffer);
         fclose(in);
@@ -713,7 +713,7 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
 
     if (huffman_decompress(buffer, compressed_data_size, output_buffer, expected_original_size, &output_size) != 0)
     {
-        fprintf(stderr, "\nError: Huffman decompression failed. Input file might be corrupted or not compressed with this tool.\n");
+        fprintf(stderr, "\nERROR: Huffman decompression failed. Input file might be corrupted or not compressed with this tool.\n");
         if (buffer)
             free(buffer);
         free(output_buffer);
@@ -725,7 +725,7 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
 
     if (output_size != expected_original_size)
     {
-        fprintf(stderr, "\nError: Decompressed size (%lu) does not match expected size from header (%lu). File might be corrupted.\n",
+        fprintf(stderr, "\nERROR: Decompressed size (%lu) does not match expected size from header (%lu). File might be corrupted.\n",
                 output_size, expected_original_size);
         if (buffer)
             free(buffer);
@@ -740,7 +740,7 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
     {
         if (fwrite(output_buffer, 1, output_size, out) != output_size)
         {
-            fprintf(stderr, "\nError: Failed to write decompressed data to output file '%s'.\n", output_file);
+            fprintf(stderr, "\nERROR: Failed to write decompressed data to output file '%s'.\n", output_file);
             if (buffer)
                 free(buffer);
             free(output_buffer);
@@ -793,7 +793,7 @@ unsigned long process_file(const char *input_file, const char *output_file,
 
     if (compressed_size == 0 && original_input_size > 0)
     {
-        fprintf(stderr, "Error: Compression step failed for input '%s'.\n", input_file);
+        fprintf(stderr, "ERROR: Compression step failed for input '%s'.\n", input_file);
         remove(temp_file);
         return 0;
     }
@@ -803,7 +803,7 @@ unsigned long process_file(const char *input_file, const char *output_file,
     final_size = encrypt_file(temp_file, output_file, password, quiet, NULL);
     if (final_size == 0 && compressed_size > 0)
     {
-        fprintf(stderr, "Error: Encryption step failed for temporary file '%s'.\n", temp_file);
+        fprintf(stderr, "ERROR: Encryption step failed for temporary file '%s'.\n", temp_file);
         remove(temp_file);
         remove(output_file);
         return 0;
@@ -849,7 +849,7 @@ unsigned long extract_file(const char *input_file, const char *output_file,
 
     if (decrypted_size == 0 && original_input_size > DEFAULT_SALT_SIZE)
     {
-        fprintf(stderr, "Error: Decryption step failed for input '%s' (I/O or memory error).\n", input_file);
+        fprintf(stderr, "ERROR: Decryption step failed for input '%s' (I/O or memory error).\n", input_file);
         remove(temp_file);
         return 0;
     }
@@ -859,7 +859,7 @@ unsigned long extract_file(const char *input_file, const char *output_file,
     final_size = decompress_file(temp_file, output_file, quiet, NULL);
     if (final_size == 0 && decrypted_size > sizeof(unsigned long))
     {
-        fprintf(stderr, "Error: Decompression step failed for temporary file '%s'. Decrypted data might be corrupted.\n", temp_file);
+        fprintf(stderr, "ERROR: Decompression step failed for temporary file '%s'. Decrypted data might be corrupted.\n", temp_file);
         remove(temp_file);
         remove(output_file);
         return 0;
