@@ -104,9 +104,9 @@ make clean        # Clean build artifacts
 │   ├── encryption/    # ChaCha20 and key derivation  
 │   ├── operations/    # File and batch operations
 │   └── utils/         # Utilities and UI
-├── src/              # Source implementations
-├── test/             # Test suites
-└── makefile          # Build configuration
+├── src/               # Source implementations
+├── test/              # Test suites
+└── makefile           # Build configuration
 ```
 
 ## Dependencies
