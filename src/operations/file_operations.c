@@ -68,7 +68,7 @@ static void cleanup_crypto_operation(FILE *in, FILE *out, unsigned char *buf1,
     }
 }
 
-int add_entry_to_file_list(const char *output_file, unsigned long original_size, unsigned long processed_size, int quiet)
+int add_entry_to_file_list(const char *input_file, const char *output_file, unsigned long original_size, unsigned long processed_size, int quiet)
 {
     file_list_t file_list;
     file_list_init(&file_list);
@@ -79,11 +79,11 @@ int add_entry_to_file_list(const char *output_file, unsigned long original_size,
         file_list_init(&file_list);
     }
 
-    if (file_list_add(&file_list, output_file, original_size, processed_size) != 0)
+    if (file_list_add(&file_list, input_file, output_file, original_size, processed_size) != 0)
     {
         if (!quiet)
         {
-            fprintf(stderr, "Warning: Failed to add entry '%s' to file list structure in memory.\n", output_file);
+            fprintf(stderr, "Warning: Failed to add entry '%s -> %s' to file list structure in memory.\n", input_file, output_file);
         }
         file_list_free(&file_list);
         return -1;
@@ -857,7 +857,8 @@ int handle_file_list(const char *command, const char *filename_pattern, int quie
         if (found_entry)
         {
             printf("Found matching file:\n");
-            printf("--> Filename: %s\n", found_entry->filename);
+            printf("--> Input: %s\n", found_entry->input_filename);
+            printf("    Output: %s\n", found_entry->output_filename);
             printf("    Sequence: #%lu\n", found_entry->sequence_num);
             printf("    Original size: %lu bytes\n", found_entry->original_size);
             printf("    Processed size: %lu bytes\n", found_entry->processed_size);

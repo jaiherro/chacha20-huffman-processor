@@ -19,11 +19,12 @@
  */
 typedef struct file_entry
 {
-    char filename[FILE_LIST_MAX_FILENAME]; /* Filename */
-    unsigned long sequence_num;            /* Processing sequence number */
-    unsigned long original_size;           /* Original file size - Replaced size_t with unsigned long */
-    unsigned long processed_size;          /* Size after processing - Replaced size_t with unsigned long */
-    struct file_entry *next;               /* Pointer to next entry */
+    char input_filename[FILE_LIST_MAX_FILENAME];  /* Input filename */
+    char output_filename[FILE_LIST_MAX_FILENAME]; /* Output filename */
+    unsigned long sequence_num;                   /* Processing sequence number */
+    unsigned long original_size;                  /* Original file size - Replaced size_t with unsigned long */
+    unsigned long processed_size;                 /* Size after processing - Replaced size_t with unsigned long */
+    struct file_entry *next;                      /* Pointer to next entry */
 } file_entry_t;
 
 /**
@@ -47,13 +48,14 @@ int file_list_init(file_list_t *list);
 
 /**
  * Add a file to the list
- * * @param list           Pointer to the file list
- * @param filename       Filename to add
- * @param original_size  Original file size - Replaced size_t with unsigned long
- * @param processed_size Size after processing - Replaced size_t with unsigned long
- * @return               0 on success, -1 on failure
+ * * @param list            Pointer to the file list
+ * @param input_filename  Input filename to add
+ * @param output_filename Output filename to add
+ * @param original_size   Original file size - Replaced size_t with unsigned long
+ * @param processed_size  Size after processing - Replaced size_t with unsigned long
+ * @return                0 on success, -1 on failure
  */
-int file_list_add(file_list_t *list, const char *filename,
+int file_list_add(file_list_t *list, const char *input_filename, const char *output_filename,
                   unsigned long original_size, unsigned long processed_size);
 
 /**

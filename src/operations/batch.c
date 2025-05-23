@@ -71,14 +71,12 @@ int batch_process(char *input_files[], int num_files, const char *output_dir,
             if (!quiet)
             {
                 printf("✓ Successfully processed: %s → %s\n", input_files[i], output_path);
-            }
-
-            // Add to file list
-            if (add_entry_to_file_list(output_path, original_size, processed_size, quiet) != 0)
+            } // Add to file list
+            if (add_entry_to_file_list(input_files[i], output_path, original_size, processed_size, quiet) != 0)
             {
                 if (!quiet)
                 {
-                    fprintf(stderr, "Warning: Failed to add '%s' to file list.\n", output_path);
+                    fprintf(stderr, "Warning: Failed to add '%s -> %s' to file list.\n", input_files[i], output_path);
                 }
             }
         }

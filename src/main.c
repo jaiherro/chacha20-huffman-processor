@@ -63,7 +63,7 @@ static int handle_compression_operation(int mode, const char *input_file, const 
         processed_size = compress_file(input_file, output_file, quiet, &original_size);
         if (processed_size > 0 || original_size == 0)
         {
-            add_entry_to_file_list(output_file, original_size, processed_size, quiet);
+            add_entry_to_file_list(input_file, output_file, original_size, processed_size, quiet);
             return 0;
         }
         return 1;
@@ -104,7 +104,7 @@ static int handle_crypto_operation(int mode, const char *input_file, const char 
         processed_size = encrypt_file(input_file, output_file, password, quiet, &original_size);
         if (processed_size > 0)
         {
-            add_entry_to_file_list(output_file, original_size, processed_size, quiet);
+            add_entry_to_file_list(input_file, output_file, original_size, processed_size, quiet);
             memset(password, 0, sizeof(password));
             return 0;
         }
@@ -126,7 +126,7 @@ static int handle_crypto_operation(int mode, const char *input_file, const char 
         processed_size = process_file(input_file, output_file, password, quiet, &original_size);
         if (processed_size > 0)
         {
-            add_entry_to_file_list(output_file, original_size, processed_size, quiet);
+            add_entry_to_file_list(input_file, output_file, original_size, processed_size, quiet);
             memset(password, 0, sizeof(password));
             return 0;
         }

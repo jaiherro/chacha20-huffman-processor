@@ -19,11 +19,9 @@ static int test_file_list_basic(void)
 
     /* Initialise */
     ASSERT_EQUAL(file_list_init(&list), 0, "Init failed");
-    ASSERT_EQUAL(list.count, 0, "Initial count should be 0");
-
-    /* Add entries */
-    ASSERT_EQUAL(file_list_add(&list, "file1.txt", 1000, 500), 0, "Add 1 failed");
-    ASSERT_EQUAL(file_list_add(&list, "file2.doc", 2000, 1800), 0, "Add 2 failed");
+    ASSERT_EQUAL(list.count, 0, "Initial count should be 0"); /* Add entries */
+    ASSERT_EQUAL(file_list_add(&list, "input1.txt", "file1.txt", 1000, 500), 0, "Add 1 failed");
+    ASSERT_EQUAL(file_list_add(&list, "input2.txt", "file2.doc", 2000, 1800), 0, "Add 2 failed");
     ASSERT_EQUAL(list.count, 2, "Count should be 2");
 
     /* Find entry */
@@ -47,13 +45,11 @@ static int test_file_list_persistence(void)
     printf("  - Save/load persistence... ");
 
     file_list_t list1, list2;
-    file_entry_t *entry;
-
-    /* Create and populate list */
+    file_entry_t *entry; /* Create and populate list */
     file_list_init(&list1);
-    file_list_add(&list1, "test1.bin", 5000, 4500);
-    file_list_add(&list1, "test2.jpg", 10000, 9500);
-    file_list_add(&list1, "test3.pdf", 20000, 18000);
+    file_list_add(&list1, "input1.txt", "test1.bin", 5000, 4500);
+    file_list_add(&list1, "input2.txt", "test2.jpg", 10000, 9500);
+    file_list_add(&list1, "input3.txt", "test3.pdf", 20000, 18000);
 
     /* Save */
     ASSERT_EQUAL(file_list_save(&list1, TEST_FILE_LIST), 0, "Save failed");
@@ -88,24 +84,22 @@ static int test_file_list_recent(void)
     file_entry_t *recent[3];
     unsigned long count;
 
-    file_list_init(&list);
-
-    /* Add entries in sequence */
-    file_list_add(&list, "old.txt", 100, 90);
-    file_list_add(&list, "medium.txt", 200, 180);
-    file_list_add(&list, "new.txt", 300, 270);
-    file_list_add(&list, "newest.txt", 400, 360);
+    file_list_init(&list); /* Add entries in sequence */
+    file_list_add(&list, "input_old.txt", "old.txt", 100, 90);
+    file_list_add(&list, "input_medium.txt", "medium.txt", 200, 180);
+    file_list_add(&list, "input_new.txt", "new.txt", 300, 270);
+    file_list_add(&list, "input_newest.txt", "newest.txt", 400, 360);
 
     /* Get 3 most recent */
     count = file_list_get_recent(&list, 3, recent);
     ASSERT_EQUAL(count, 3, "Should get 3 recent entries");
 
     /* Verify order (most recent first) */
-    ASSERT_TRUE(strcmp(recent[0]->filename, "newest.txt") == 0,
+    ASSERT_TRUE(strcmp(recent[0]->output_filename, "newest.txt") == 0,
                 "First should be newest");
-    ASSERT_TRUE(strcmp(recent[1]->filename, "new.txt") == 0,
+    ASSERT_TRUE(strcmp(recent[1]->output_filename, "new.txt") == 0,
                 "Second should be new");
-    ASSERT_TRUE(strcmp(recent[2]->filename, "medium.txt") == 0,
+    ASSERT_TRUE(strcmp(recent[2]->output_filename, "medium.txt") == 0,
                 "Third should be medium");
 
     file_list_free(&list);

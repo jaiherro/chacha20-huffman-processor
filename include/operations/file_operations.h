@@ -17,13 +17,14 @@
 /**
  * Add an entry to the file list
  *
+ * @param input_file Path to the input file
  * @param output_file Path to the output file
  * @param original_size Original file size
  * @param processed_size Processed file size
  * @param quiet If non-zero, suppress warnings
  * @return 0 on success, -1 on failure
  */
-int add_entry_to_file_list(const char *output_file, unsigned long original_size,
+int add_entry_to_file_list(const char *input_file, const char *output_file, unsigned long original_size,
                            unsigned long processed_size, int quiet);
 
 /**

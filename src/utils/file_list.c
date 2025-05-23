@@ -19,18 +19,20 @@ int file_list_init(file_list_t *list)
     return 0;
 }
 
-int file_list_add(file_list_t *list, const char *filename,
+int file_list_add(file_list_t *list, const char *input_filename, const char *output_filename,
                   unsigned long original_size, unsigned long processed_size)
 {
-    if (!list || !filename)
+    if (!list || !input_filename || !output_filename)
         return -1;
 
     file_entry_t *entry = malloc(sizeof(file_entry_t));
     if (!entry)
         return -1;
 
-    strncpy(entry->filename, filename, FILE_LIST_MAX_FILENAME - 1);
-    entry->filename[FILE_LIST_MAX_FILENAME - 1] = '\0';
+    strncpy(entry->input_filename, input_filename, FILE_LIST_MAX_FILENAME - 1);
+    entry->input_filename[FILE_LIST_MAX_FILENAME - 1] = '\0';
+    strncpy(entry->output_filename, output_filename, FILE_LIST_MAX_FILENAME - 1);
+    entry->output_filename[FILE_LIST_MAX_FILENAME - 1] = '\0';
     entry->sequence_num = list->next_sequence_num++;
     entry->original_size = original_size;
     entry->processed_size = processed_size;
@@ -57,7 +59,7 @@ file_entry_t *file_list_find(file_list_t *list, const char *filename)
 
     for (file_entry_t *current = list->head; current; current = current->next)
     {
-        if (strstr(current->filename, filename))
+        if (strstr(current->input_filename, filename) || strstr(current->output_filename, filename))
         {
             return current;
         }
@@ -129,15 +131,16 @@ int file_list_save(file_list_t *list, const char *filename)
     {
         fclose(file);
         return -1;
-    }
-
-    // Write entries
+    } // Write entries
     for (file_entry_t *current = list->head; current; current = current->next)
     {
-        unsigned long filename_len = strlen(current->filename) + 1;
+        unsigned long input_filename_len = strlen(current->input_filename) + 1;
+        unsigned long output_filename_len = strlen(current->output_filename) + 1;
 
-        if (fwrite(&filename_len, sizeof(unsigned long), 1, file) != 1 ||
-            fwrite(current->filename, 1, filename_len, file) != filename_len ||
+        if (fwrite(&input_filename_len, sizeof(unsigned long), 1, file) != 1 ||
+            fwrite(current->input_filename, 1, input_filename_len, file) != input_filename_len ||
+            fwrite(&output_filename_len, sizeof(unsigned long), 1, file) != 1 ||
+            fwrite(current->output_filename, 1, output_filename_len, file) != output_filename_len ||
             fwrite(&current->sequence_num, sizeof(unsigned long), 1, file) != 1 ||
             fwrite(&current->original_size, sizeof(unsigned long), 1, file) != 1 ||
             fwrite(&current->processed_size, sizeof(unsigned long), 1, file) != 1)
@@ -170,12 +173,11 @@ int file_list_load(file_list_t *list, const char *filename)
         fclose(file);
         return 0; // Treat as empty file
     }
-
     for (unsigned long i = 0; i < count_from_file; i++)
     {
-        unsigned long filename_len;
-        if (fread(&filename_len, sizeof(unsigned long), 1, file) != 1 ||
-            filename_len == 0 || filename_len > FILE_LIST_MAX_FILENAME)
+        unsigned long input_filename_len, output_filename_len;
+        if (fread(&input_filename_len, sizeof(unsigned long), 1, file) != 1 ||
+            input_filename_len == 0 || input_filename_len > FILE_LIST_MAX_FILENAME)
         {
             fclose(file);
             file_list_free(list);
@@ -190,7 +192,10 @@ int file_list_load(file_list_t *list, const char *filename)
             return -1;
         }
 
-        if (fread(entry->filename, 1, filename_len, file) != filename_len ||
+        if (fread(entry->input_filename, 1, input_filename_len, file) != input_filename_len ||
+            fread(&output_filename_len, sizeof(unsigned long), 1, file) != 1 ||
+            output_filename_len == 0 || output_filename_len > FILE_LIST_MAX_FILENAME ||
+            fread(entry->output_filename, 1, output_filename_len, file) != output_filename_len ||
             fread(&entry->sequence_num, sizeof(unsigned long), 1, file) != 1 ||
             fread(&entry->original_size, sizeof(unsigned long), 1, file) != 1 ||
             fread(&entry->processed_size, sizeof(unsigned long), 1, file) != 1)
@@ -201,7 +206,8 @@ int file_list_load(file_list_t *list, const char *filename)
             return -1;
         }
 
-        entry->filename[filename_len - 1] = '\0';
+        entry->input_filename[input_filename_len - 1] = '\0';
+        entry->output_filename[output_filename_len - 1] = '\0';
         entry->next = NULL;
 
         if (!list->tail)
@@ -255,10 +261,10 @@ void file_list_print(file_list_t *list)
         printf("  (empty)\n");
         return;
     }
-
     for (file_entry_t *current = list->head; current; current = current->next)
     {
-        printf("--> %s\n", current->filename);
+        printf("--> Input: %s\n", current->input_filename);
+        printf("    Output: %s\n", current->output_filename);
         printf("    Sequence: #%lu\n", current->sequence_num);
         printf("    Original size: %lu bytes\n", current->original_size);
         printf("    Processed size: %lu bytes\n", current->processed_size);
