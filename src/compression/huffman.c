@@ -96,31 +96,40 @@ static huffman_node *build_tree(unsigned long freq[MAX_SYMBOLS])
 
     if (pq.count == 0)
         return NULL;
+
     if (pq.count == 1)
     {
-        /* Single symbol case: create a root with two children of the same symbol */
-        huffman_node *leaf = pq_extract_min(&pq);
+        /* Single symbol case: create proper tree structure */
+        huffman_node *original_leaf = pq_extract_min(&pq);
+
+        /* Create root node */
         huffman_node *root = malloc(sizeof(huffman_node));
         if (!root)
         {
-            free(leaf);
+            free(original_leaf);
             return NULL;
         }
-        huffman_node *leaf2 = malloc(sizeof(huffman_node));
-        if (!leaf2)
+
+        /* Create duplicate leaf node */
+        huffman_node *duplicate_leaf = malloc(sizeof(huffman_node));
+        if (!duplicate_leaf)
         {
             free(root);
-            free(leaf);
+            free(original_leaf);
             return NULL;
         }
-        /* Clone the single leaf */
-        leaf2->symbol = leaf->symbol;
-        leaf2->frequency = leaf->frequency;
-        leaf2->left = leaf2->right = NULL;
-        /* Create internal root */
-        root->left = leaf;
-        root->right = leaf2;
-        root->frequency = leaf->frequency * 2;
+
+        /* Configure duplicate leaf */
+        duplicate_leaf->symbol = original_leaf->symbol;
+        duplicate_leaf->frequency = original_leaf->frequency;
+        duplicate_leaf->left = duplicate_leaf->right = NULL;
+
+        /* Configure root as internal node */
+        root->left = original_leaf;
+        root->right = duplicate_leaf;
+        root->frequency = original_leaf->frequency;
+        root->symbol = 0;
+
         return root;
     }
 
