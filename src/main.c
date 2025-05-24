@@ -384,7 +384,7 @@ int main(int argc, char *argv[])
     {
         print_usage(argv[0]);
         return 1;
-    } /* Initialize debug mode */
+    } /* Initialise debug mode */
     if (debug_operation)
     {
         debug_init(1, DEBUG_LEVEL_TRACE);

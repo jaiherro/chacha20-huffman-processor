@@ -30,11 +30,21 @@ static void cleanup_crypto_operation(FILE *in, FILE *out, unsigned char *buf1,
 /* Helper function implementations */
 static int get_file_size(FILE *file, unsigned long *size)
 {
+    DEBUG_TRACE_MSG("Getting file size");
+
     if (fseek(file, 0, SEEK_END) != 0)
+    {
+        DEBUG_ERROR_MSG("Failed to seek to end of file");
         return -1;
+    }
     *size = ftell(file);
     if (fseek(file, 0, SEEK_SET) != 0)
+    {
+        DEBUG_ERROR_MSG("Failed to seek back to start of file");
         return -1;
+    }
+
+    DEBUG_TRACE("File size determined: %lu bytes", *size);
     return 0;
 }
 
@@ -60,6 +70,8 @@ static void cleanup_crypto_operation(FILE *in, FILE *out, unsigned char *buf1,
                                      unsigned char *buf2, chacha20_ctx *ctx,
                                      const char *output_file, int failed)
 {
+    DEBUG_TRACE("Cleaning up crypto operation - failed: %s", failed ? "yes" : "no");
+
     if (in)
         fclose(in);
     if (out)
@@ -67,19 +79,38 @@ static void cleanup_crypto_operation(FILE *in, FILE *out, unsigned char *buf1,
     cleanup_crypto_buffers(buf1, buf2, ctx);
     if (failed && output_file)
     {
-        remove(output_file);
+        DEBUG_TRACE("Removing failed output file: '%s'", output_file);
+        if (remove(output_file) != 0)
+        {
+            DEBUG_ERROR("Failed to remove output file: '%s'", output_file);
+        }
+        else
+        {
+            DEBUG_TRACE_MSG("Failed output file removed successfully");
+        }
     }
 }
 
 int add_entry_to_file_list(const char *input_file, const char *output_file, unsigned long original_size, unsigned long processed_size, int quiet)
 {
     file_list_t file_list;
+
+    DEBUG_FUNCTION_ENTER("add_entry_to_file_list");
+    DEBUG_INFO("Adding entry to file list - input: '%s', output: '%s', original: %lu, processed: %lu, quiet: %s",
+               input_file, output_file, original_size, processed_size, quiet ? "yes" : "no");
+
     file_list_init(&file_list);
+    DEBUG_TRACE_MSG("File list structure initialised");
 
     if (file_list_load(&file_list, DEFAULT_FILE_LIST) != 0)
     {
+        DEBUG_INFO("Failed to load existing file list, creating new one");
         file_list_free(&file_list);
         file_list_init(&file_list);
+    }
+    else
+    {
+        DEBUG_TRACE("Existing file list loaded from: '%s'", DEFAULT_FILE_LIST);
     }
 
     if (file_list_add(&file_list, input_file, output_file, original_size, processed_size) != 0)
@@ -88,9 +119,12 @@ int add_entry_to_file_list(const char *input_file, const char *output_file, unsi
         {
             fprintf(stderr, "Warning: Failed to add entry '%s -> %s' to file list structure in memory.\n", input_file, output_file);
         }
+        DEBUG_ERROR("Failed to add entry to file list in memory: '%s' -> '%s'", input_file, output_file);
         file_list_free(&file_list);
+        DEBUG_FUNCTION_EXIT("add_entry_to_file_list", -1);
         return -1;
     }
+    DEBUG_TRACE("Entry added to file list structure in memory");
 
     if (file_list_save(&file_list, DEFAULT_FILE_LIST) != 0)
     {
@@ -98,11 +132,16 @@ int add_entry_to_file_list(const char *input_file, const char *output_file, unsi
         {
             fprintf(stderr, "Warning: Failed to save updated file list to %s\n", DEFAULT_FILE_LIST);
         }
+        DEBUG_ERROR("Failed to save file list to: '%s'", DEFAULT_FILE_LIST);
         file_list_free(&file_list);
+        DEBUG_FUNCTION_EXIT("add_entry_to_file_list", -1);
         return -1;
     }
+    DEBUG_TRACE("File list saved successfully to: '%s'", DEFAULT_FILE_LIST);
 
     file_list_free(&file_list);
+    DEBUG_TRACE_MSG("File list structure cleaned up");
+    DEBUG_FUNCTION_EXIT("add_entry_to_file_list", 0);
     return 0;
 }
 
@@ -200,12 +239,12 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
     if (chacha20_init(&ctx, key, nonce, 1) != 0)
     {
         fprintf(stderr, "ERROR: Failed to initialise ChaCha20 context.\n");
-        DEBUG_ERROR_MSG("ChaCha20 initialization failed");
+        DEBUG_ERROR_MSG("ChaCha20 initialisation failed");
         cleanup_crypto_operation(in, out, NULL, NULL, NULL, output_file, 1);
         DEBUG_FUNCTION_EXIT("encrypt_file", 0);
         return 0;
     }
-    DEBUG_TRACE_MSG("ChaCha20 context initialized");
+    DEBUG_TRACE_MSG("ChaCha20 context initialised");
 
     // Write encrypted magic header to detect wrong password on decryption
     {
@@ -401,16 +440,16 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
     DEBUG_TRACE_MSG("Key and nonce derived successfully");
 
     // Initialise ChaCha20
-    DEBUG_TRACE_MSG("Initializing ChaCha20 context");
+    DEBUG_TRACE_MSG("Initialising ChaCha20 context");
     if (chacha20_init(&ctx, key, nonce, 1) != 0)
     {
         fprintf(stderr, "ERROR: Failed to initialise ChaCha20 context.\n");
-        DEBUG_ERROR_MSG("ChaCha20 initialization failed");
+        DEBUG_ERROR_MSG("ChaCha20 initialisation failed");
         cleanup_crypto_operation(in, out, NULL, NULL, NULL, output_file, 1);
         DEBUG_FUNCTION_EXIT("decrypt_file", 0);
         return 0;
     }
-    DEBUG_TRACE_MSG("ChaCha20 context initialized successfully");
+    DEBUG_TRACE_MSG("ChaCha20 context initialised successfully");
 
     // Allocate buffers
     DEBUG_TRACE("Allocating buffers (%d bytes each)", BUFFER_SIZE);
@@ -1087,30 +1126,45 @@ int handle_file_list(const char *command, const char *filename_pattern, int quie
     file_list_t file_list;
     file_entry_t *found_entry;
 
+    DEBUG_FUNCTION_ENTER("handle_file_list");
+    DEBUG_INFO("Handling file list command - command: '%s', pattern: '%s', quiet: %s",
+               command, filename_pattern ? filename_pattern : "(null)", quiet ? "yes" : "no");
+
     file_list_init(&file_list);
+    DEBUG_TRACE_MSG("File list structure initialised");
 
     if (file_list_load(&file_list, DEFAULT_FILE_LIST) != 0)
     {
+        DEBUG_INFO("Failed to load file list, initialising empty list");
         if (!quiet)
         {
             file_list_free(&file_list);
             file_list_init(&file_list);
         }
     }
+    else
+    {
+        DEBUG_TRACE("File list loaded from: '%s'", DEFAULT_FILE_LIST);
+    }
 
     if (strcmp(command, "list") == 0)
     {
+        DEBUG_INFO_MSG("Processing 'list' command");
         if (!quiet)
             print_section_header("File Processing History");
         printf("Data source: %s\n\n", DEFAULT_FILE_LIST);
         file_list_print(&file_list);
+        DEBUG_TRACE_MSG("File list printed successfully");
     }
     else if (strcmp(command, "find") == 0)
     {
+        DEBUG_INFO("Processing 'find' command with pattern: '%s'", filename_pattern ? filename_pattern : "(null)");
         if (!filename_pattern || filename_pattern[0] == '\0')
         {
             fprintf(stderr, "ERROR: No search pattern specified.\n");
+            DEBUG_ERROR_MSG("No search pattern specified for find command");
             file_list_free(&file_list);
+            DEBUG_FUNCTION_EXIT("handle_file_list", -1);
             return -1;
         }
 
@@ -1123,6 +1177,7 @@ int handle_file_list(const char *command, const char *filename_pattern, int quie
         found_entry = file_list_find(&file_list, filename_pattern);
         if (found_entry)
         {
+            DEBUG_INFO("Found matching entry for pattern: '%s'", filename_pattern);
             printf("MATCH FOUND:\n");
             printf("Input file:     %s\n", found_entry->input_filename);
             printf("Output file:    %s\n", found_entry->output_filename);
@@ -1141,16 +1196,21 @@ int handle_file_list(const char *command, const char *filename_pattern, int quie
         }
         else
         {
+            DEBUG_INFO("No matching entry found for pattern: '%s'", filename_pattern);
             printf("NO MATCH: No files found matching pattern '%s'\n", filename_pattern);
         }
     }
     else
     {
         fprintf(stderr, "ERROR: Unknown internal file list command: %s\n", command);
+        DEBUG_ERROR("Unknown file list command: '%s'", command);
         file_list_free(&file_list);
+        DEBUG_FUNCTION_EXIT("handle_file_list", -1);
         return -1;
     }
 
     file_list_free(&file_list);
+    DEBUG_TRACE_MSG("File list structure cleaned up");
+    DEBUG_FUNCTION_EXIT("handle_file_list", 0);
     return 0;
 }
