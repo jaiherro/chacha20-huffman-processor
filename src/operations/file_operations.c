@@ -729,19 +729,35 @@ unsigned long compress_file(const char *input_file, const char *output_file, int
     if (output_size > 0)
     {
         DEBUG_TRACE("Writing compressed data (%lu bytes)", output_size);
-        if (fwrite(output_buffer, 1, output_size, out) != output_size)
+        if (!quiet)
         {
-            fprintf(stderr, "\nERROR: Failed to write compressed data to output file '%s'.\n", output_file);
-            DEBUG_ERROR_MSG("Failed to write compressed data");
-            if (buffer)
-                free(buffer);
-            free(output_buffer);
-            fclose(in);
-            fclose(out);
-            remove(output_file);
-            DEBUG_FUNCTION_EXIT("compress_file", 0);
-            return 0;
+            print_progress_bar(0, output_size, PROGRESS_WIDTH);
         }
+        size_t written = 0;
+        while (written < output_size)
+        {
+            size_t chunk = (output_size - written < BUFFER_SIZE) ? output_size - written : BUFFER_SIZE;
+            if (fwrite(output_buffer + written, 1, chunk, out) != chunk)
+            {
+                fprintf(stderr, "\nERROR: Failed to write compressed data to output file '%s'.\n", output_file);
+                DEBUG_ERROR_MSG("Failed to write compressed data");
+                if (buffer)
+                    free(buffer);
+                free(output_buffer);
+                fclose(in);
+                fclose(out);
+                remove(output_file);
+                DEBUG_FUNCTION_EXIT("compress_file", 0);
+                return 0;
+            }
+            written += chunk;
+            if (!quiet)
+            {
+                print_progress_bar(written, output_size, PROGRESS_WIDTH);
+            }
+        }
+        if (!quiet)
+            printf("\n");
         DEBUG_TRACE_MSG("Compressed data written successfully");
     }
     total_output_size += output_size;
