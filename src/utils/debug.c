@@ -1,5 +1,8 @@
 /**
  * debug.c - Debug utilities implementation
+ *
+ * Built by: Ethan Hall and Jai Herro
+ *
  */
 
 #include "utils/debug.h"

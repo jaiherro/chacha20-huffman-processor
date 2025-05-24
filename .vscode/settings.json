@@ -1,5 +1,6 @@
 {
   "files.associations": {
-    "key_derivation.h": "c"
+    "key_derivation.h": "c",
+    "file_operations.h": "c"
   }
 }

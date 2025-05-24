@@ -1,5 +1,8 @@
 /**
  * batch.c - Batch processing operations
+ *
+ * Built by: Ethan Hall and Jai Herro
+ *
  */
 
 #include "operations/batch.h"

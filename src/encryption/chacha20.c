@@ -1,5 +1,8 @@
 /**
  * chacha20.c - ChaCha20 stream cipher implementation (RFC 8439)
+ *
+ * Built by: Jai Herro
+ *
  */
 
 #include "encryption/chacha20.h"

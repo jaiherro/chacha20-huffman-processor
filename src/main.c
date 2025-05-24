@@ -1,5 +1,13 @@
-/**
- * main.c - Secure File Processor with ChaCha20 encryption and Huffman compression
+/*
+ * Group Members: Ethan Hall, Jai Herro
+ * Group: 01
+ * Lab: 06
+ *
+ * Dependencies: Standard C libraries only (stdio, stdlib, string, math)
+ * C Standard: C99
+ * 
+ * Built by: Ethan Hall and Jai Herro
+ * 
  */
 
 #include <stdio.h>

@@ -1,5 +1,8 @@
 /**
  * file_operations.c - Implementation of high-level file operations
+ *
+ * Built by: Ethan Hall and Jai Herro
+ *
  */
 
 #include "operations/file_operations.h"

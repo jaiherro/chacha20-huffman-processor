@@ -1,14 +1,14 @@
 /**
  * Simple password-based key derivation implementation
+ *
+ * Built by: Ethan Hall and Jai Herro
+ *
  */
 
 #include "encryption/key_derivation.h"
 #include <stdlib.h>
 #include <string.h>
 
-/**
- * Simple key derivation using password and salt
- */
 static void derive_key(const char *password, const unsigned char *salt,
                        unsigned long salt_len, unsigned int iterations,
                        unsigned char *output, unsigned long output_len)
@@ -53,9 +53,6 @@ static void derive_key(const char *password, const unsigned char *salt,
     memset(hash, 0, sizeof(hash));
 }
 
-/**
- * Generate pseudo-random salt
- */
 int generate_salt(unsigned char *salt, unsigned long salt_len)
 {
     if (!salt || salt_len == 0)
@@ -72,9 +69,6 @@ int generate_salt(unsigned char *salt, unsigned long salt_len)
     return 0;
 }
 
-/**
- * Derive both key and nonce from password
- */
 int derive_key_and_nonce(const char *password,
                          const unsigned char *salt, unsigned long salt_len,
                          unsigned int iterations,

@@ -1,5 +1,8 @@
 /**
  * ui.c - Implementation of user interface and display utilities
+ *
+ * Built by: Ethan Hall and Jai Herro
+ *
  */
 
 #include "utils/ui.h"

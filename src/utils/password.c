@@ -1,5 +1,8 @@
 /**
  * password.c - Implementation of password handling utilities
+ * 
+ * Built by: Ethan Hall and Jai Herro
+ * 
  */
 
 #include "utils/password.h"

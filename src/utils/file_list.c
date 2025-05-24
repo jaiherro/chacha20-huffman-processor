@@ -1,5 +1,8 @@
 /**
  * file_list.c - File list management using linked lists
+ *
+ * Built by: Ethan Hall and Jai Herro
+ *
  */
 
 #include "utils/file_list.h"

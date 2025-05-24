@@ -1,6 +1,8 @@
 /**
  * huffman.c - Simplified Huffman compression algorithm
- * Maintains full functionality with cleaner, more readable code
+ *
+ * Built by: Ethan Hall
+ *
  */
 
 #include "compression/huffman.h"
