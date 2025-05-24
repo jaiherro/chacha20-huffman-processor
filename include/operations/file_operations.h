@@ -13,7 +13,8 @@
 
 /* Add entry to file list */
 int add_entry_to_file_list(const char *input_file, const char *output_file,
-                           unsigned long original_size, unsigned long processed_size,
+                           unsigned long original_size, 
+                           unsigned long processed_size,
                            int quiet);
 
 /* Encrypt file using ChaCha20 */
