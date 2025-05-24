@@ -2,7 +2,6 @@
 SRC_DIR = src
 INCLUDE_DIR = include
 TEST_DIR = test
-BUILD_DIR = build
 
 # Compiler settings
 CC ?= gcc
@@ -12,50 +11,43 @@ CFLAGS = -Wall -Werror -pedantic -std=c99 -I$(INCLUDE_DIR)
 APP_SRCS = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/*/*.c)
 TEST_SRCS = $(wildcard $(TEST_DIR)/*.c)
 
-# Object files in build directory
-APP_OBJS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/$(SRC_DIR)/%.o,$(APP_SRCS))
-TEST_OBJS = $(patsubst $(TEST_DIR)/%.c,$(BUILD_DIR)/$(TEST_DIR)/%.o,$(TEST_SRCS))
+# Object files
+APP_OBJS = $(APP_SRCS:.c=.o)
+TEST_OBJS = $(TEST_SRCS:.c=.o)
 
 # Library objects for tests (exclude main.o if it exists)
-LIB_OBJS = $(filter-out $(BUILD_DIR)/$(SRC_DIR)/main.o, $(APP_OBJS))
+LIB_OBJS = $(filter-out $(SRC_DIR)/main.o, $(APP_OBJS))
 
-# Executables in build directory
-TARGET = $(BUILD_DIR)/secure_compress
-TEST_TARGET = $(BUILD_DIR)/run_tests
+# Executables
+TARGET = secure_compress
+TEST_TARGET = run_tests
 
 # Default target
 all: $(TARGET)
 
 # Build main executable
-$(TARGET): $(APP_OBJS) | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -o $@ $(APP_OBJS) -lm
+$(TARGET): $(APP_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ -lm
 
 # Build test executable  
-$(TEST_TARGET): $(TEST_OBJS) $(LIB_OBJS) | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -o $@ $(TEST_OBJS) $(LIB_OBJS) -lm
+$(TEST_TARGET): $(TEST_OBJS) $(LIB_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ -lm
 
-# Create build directories
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)/$(SRC_DIR) $(BUILD_DIR)/$(TEST_DIR)
-	@# Create subdirectories that might exist in src
-	@for dir in $(sort $(dir $(APP_SRCS))); do \
-		mkdir -p $(BUILD_DIR)/$$dir; \
-	done
-
-# Generic compilation rule for source files
-$(BUILD_DIR)/$(SRC_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
+# Generic compilation rule for all source files
+%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Test object files
-$(BUILD_DIR)/$(TEST_DIR)/%.o: $(TEST_DIR)/%.c | $(BUILD_DIR)
+$(TEST_DIR)/%.o: $(TEST_DIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Run tests
 test: $(TEST_TARGET)
-	$(TEST_TARGET)
+	./$(TEST_TARGET)
 
 # Clean build artifacts
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -f $(SRC_DIR)/*.o $(SRC_DIR)/*/*.o $(TEST_DIR)/*.o
+	rm -f $(TARGET) $(TEST_TARGET) $(TARGET).exe $(TEST_TARGET).exe $(TEST_DIR)/test_list.dat
 
 .PHONY: all test clean
