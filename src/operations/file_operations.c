@@ -15,13 +15,7 @@
 
 /* Platform-specific includes for 64-bit file operations */
 #ifdef _WIN32
-#include <io.h>
-#define ftello64 _ftelli64
-#define fseeko64 _fseeki64
 #else
-#define _FILE_OFFSET_BITS 64
-#define ftello64 ftello
-#define fseeko64 fseeko
 #endif
 
 /* Fixed number of iterations for key derivation */
@@ -30,6 +24,8 @@
 #define MIN_COMPRESSED_FILE_SIZE (sizeof(unsigned long long) + 1)
 #define ENCRYPTION_MAGIC "SFPv1"
 #define ENCRYPTION_MAGIC_LEN 5
+
+#define _FILE_OFFSET_BITS 64
 
 /* Helper function prototypes */
 static int get_file_size64(FILE *file, unsigned long long *size);
@@ -41,30 +37,27 @@ static void cleanup_crypto_operation(FILE *in, FILE *out, unsigned char *buf1,
 /* Helper function implementations */
 static int get_file_size64(FILE *file, unsigned long long *size)
 {
-    DEBUG_TRACE_MSG("Getting file size using 64-bit operations");
-
-    /* Use 64-bit file operations to support files larger than 2GB */
-    if (fseeko64(file, 0, SEEK_END) != 0)
-    {
-        DEBUG_ERROR_MSG("Failed to seek to end of file (64-bit)");
+#ifdef _WIN32
+    /* Windows 64-bit file size */
+    if (_fseeki64(file, 0, SEEK_END) != 0)
         return -1;
-    }
-
-    long long file_size = ftello64(file);
-    if (file_size < 0)
-    {
-        DEBUG_ERROR_MSG("Failed to get file position (64-bit) - ftello64 returned error");
+    __int64 fsz = _ftelli64(file);
+    if (fsz < 0)
         return -1;
-    }
-
-    if (fseeko64(file, 0, SEEK_SET) != 0)
-    {
-        DEBUG_ERROR_MSG("Failed to seek back to start of file (64-bit)");
+    if (_fseeki64(file, 0, SEEK_SET) != 0)
         return -1;
-    }
-
-    *size = (unsigned long long)file_size;
-    DEBUG_TRACE("File size determined: %llu bytes (64-bit)", *size);
+    *size = (unsigned long long)fsz;
+#else
+    /* POSIX 64-bit file size */
+    if (fseeko(file, 0, SEEK_END) != 0)
+        return -1;
+    off_t fsz = ftello(file);
+    if (fsz < 0)
+        return -1;
+    if (fseeko(file, 0, SEEK_SET) != 0)
+        return -1;
+    *size = (unsigned long long)fsz;
+#endif
     return 0;
 }
 
