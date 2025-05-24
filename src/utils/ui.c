@@ -44,7 +44,6 @@ void print_usage(const char *program_name)
     printf("    List all previously processed files\n\n");
 
     printf("NOTE: Operations requiring encryption/decryption will prompt for a password.\n");
-    printf("      Use strong passwords for optimal security.\n");
 }
 
 void print_progress_bar(unsigned long current, unsigned long total, unsigned long width)
