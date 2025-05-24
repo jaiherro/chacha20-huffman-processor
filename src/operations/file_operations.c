@@ -104,7 +104,7 @@ int add_entry_to_file_list(const char *input_file, const char *output_file, unsi
 
     if (file_list_load(&file_list, DEFAULT_FILE_LIST) != 0)
     {
-        DEBUG_INFO("Failed to load existing file list, creating new one");
+        DEBUG_INFO_MSG("Failed to load existing file list, creating new one");
         file_list_free(&file_list);
         file_list_init(&file_list);
     }
@@ -124,7 +124,7 @@ int add_entry_to_file_list(const char *input_file, const char *output_file, unsi
         DEBUG_FUNCTION_EXIT("add_entry_to_file_list", -1);
         return -1;
     }
-    DEBUG_TRACE("Entry added to file list structure in memory");
+    DEBUG_TRACE_MSG("Entry added to file list structure in memory");
 
     if (file_list_save(&file_list, DEFAULT_FILE_LIST) != 0)
     {
@@ -1135,7 +1135,7 @@ int handle_file_list(const char *command, const char *filename_pattern, int quie
 
     if (file_list_load(&file_list, DEFAULT_FILE_LIST) != 0)
     {
-        DEBUG_INFO("Failed to load file list, initialising empty list");
+        DEBUG_INFO_MSG("Failed to load file list, initialising empty list");
         if (!quiet)
         {
             file_list_free(&file_list);
