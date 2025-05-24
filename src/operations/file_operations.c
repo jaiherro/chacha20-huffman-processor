@@ -13,38 +13,58 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Platform-specific includes for 64-bit file operations */
+#ifdef _WIN32
+#include <io.h>
+#define ftello64 _ftelli64
+#define fseeko64 _fseeki64
+#else
+#define _FILE_OFFSET_BITS 64
+#define ftello64 ftello
+#define fseeko64 fseeko
+#endif
+
 /* Fixed number of iterations for key derivation */
 #define KEY_DERIVATION_ITERATIONS 100000
 #define MIN_ENCRYPTED_FILE_SIZE (DEFAULT_SALT_SIZE + 1)
-#define MIN_COMPRESSED_FILE_SIZE (sizeof(unsigned long) + 1)
+#define MIN_COMPRESSED_FILE_SIZE (sizeof(unsigned long long) + 1)
 #define ENCRYPTION_MAGIC "SFPv1"
 #define ENCRYPTION_MAGIC_LEN 5
 
 /* Helper function prototypes */
-static int get_file_size(FILE *file, unsigned long *size);
+static int get_file_size64(FILE *file, unsigned long long *size);
 static void cleanup_crypto_buffers(unsigned char *buf1, unsigned char *buf2, chacha20_ctx *ctx);
 static void cleanup_crypto_operation(FILE *in, FILE *out, unsigned char *buf1,
                                      unsigned char *buf2, chacha20_ctx *ctx,
                                      const char *output_file, int failed);
 
 /* Helper function implementations */
-static int get_file_size(FILE *file, unsigned long *size)
+static int get_file_size64(FILE *file, unsigned long long *size)
 {
-    DEBUG_TRACE_MSG("Getting file size");
+    DEBUG_TRACE_MSG("Getting file size using 64-bit operations");
 
-    if (fseek(file, 0, SEEK_END) != 0)
+    /* Use 64-bit file operations to support files larger than 2GB */
+    if (fseeko64(file, 0, SEEK_END) != 0)
     {
-        DEBUG_ERROR_MSG("Failed to seek to end of file");
-        return -1;
-    }
-    *size = ftell(file);
-    if (fseek(file, 0, SEEK_SET) != 0)
-    {
-        DEBUG_ERROR_MSG("Failed to seek back to start of file");
+        DEBUG_ERROR_MSG("Failed to seek to end of file (64-bit)");
         return -1;
     }
 
-    DEBUG_TRACE("File size determined: %lu bytes", *size);
+    long long file_size = ftello64(file);
+    if (file_size < 0)
+    {
+        DEBUG_ERROR_MSG("Failed to get file position (64-bit) - ftello64 returned error");
+        return -1;
+    }
+
+    if (fseeko64(file, 0, SEEK_SET) != 0)
+    {
+        DEBUG_ERROR_MSG("Failed to seek back to start of file (64-bit)");
+        return -1;
+    }
+
+    *size = (unsigned long long)file_size;
+    DEBUG_TRACE("File size determined: %llu bytes (64-bit)", *size);
     return 0;
 }
 
@@ -91,12 +111,12 @@ static void cleanup_crypto_operation(FILE *in, FILE *out, unsigned char *buf1,
     }
 }
 
-int add_entry_to_file_list(const char *input_file, const char *output_file, unsigned long original_size, unsigned long processed_size, int quiet)
+int add_entry_to_file_list(const char *input_file, const char *output_file, unsigned long long original_size, unsigned long long processed_size, int quiet)
 {
     file_list_t file_list;
 
     DEBUG_FUNCTION_ENTER("add_entry_to_file_list");
-    DEBUG_INFO("Adding entry to file list - input: '%s', output: '%s', original: %lu, processed: %lu, quiet: %s",
+    DEBUG_INFO("Adding entry to file list - input: '%s', output: '%s', original: %llu, processed: %llu, quiet: %s",
                input_file, output_file, original_size, processed_size, quiet ? "yes" : "no");
 
     file_list_init(&file_list);
@@ -145,8 +165,8 @@ int add_entry_to_file_list(const char *input_file, const char *output_file, unsi
     return 0;
 }
 
-unsigned long encrypt_file(const char *input_file, const char *output_file,
-                           const char *password, int quiet, unsigned long *original_size_out)
+unsigned long long encrypt_file(const char *input_file, const char *output_file,
+                                const char *password, int quiet, unsigned long long *original_size_out)
 {
     FILE *in = NULL, *out = NULL;
     chacha20_ctx ctx;
@@ -154,8 +174,8 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
     unsigned char key[CHACHA20_KEY_SIZE];
     unsigned char nonce[CHACHA20_NONCE_SIZE];
     unsigned char salt[DEFAULT_SALT_SIZE];
-    unsigned long read_size, file_size = 0, original_size = 0;
-    unsigned long final_output_size = 0;
+    unsigned long read_size, file_size = 0;
+    unsigned long long original_size = 0, final_output_size = 0;
 
     DEBUG_FUNCTION_ENTER("encrypt_file");
     DEBUG_INFO("Encrypting file - input: '%s', output: '%s', quiet: %s",
@@ -177,8 +197,7 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
         return 0;
     }
     DEBUG_TRACE_MSG("Input file opened successfully");
-
-    if (get_file_size(in, &original_size) != 0)
+    if (get_file_size64(in, &original_size) != 0)
     {
         fprintf(stderr, "ERROR: Could not determine size of input file '%s'.\n", input_file);
         DEBUG_ERROR("Failed to get file size for: '%s'", input_file);
@@ -186,7 +205,7 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
         DEBUG_FUNCTION_EXIT("encrypt_file", 0);
         return 0;
     }
-    DEBUG_INFO("Input file size: %lu bytes", original_size);
+    DEBUG_INFO("Input file size: %llu bytes", original_size);
     if (original_size_out)
         *original_size_out = original_size;
 
@@ -288,7 +307,7 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
         printf("\nEncrypting file...\n");
         print_progress_bar(0, original_size, PROGRESS_WIDTH);
     }
-    DEBUG_INFO("Starting encryption loop for %lu bytes", original_size);
+    DEBUG_INFO("Starting encryption loop for %llu bytes", original_size);
 
     // Process file in chunks
     while ((read_size = fread(buffer, 1, BUFFER_SIZE, in)) > 0)
@@ -327,9 +346,8 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
         DEBUG_FUNCTION_EXIT("encrypt_file", 0);
         return 0;
     }
-
     final_output_size += file_size;
-    DEBUG_INFO("Encryption completed - final output size: %lu bytes", final_output_size);
+    DEBUG_INFO("Encryption completed - final output size: %llu bytes", final_output_size);
     if (!quiet)
     {
         if (original_size > 0)
@@ -345,13 +363,12 @@ unsigned long encrypt_file(const char *input_file, const char *output_file,
     memset(nonce, 0, CHACHA20_NONCE_SIZE);
     memset(salt, 0, DEFAULT_SALT_SIZE);
     DEBUG_TRACE_MSG("Encryption cleanup completed");
-
     DEBUG_FUNCTION_EXIT_SIZE("encrypt_file", final_output_size);
     return final_output_size;
 }
 
-unsigned long decrypt_file(const char *input_file, const char *output_file,
-                           const char *password, int quiet, unsigned long *original_size_out)
+unsigned long long decrypt_file(const char *input_file, const char *output_file,
+                                const char *password, int quiet, unsigned long long *original_size_out)
 {
     FILE *in = NULL, *out = NULL;
     chacha20_ctx ctx;
@@ -359,8 +376,8 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
     unsigned char key[CHACHA20_KEY_SIZE];
     unsigned char nonce[CHACHA20_NONCE_SIZE];
     unsigned char salt[DEFAULT_SALT_SIZE];
-    unsigned long read_size, file_size = 0, total_input_size = 0;
-    unsigned long data_to_decrypt_size, final_output_size = 0;
+    unsigned long read_size, file_size = 0;
+    unsigned long long total_input_size = 0, data_to_decrypt_size, final_output_size = 0;
 
     DEBUG_FUNCTION_ENTER("decrypt_file");
     DEBUG_INFO("Decrypting file - input: '%s', output: '%s', quiet: %s",
@@ -382,8 +399,7 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
         return 0;
     }
     DEBUG_TRACE_MSG("Input file opened successfully");
-
-    if (get_file_size(in, &total_input_size) != 0)
+    if (get_file_size64(in, &total_input_size) != 0)
     {
         fprintf(stderr, "ERROR: Could not determine size of input file '%s'.\n", input_file);
         DEBUG_ERROR("Failed to get file size for: '%s'", input_file);
@@ -391,16 +407,15 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
         DEBUG_FUNCTION_EXIT("decrypt_file", 0);
         return 0;
     }
-    DEBUG_INFO("Input file size: %lu bytes", total_input_size);
-
+    DEBUG_INFO("Input file size: %llu bytes", total_input_size);
     if (original_size_out)
         *original_size_out = total_input_size;
 
     if (total_input_size < MIN_ENCRYPTED_FILE_SIZE)
     {
-        fprintf(stderr, "ERROR: Input file '%s' is too small (%lu bytes) to be valid encrypted data.\n",
+        fprintf(stderr, "ERROR: Input file '%s' is too small (%llu bytes) to be valid encrypted data.\n",
                 input_file, total_input_size);
-        DEBUG_ERROR("Input file too small: %lu bytes", total_input_size);
+        DEBUG_ERROR("Input file too small: %llu bytes", total_input_size);
         fclose(in);
         DEBUG_FUNCTION_EXIT("decrypt_file", 0);
         return 0;
@@ -465,11 +480,11 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
     }
     DEBUG_TRACE_MSG("Buffers allocated successfully"); // Verify encrypted magic header to detect wrong password
     data_to_decrypt_size = total_input_size - DEFAULT_SALT_SIZE;
-    DEBUG_INFO("Data to decrypt size: %lu bytes", data_to_decrypt_size);
+    DEBUG_INFO("Data to decrypt size: %llu bytes", data_to_decrypt_size);
     if (data_to_decrypt_size < ENCRYPTION_MAGIC_LEN)
     {
         fprintf(stderr, "ERROR: Encrypted file too small to contain magic header.\n");
-        DEBUG_ERROR("File too small for magic header: %lu bytes", data_to_decrypt_size);
+        DEBUG_ERROR("File too small for magic header: %llu bytes", data_to_decrypt_size);
         cleanup_crypto_operation(in, out, buffer, output_buffer, &ctx, output_file, 1);
         DEBUG_FUNCTION_EXIT("decrypt_file", 0);
         return 0;
@@ -503,31 +518,30 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
             DEBUG_FUNCTION_EXIT("decrypt_file", 0);
             return 0;
         }
-        DEBUG_TRACE_MSG("Magic header verified successfully");
-        // Reduce data to decrypt by magic header length
+        DEBUG_TRACE_MSG("Magic header verified successfully"); // Reduce data to decrypt by magic header length
         data_to_decrypt_size -= ENCRYPTION_MAGIC_LEN;
-        DEBUG_INFO("Adjusted data to decrypt size: %lu bytes", data_to_decrypt_size);
+        DEBUG_INFO("Adjusted data to decrypt size: %llu bytes", data_to_decrypt_size);
     }
     if (!quiet)
     {
         printf("\nDecrypting file...\n");
         print_progress_bar(0, data_to_decrypt_size, PROGRESS_WIDTH);
     }
-    DEBUG_INFO("Starting decryption loop for %lu bytes", data_to_decrypt_size);
+    DEBUG_INFO("Starting decryption loop for %llu bytes", data_to_decrypt_size);
 
     // Decrypt file in chunks
     while (file_size < data_to_decrypt_size)
     {
         unsigned long chunk_size = (data_to_decrypt_size - file_size < BUFFER_SIZE) ? data_to_decrypt_size - file_size : BUFFER_SIZE;
 
-        DEBUG_TRACE("Processing chunk: %lu bytes (progress: %lu/%lu)", chunk_size, file_size, data_to_decrypt_size);
+        DEBUG_TRACE("Processing chunk: %lu bytes (progress: %lu/%llu)", chunk_size, file_size, data_to_decrypt_size);
         read_size = fread(buffer, 1, chunk_size, in);
         if (read_size == 0)
         {
             if (feof(in) && file_size < data_to_decrypt_size)
             {
                 fprintf(stderr, "\nERROR: Unexpected end of file while reading encrypted data.\n");
-                DEBUG_ERROR("Unexpected EOF at position %lu/%lu", file_size, data_to_decrypt_size);
+                DEBUG_ERROR("Unexpected EOF at position %lu/%llu", file_size, data_to_decrypt_size);
             }
             else if (ferror(in))
             {
@@ -565,7 +579,7 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
     }
     DEBUG_INFO_MSG("Decryption loop completed successfully");
     final_output_size = file_size;
-    DEBUG_INFO("Final output size: %lu bytes", final_output_size);
+    DEBUG_INFO("Final output size: %llu bytes", final_output_size);
 
     if (!quiet)
     {
@@ -587,12 +601,12 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
     return final_output_size;
 }
 
-unsigned long compress_file(const char *input_file, const char *output_file, int quiet, unsigned long *original_size_out)
+unsigned long long compress_file(const char *input_file, const char *output_file, int quiet, unsigned long long *original_size_out)
 {
     FILE *in = NULL, *out = NULL;
     unsigned char *buffer = NULL, *output_buffer = NULL;
-    unsigned long read_size, output_size, total_input_size = 0;
-    unsigned long total_output_size = 0;
+    unsigned long read_size, output_size;
+    unsigned long long total_input_size = 0, total_output_size = 0;
 
     DEBUG_FUNCTION_ENTER("compress_file");
     DEBUG_INFO("Compressing file - input: '%s', output: '%s', quiet: %s",
@@ -615,7 +629,7 @@ unsigned long compress_file(const char *input_file, const char *output_file, int
         return 0;
     }
     DEBUG_TRACE_MSG("Input file opened successfully");
-    if (get_file_size(in, &total_input_size) != 0)
+    if (get_file_size64(in, &total_input_size) != 0)
     {
         fprintf(stderr, "ERROR: Could not determine size of input file '%s'.\n", input_file);
         DEBUG_ERROR("Failed to get file size for: '%s'", input_file);
@@ -623,7 +637,7 @@ unsigned long compress_file(const char *input_file, const char *output_file, int
         DEBUG_FUNCTION_EXIT("compress_file", 0);
         return 0;
     }
-    DEBUG_INFO("Input file size: %lu bytes", total_input_size);
+    DEBUG_INFO("Input file size: %llu bytes", total_input_size);
 
     if (original_size_out)
         *original_size_out = total_input_size;
@@ -638,8 +652,8 @@ unsigned long compress_file(const char *input_file, const char *output_file, int
         return 0;
     }
     DEBUG_TRACE_MSG("Output file opened successfully"); // Write the original file size to the output file header
-    DEBUG_TRACE("Writing file size header (%lu bytes)", total_input_size);
-    if (fwrite(&total_input_size, sizeof(unsigned long), 1, out) != 1)
+    DEBUG_TRACE("Writing file size header (%llu bytes)", total_input_size);
+    if (fwrite(&total_input_size, sizeof(unsigned long long), 1, out) != 1)
     {
         fprintf(stderr, "ERROR: Failed to write file size header to output file '%s'.\n", output_file);
         DEBUG_ERROR_MSG("Failed to write file size header");
@@ -649,16 +663,16 @@ unsigned long compress_file(const char *input_file, const char *output_file, int
         DEBUG_FUNCTION_EXIT("compress_file", 0);
         return 0;
     }
-    total_output_size += sizeof(unsigned long);
+    total_output_size += sizeof(unsigned long long);
     DEBUG_TRACE_MSG("File size header written successfully");
 
     if (total_input_size > 0)
     {
-        DEBUG_TRACE("Allocating input buffer (%lu bytes)", total_input_size);
+        DEBUG_TRACE("Allocating input buffer (%llu bytes)", total_input_size);
         buffer = malloc(total_input_size);
         if (!buffer)
         {
-            fprintf(stderr, "ERROR: Memory allocation failed for input buffer (%lu bytes).\n", total_input_size);
+            fprintf(stderr, "ERROR: Memory allocation failed for input buffer (%llu bytes).\n", total_input_size);
             DEBUG_ERROR_MSG("Input buffer allocation failed");
             fclose(in);
             fclose(out);
@@ -666,13 +680,12 @@ unsigned long compress_file(const char *input_file, const char *output_file, int
             DEBUG_FUNCTION_EXIT("compress_file", 0);
             return 0;
         }
-
-        DEBUG_TRACE("Reading entire input file (%lu bytes)", total_input_size);
+        DEBUG_TRACE("Reading entire input file (%llu bytes)", total_input_size);
         read_size = fread(buffer, 1, total_input_size, in);
         if (read_size != total_input_size || ferror(in))
         {
             fprintf(stderr, "ERROR: Failed to read entire input file '%s'.\n", input_file);
-            DEBUG_ERROR("Failed to read input file - expected %lu, got %lu", total_input_size, read_size);
+            DEBUG_ERROR("Failed to read input file - expected %llu, got %lu", total_input_size, read_size);
             free(buffer);
             fclose(in);
             fclose(out);
@@ -757,18 +770,17 @@ unsigned long compress_file(const char *input_file, const char *output_file, int
     free(output_buffer);
     fclose(in);
     fclose(out);
-
-    DEBUG_INFO("Compression completed - total output size: %lu bytes", total_output_size);
+    DEBUG_INFO("Compression completed - total output size: %llu bytes", total_output_size);
     DEBUG_FUNCTION_EXIT_SIZE("compress_file", total_output_size);
     return total_output_size;
 }
 
-unsigned long decompress_file(const char *input_file, const char *output_file, int quiet, unsigned long *original_size_out)
+unsigned long long decompress_file(const char *input_file, const char *output_file, int quiet, unsigned long long *original_size_out)
 {
     FILE *in = NULL, *out = NULL;
     unsigned char *buffer = NULL, *output_buffer = NULL;
-    unsigned long compressed_data_size, output_size, expected_original_size = 0;
-    unsigned long input_actual_file_size = 0;
+    unsigned long compressed_data_size, output_size;
+    unsigned long long expected_original_size = 0, input_actual_file_size = 0;
 
     DEBUG_FUNCTION_ENTER("decompress_file");
     DEBUG_INFO("Decompressing file - input: '%s', output: '%s', quiet: %s",
@@ -790,8 +802,7 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
         return 0;
     }
     DEBUG_TRACE_MSG("Input file opened successfully");
-
-    if (get_file_size(in, &input_actual_file_size) != 0)
+    if (get_file_size64(in, &input_actual_file_size) != 0)
     {
         fprintf(stderr, "ERROR: Could not determine size of input file '%s'.\n", input_file);
         DEBUG_ERROR("Failed to get file size for: '%s'", input_file);
@@ -799,23 +810,22 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
         DEBUG_FUNCTION_EXIT("decompress_file", 0);
         return 0;
     }
-    DEBUG_INFO("Input file size: %lu bytes", input_actual_file_size);
+    DEBUG_INFO("Input file size: %llu bytes", input_actual_file_size);
 
     if (original_size_out)
         *original_size_out = input_actual_file_size;
 
     if (input_actual_file_size < MIN_COMPRESSED_FILE_SIZE)
     {
-        fprintf(stderr, "ERROR: Input file '%s' is too small (%lu bytes) to contain header.\n",
+        fprintf(stderr, "ERROR: Input file '%s' is too small (%llu bytes) to contain header.\n",
                 input_file, input_actual_file_size);
-        DEBUG_ERROR("Input file too small: %lu bytes", input_actual_file_size);
+        DEBUG_ERROR("Input file too small: %llu bytes", input_actual_file_size);
         fclose(in);
         DEBUG_FUNCTION_EXIT("decompress_file", 0);
         return 0;
     }
-
     DEBUG_TRACE_MSG("Reading original file size header");
-    if (fread(&expected_original_size, sizeof(unsigned long), 1, in) != 1)
+    if (fread(&expected_original_size, sizeof(unsigned long long), 1, in) != 1)
     {
         fprintf(stderr, "ERROR: Failed to read original file size header from input file '%s'.\n", input_file);
         DEBUG_ERROR_MSG("Failed to read original file size header");
@@ -823,7 +833,7 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
         DEBUG_FUNCTION_EXIT("decompress_file", 0);
         return 0;
     }
-    DEBUG_INFO("Expected original size: %lu bytes", expected_original_size);
+    DEBUG_INFO("Expected original size: %llu bytes", expected_original_size);
 
     out = fopen(output_file, "wb");
     if (!out)
@@ -835,8 +845,7 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
         return 0;
     }
     DEBUG_TRACE_MSG("Output file opened successfully");
-
-    compressed_data_size = input_actual_file_size - sizeof(unsigned long);
+    compressed_data_size = input_actual_file_size - sizeof(unsigned long long);
     DEBUG_INFO("Compressed data size: %lu bytes", compressed_data_size);
     if (compressed_data_size > 0)
     {
@@ -869,7 +878,7 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
     }
     else if (expected_original_size > 0)
     {
-        fprintf(stderr, "ERROR: Compressed file format error - header indicates %lu original bytes, but no compressed data found.\n",
+        fprintf(stderr, "ERROR: Compressed file format error - header indicates %llu original bytes, but no compressed data found.\n",
                 expected_original_size);
         DEBUG_ERROR_MSG("File format error - no compressed data but original size > 0");
         fclose(in);
@@ -883,11 +892,11 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
         buffer = NULL;
         DEBUG_TRACE_MSG("Empty file - no compressed data");
     }
-    DEBUG_TRACE("Allocating output buffer (%lu bytes)", expected_original_size);
+    DEBUG_TRACE("Allocating output buffer (%llu bytes)", expected_original_size);
     output_buffer = malloc(expected_original_size > 0 ? expected_original_size : 1);
     if (!output_buffer)
     {
-        fprintf(stderr, "ERROR: Memory allocation failed for output buffer (%lu bytes).\n", expected_original_size);
+        fprintf(stderr, "ERROR: Memory allocation failed for output buffer (%llu bytes).\n", expected_original_size);
         DEBUG_ERROR_MSG("Output buffer allocation failed");
         if (buffer)
             free(buffer);
@@ -903,7 +912,7 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
         printf("\nDecompressing file...\n");
         print_progress_bar(0, expected_original_size, PROGRESS_WIDTH);
     }
-    DEBUG_INFO("Starting Huffman decompression - compressed size: %lu, expected output: %lu bytes",
+    DEBUG_INFO("Starting Huffman decompression - compressed size: %lu, expected output: %llu bytes",
                compressed_data_size, expected_original_size);
 
     if (huffman_decompress(buffer, compressed_data_size, output_buffer, expected_original_size, &output_size) != 0)
@@ -922,9 +931,9 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
     DEBUG_INFO("Huffman decompression completed - actual output size: %lu bytes", output_size);
     if (output_size != expected_original_size)
     {
-        fprintf(stderr, "\nERROR: Decompressed size (%lu) does not match expected size from header (%lu). File might be corrupted.\n",
+        fprintf(stderr, "\nERROR: Decompressed size (%lu) does not match expected size from header (%llu). File might be corrupted.\n",
                 output_size, expected_original_size);
-        DEBUG_ERROR("Size mismatch - expected: %lu, actual: %lu", expected_original_size, output_size);
+        DEBUG_ERROR("Size mismatch - expected: %llu, actual: %lu", expected_original_size, output_size);
         if (buffer)
             free(buffer);
         free(output_buffer);
@@ -966,18 +975,18 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
     fclose(in);
     fclose(out);
 
-    DEBUG_INFO("Decompression completed successfully - output size: %lu bytes", expected_original_size);
+    DEBUG_INFO("Decompression completed successfully - output size: %llu bytes", expected_original_size);
     DEBUG_FUNCTION_EXIT_SIZE("decompress_file", expected_original_size);
     return expected_original_size;
 }
 
-unsigned long process_file(const char *input_file, const char *output_file,
-                           const char *password, int quiet, unsigned long *original_size_out)
+unsigned long long process_file(const char *input_file, const char *output_file,
+                                const char *password, int quiet, unsigned long long *original_size_out)
 {
     char temp_file[MAX_FILENAME];
-    unsigned long compressed_size = 0;
-    unsigned long final_size = 0;
-    unsigned long original_input_size = 0;
+    unsigned long long compressed_size = 0;
+    unsigned long long final_size = 0;
+    unsigned long long original_input_size = 0;
 
     DEBUG_FUNCTION_ENTER("process_file");
     DEBUG_INFO("Processing file (compress + encrypt) - input: '%s', output: '%s'",
@@ -1001,7 +1010,7 @@ unsigned long process_file(const char *input_file, const char *output_file,
     compressed_size = compress_file(input_file, temp_file, quiet, &original_input_size);
     if (original_size_out)
         *original_size_out = original_input_size;
-    DEBUG_INFO("Compression step completed - input: %lu bytes, compressed: %lu bytes",
+    DEBUG_INFO("Compression step completed - input: %llu bytes, compressed: %llu bytes",
                original_input_size, compressed_size);
 
     if (compressed_size == 0 && original_input_size > 0)
@@ -1014,9 +1023,10 @@ unsigned long process_file(const char *input_file, const char *output_file,
     }
     if (!quiet)
         printf("\n--- Encryption Step ---\n");
+
     DEBUG_INFO_MSG("Starting encryption step");
     final_size = encrypt_file(temp_file, output_file, password, quiet, NULL);
-    DEBUG_INFO("Encryption step completed - compressed: %lu bytes, final: %lu bytes",
+    DEBUG_INFO("Encryption step completed - compressed: %llu bytes, final: %llu bytes",
                compressed_size, final_size);
 
     if (final_size == 0 && compressed_size > 0)
@@ -1039,20 +1049,19 @@ unsigned long process_file(const char *input_file, const char *output_file,
                                  original_input_size, final_size);
         print_operation_result(0, "File processing (compress + encrypt)");
     }
-
-    DEBUG_INFO("File processing completed successfully - original: %lu bytes, final: %lu bytes",
+    DEBUG_INFO("File processing completed successfully - original: %llu bytes, final: %llu bytes",
                original_input_size, final_size);
     DEBUG_FUNCTION_EXIT_SIZE("process_file", final_size);
     return final_size;
 }
 
-unsigned long extract_file(const char *input_file, const char *output_file,
-                           const char *password, int quiet, unsigned long *original_size_out)
+unsigned long long extract_file(const char *input_file, const char *output_file,
+                                const char *password, int quiet, unsigned long long *original_size_out)
 {
     char temp_file[MAX_FILENAME];
-    unsigned long decrypted_size = 0;
-    unsigned long final_size = 0;
-    unsigned long original_input_size = 0;
+    unsigned long long decrypted_size = 0;
+    unsigned long long final_size = 0;
+    unsigned long long original_input_size = 0;
 
     DEBUG_FUNCTION_ENTER("extract_file");
     DEBUG_INFO("Extracting file (decrypt + decompress) - input: '%s', output: '%s'",
@@ -1076,7 +1085,8 @@ unsigned long extract_file(const char *input_file, const char *output_file,
     decrypted_size = decrypt_file(input_file, temp_file, password, quiet, &original_input_size);
     if (original_size_out)
         *original_size_out = original_input_size;
-    DEBUG_INFO("Decryption step completed - input: %lu bytes, decrypted: %lu bytes",
+
+    DEBUG_INFO("Decryption step completed - input: %llu bytes, decrypted: %llu bytes",
                original_input_size, decrypted_size);
 
     if (decrypted_size == 0 && original_input_size > DEFAULT_SALT_SIZE)
@@ -1092,10 +1102,9 @@ unsigned long extract_file(const char *input_file, const char *output_file,
         printf("\n--- Decompression Step ---\n");
     DEBUG_INFO_MSG("Starting decompression step");
     final_size = decompress_file(temp_file, output_file, quiet, NULL);
-    DEBUG_INFO("Decompression step completed - compressed: %lu bytes, final: %lu bytes",
+    DEBUG_INFO("Decompression step completed - compressed: %llu bytes, final: %llu bytes",
                decrypted_size, final_size);
-
-    if (final_size == 0 && decrypted_size > sizeof(unsigned long))
+    if (final_size == 0 && decrypted_size > sizeof(unsigned long long))
     {
         fprintf(stderr, "ERROR: Decompression step failed for temporary file '%s'. Decrypted data might be corrupted.\n", temp_file);
         DEBUG_ERROR_MSG("Decompression step failed");
@@ -1115,7 +1124,7 @@ unsigned long extract_file(const char *input_file, const char *output_file,
                                  original_input_size, final_size);
         print_operation_result(0, "File extraction (decrypt + decompress)");
     }
-    DEBUG_INFO("File extraction completed successfully - original: %lu bytes, final: %lu bytes",
+    DEBUG_INFO("File extraction completed successfully - original: %llu bytes, final: %llu bytes",
                original_input_size, final_size);
     DEBUG_FUNCTION_EXIT_SIZE("extract_file", final_size);
     return final_size;
@@ -1181,9 +1190,9 @@ int handle_file_list(const char *command, const char *filename_pattern, int quie
             printf("MATCH FOUND:\n");
             printf("Input file:     %s\n", found_entry->input_filename);
             printf("Output file:    %s\n", found_entry->output_filename);
-            printf("Sequence ID:    %lu\n", found_entry->sequence_num);
-            printf("Original size:  %lu bytes\n", found_entry->original_size);
-            printf("Processed size: %lu bytes\n", found_entry->processed_size);
+            printf("Sequence ID:    %llu\n", found_entry->sequence_num);
+            printf("Original size:  %llu bytes\n", found_entry->original_size);
+            printf("Processed size: %llu bytes\n", found_entry->processed_size);
             if (found_entry->original_size > 0)
             {
                 printf("Size ratio:     %.2f%%\n",

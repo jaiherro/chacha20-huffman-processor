@@ -18,7 +18,7 @@ int batch_process(char *input_files[], int num_files, const char *output_dir,
     int failure_count = 0;
     char output_path[MAX_FILENAME];
     char *filename_only;
-    unsigned long original_size, processed_size;
+    unsigned long long original_size, processed_size;
 
     DEBUG_FUNCTION_ENTER("batch_process");
     DEBUG_INFO("Starting batch processing - %d files to directory: '%s'", num_files, output_dir);
@@ -76,7 +76,7 @@ int batch_process(char *input_files[], int num_files, const char *output_dir,
         if (processed_size > 0)
         {
             success_count++;
-            DEBUG_INFO("File processed successfully - original: %lu bytes, processed: %lu bytes",
+            DEBUG_INFO("File processed successfully - original: %llu bytes, processed: %llu bytes",
                        original_size, processed_size);
             if (!quiet)
             {

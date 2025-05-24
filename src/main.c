@@ -46,7 +46,7 @@ static int validate_file_input(const char *filename)
 
 static int handle_compression_operation(int mode, const char *input_file, const char *output_file, int quiet)
 {
-    unsigned long original_size, processed_size;
+    unsigned long long original_size, processed_size;
 
     DEBUG_FUNCTION_ENTER("handle_compression_operation");
     DEBUG_INFO("Compression operation - mode: %s, input: '%s', output: '%s', quiet: %s",
@@ -64,7 +64,7 @@ static int handle_compression_operation(int mode, const char *input_file, const 
     {
         DEBUG_TRACE("Starting file compression: %s", "begin");
         processed_size = compress_file(input_file, output_file, quiet, &original_size);
-        DEBUG_INFO("Compression result - original: %lu bytes, compressed: %lu bytes",
+        DEBUG_INFO("Compression result - original: %llu bytes, compressed: %llu bytes",
                    original_size, processed_size);
 
         if (processed_size > 0 || original_size == 0)
@@ -81,10 +81,10 @@ static int handle_compression_operation(int mode, const char *input_file, const 
     {
         DEBUG_TRACE("Starting file decompression: %s", "begin");
         processed_size = decompress_file(input_file, output_file, quiet, &original_size);
-        DEBUG_INFO("Decompression result - compressed: %lu bytes, decompressed: %lu bytes",
+        DEBUG_INFO("Decompression result - compressed: %llu bytes, decompressed: %llu bytes",
                    original_size, processed_size);
 
-        if (processed_size == 0 && original_size > sizeof(unsigned long))
+        if (processed_size == 0 && original_size > sizeof(unsigned long long))
         {
             if (!quiet)
                 fprintf(stderr, "Decompression failed (corrupted file or I/O error).\n");
@@ -104,7 +104,7 @@ static int handle_compression_operation(int mode, const char *input_file, const 
 static int handle_crypto_operation(int mode, const char *input_file, const char *output_file, int quiet)
 {
     char password[MAX_PASSWORD];
-    unsigned long original_size, processed_size;
+    unsigned long long original_size, processed_size;
     int password_confirm = (mode == MODE_ENCRYPT || mode == MODE_PROCESS);
 
     DEBUG_FUNCTION_ENTER("handle_crypto_operation");
@@ -132,7 +132,7 @@ static int handle_crypto_operation(int mode, const char *input_file, const char 
     case MODE_ENCRYPT:
         DEBUG_INFO_MSG("Starting file encryption");
         processed_size = encrypt_file(input_file, output_file, password, quiet, &original_size);
-        DEBUG_INFO("Encryption result - original: %lu bytes, encrypted: %lu bytes",
+        DEBUG_INFO("Encryption result - original: %llu bytes, encrypted: %llu bytes",
                    original_size, processed_size);
         if (processed_size > 0)
         {
@@ -146,7 +146,7 @@ static int handle_crypto_operation(int mode, const char *input_file, const char 
     case MODE_DECRYPT:
         DEBUG_INFO_MSG("Starting file decryption");
         processed_size = decrypt_file(input_file, output_file, password, quiet, &original_size);
-        DEBUG_INFO("Decryption result - encrypted: %lu bytes, decrypted: %lu bytes",
+        DEBUG_INFO("Decryption result - encrypted: %llu bytes, decrypted: %llu bytes",
                    original_size, processed_size);
         if (processed_size == 0 && original_size > DEFAULT_SALT_SIZE)
         {
@@ -163,7 +163,7 @@ static int handle_crypto_operation(int mode, const char *input_file, const char 
     case MODE_PROCESS:
         DEBUG_INFO_MSG("Starting file processing (compress + encrypt)");
         processed_size = process_file(input_file, output_file, password, quiet, &original_size);
-        DEBUG_INFO("Processing result - original: %lu bytes, processed: %lu bytes",
+        DEBUG_INFO("Processing result - original: %llu bytes, processed: %llu bytes",
                    original_size, processed_size);
         if (processed_size > 0)
         {
@@ -177,9 +177,9 @@ static int handle_crypto_operation(int mode, const char *input_file, const char 
     case MODE_EXTRACT:
         DEBUG_INFO_MSG("Starting file extraction (decrypt + decompress)");
         processed_size = extract_file(input_file, output_file, password, quiet, &original_size);
-        DEBUG_INFO("Extraction result - processed: %lu bytes, extracted: %lu bytes",
+        DEBUG_INFO("Extraction result - processed: %llu bytes, extracted: %llu bytes",
                    original_size, processed_size);
-        if (processed_size == 0 && original_size > DEFAULT_SALT_SIZE + sizeof(unsigned long))
+        if (processed_size == 0 && original_size > DEFAULT_SALT_SIZE + sizeof(unsigned long long))
         {
             if (!quiet)
                 fprintf(stderr, "Extraction failed (decryption or decompression error).\n");

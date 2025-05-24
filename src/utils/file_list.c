@@ -20,7 +20,7 @@ int file_list_init(file_list_t *list)
 }
 
 int file_list_add(file_list_t *list, const char *input_filename, const char *output_filename,
-                  unsigned long original_size, unsigned long processed_size)
+                  unsigned long long original_size, unsigned long long processed_size)
 {
     if (!list || !input_filename || !output_filename)
         return -1;
@@ -67,7 +67,7 @@ file_entry_t *file_list_find(file_list_t *list, const char *filename)
     return NULL;
 }
 
-unsigned long file_list_get_recent(file_list_t *list, unsigned long count, file_entry_t **result)
+unsigned long long file_list_get_recent(file_list_t *list, unsigned long long count, file_entry_t **result)
 {
     if (!list || !result || !count)
         return 0;
@@ -136,14 +136,13 @@ int file_list_save(file_list_t *list, const char *filename)
     {
         unsigned long input_filename_len = strlen(current->input_filename) + 1;
         unsigned long output_filename_len = strlen(current->output_filename) + 1;
-
         if (fwrite(&input_filename_len, sizeof(unsigned long), 1, file) != 1 ||
             fwrite(current->input_filename, 1, input_filename_len, file) != input_filename_len ||
             fwrite(&output_filename_len, sizeof(unsigned long), 1, file) != 1 ||
             fwrite(current->output_filename, 1, output_filename_len, file) != output_filename_len ||
-            fwrite(&current->sequence_num, sizeof(unsigned long), 1, file) != 1 ||
-            fwrite(&current->original_size, sizeof(unsigned long), 1, file) != 1 ||
-            fwrite(&current->processed_size, sizeof(unsigned long), 1, file) != 1)
+            fwrite(&current->sequence_num, sizeof(unsigned long long), 1, file) != 1 ||
+            fwrite(&current->original_size, sizeof(unsigned long long), 1, file) != 1 ||
+            fwrite(&current->processed_size, sizeof(unsigned long long), 1, file) != 1)
         {
             fclose(file);
             return -1;
@@ -191,14 +190,13 @@ int file_list_load(file_list_t *list, const char *filename)
             file_list_free(list);
             return -1;
         }
-
         if (fread(entry->input_filename, 1, input_filename_len, file) != input_filename_len ||
             fread(&output_filename_len, sizeof(unsigned long), 1, file) != 1 ||
             output_filename_len == 0 || output_filename_len > FILE_LIST_MAX_FILENAME ||
             fread(entry->output_filename, 1, output_filename_len, file) != output_filename_len ||
-            fread(&entry->sequence_num, sizeof(unsigned long), 1, file) != 1 ||
-            fread(&entry->original_size, sizeof(unsigned long), 1, file) != 1 ||
-            fread(&entry->processed_size, sizeof(unsigned long), 1, file) != 1)
+            fread(&entry->sequence_num, sizeof(unsigned long long), 1, file) != 1 ||
+            fread(&entry->original_size, sizeof(unsigned long long), 1, file) != 1 ||
+            fread(&entry->processed_size, sizeof(unsigned long long), 1, file) != 1)
         {
             free(entry);
             fclose(file);
@@ -254,7 +252,7 @@ void file_list_print(file_list_t *list)
     }
 
     printf("File Processing History\n");
-    printf("Total entries: %lu\n", list->count);
+    printf("Total entries: %llu\n", list->count);
 
     if (list->count == 0)
     {
@@ -292,8 +290,7 @@ void file_list_print(file_list_t *list)
         {
             strcpy(output_display, current->output_filename);
         }
-
-        printf("%-4lu %-30s %-30s %-12lu %-12lu ",
+        printf("%-4llu %-30s %-30s %-12llu %-12llu ",
                current->sequence_num,
                input_display,
                output_display,

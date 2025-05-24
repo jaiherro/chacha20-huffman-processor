@@ -125,7 +125,7 @@ void debug_counter(char *buffer, size_t buffer_size);
     DEBUG_TRACE("Exiting function: %s with result: %d", func_name, result)
 
 #define DEBUG_FUNCTION_EXIT_SIZE(func_name, result) \
-    DEBUG_TRACE("Exiting function: %s with result: %lu", func_name, result)
+    DEBUG_TRACE("Exiting function: %s with result: %llu", func_name, result)
 
 /* Memory allocation debugging */
 #define DEBUG_MALLOC(ptr, size) \
