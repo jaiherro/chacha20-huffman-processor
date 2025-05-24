@@ -25,9 +25,9 @@ void print_usage(const char *program_name)
     printf("  -f <pattern>           Find files matching pattern in list\n");
     printf("  -b <outdir> <files..>  Batch process (compress + encrypt) multiple files\n");
     printf("  -h, --help             Show this help information\n\n");
-
     printf("OPTIONS:\n");
-    printf("  -q                     Quiet mode (minimal output)\n\n");
+    printf("  -q                     Quiet mode (minimal output)\n");
+    printf("  --debug                Enable debug mode (verbose diagnostic output)\n\n");
 
     printf("EXAMPLES:\n");
     printf("  %s -e document.txt document.enc\n", program_name);

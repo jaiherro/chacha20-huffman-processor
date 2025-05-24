@@ -5,10 +5,7 @@ TEST_DIR = test
 
 # Compiler settings
 CC ?= gcc
-CFLAGS = -Wall -Wextra -pedantic -std=c99 -I$(INCLUDE_DIR)
-
-# Use -Werror for submission builds if required:
-# BASE_CFLAGS = -Wall -Werror -pedantic -std=c99 -I$(INCLUDE_DIR)
+CFLAGS = -Wall -Werror -pedantic -std=c99 -I$(INCLUDE_DIR)
 
 # Source files (Windows-compatible wildcards)
 APP_SRCS = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/*/*.c)

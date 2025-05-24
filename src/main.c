@@ -10,6 +10,7 @@
 #include "utils/ui.h"
 #include "utils/password.h"
 #include "utils/filesystem.h"
+#include "utils/debug.h"
 
 /* Program modes */
 #define MODE_COMPRESS 1
@@ -29,7 +30,7 @@ static int handle_crypto_operation(int mode, const char *input_file, const char 
 static int handle_batch_operation(char *input_files[], int num_files, const char *output_dir, int quiet);
 static int parse_command_line(int argc, char *argv[], int *mode, char **input_file, char **output_file,
                               char **batch_output_dir, char batch_input_files[][MAX_FILENAME],
-                              int *num_batch_files, int *quiet);
+                              int *num_batch_files, int *quiet, int *debug);
 static int validate_file_input(const char *filename);
 
 /* Helper function implementations */
@@ -47,31 +48,56 @@ static int handle_compression_operation(int mode, const char *input_file, const 
 {
     unsigned long original_size, processed_size;
 
+    DEBUG_FUNCTION_ENTER("handle_compression_operation");
+    DEBUG_INFO("Compression operation - mode: %s, input: '%s', output: '%s', quiet: %s",
+               (mode == MODE_COMPRESS) ? "COMPRESS" : "DECOMPRESS",
+               input_file, output_file, quiet ? "yes" : "no");
+
     if (validate_file_input(input_file) != 0)
+    {
+        DEBUG_ERROR("File validation failed for input: '%s'", input_file);
+        DEBUG_FUNCTION_EXIT("handle_compression_operation", 1);
         return 1;
+    }
 
     if (mode == MODE_COMPRESS)
     {
+        DEBUG_TRACE("Starting file compression: %s", "begin");
         processed_size = compress_file(input_file, output_file, quiet, &original_size);
+        DEBUG_INFO("Compression result - original: %lu bytes, compressed: %lu bytes",
+                   original_size, processed_size);
+
         if (processed_size > 0 || original_size == 0)
         {
             add_entry_to_file_list(input_file, output_file, original_size, processed_size, quiet);
+            DEBUG_FUNCTION_EXIT("handle_compression_operation", 0);
             return 0;
         }
+        DEBUG_ERROR("Compression failed: %s", "error");
+        DEBUG_FUNCTION_EXIT("handle_compression_operation", 1);
         return 1;
     }
     else if (mode == MODE_DECOMPRESS)
     {
+        DEBUG_TRACE("Starting file decompression: %s", "begin");
         processed_size = decompress_file(input_file, output_file, quiet, &original_size);
+        DEBUG_INFO("Decompression result - compressed: %lu bytes, decompressed: %lu bytes",
+                   original_size, processed_size);
+
         if (processed_size == 0 && original_size > sizeof(unsigned long))
         {
             if (!quiet)
                 fprintf(stderr, "Decompression failed (corrupted file or I/O error).\n");
+            DEBUG_ERROR("Decompression failed - invalid result sizes: %s", "error");
+            DEBUG_FUNCTION_EXIT("handle_compression_operation", 1);
             return 1;
         }
+        DEBUG_FUNCTION_EXIT("handle_compression_operation", 0);
         return 0;
     }
 
+    DEBUG_ERROR("Unknown compression mode: %d", mode);
+    DEBUG_FUNCTION_EXIT("handle_compression_operation", 1);
     return 1;
 }
 
@@ -81,63 +107,95 @@ static int handle_crypto_operation(int mode, const char *input_file, const char 
     unsigned long original_size, processed_size;
     int password_confirm = (mode == MODE_ENCRYPT || mode == MODE_PROCESS);
 
+    DEBUG_FUNCTION_ENTER("handle_crypto_operation");
+    const char *mode_names[] = {"", "COMPRESS", "DECOMPRESS", "ENCRYPT", "DECRYPT", "PROCESS", "EXTRACT"};
+    DEBUG_INFO("Crypto operation - mode: %s, input: '%s', output: '%s', quiet: %s",
+               (mode >= 1 && mode <= 6) ? mode_names[mode] : "UNKNOWN",
+               input_file, output_file, quiet ? "yes" : "no");
     if (get_password(password, sizeof(password), password_confirm) != 0)
+    {
+        DEBUG_ERROR("Failed to get password from user: %s", "failed");
+        DEBUG_FUNCTION_EXIT("handle_crypto_operation", 1);
         return 1;
+    }
+    DEBUG_INFO_MSG("Password obtained successfully");
 
     if (validate_file_input(input_file) != 0)
     {
+        DEBUG_ERROR("File validation failed for input: '%s'", input_file);
         memset(password, 0, sizeof(password));
+        DEBUG_FUNCTION_EXIT("handle_crypto_operation", 1);
         return 1;
     }
-
     switch (mode)
     {
     case MODE_ENCRYPT:
+        DEBUG_INFO_MSG("Starting file encryption");
         processed_size = encrypt_file(input_file, output_file, password, quiet, &original_size);
+        DEBUG_INFO("Encryption result - original: %lu bytes, encrypted: %lu bytes",
+                   original_size, processed_size);
         if (processed_size > 0)
         {
             add_entry_to_file_list(input_file, output_file, original_size, processed_size, quiet);
             memset(password, 0, sizeof(password));
+            DEBUG_FUNCTION_EXIT("handle_crypto_operation", 0);
             return 0;
         }
+        DEBUG_ERROR_MSG("Encryption failed");
         break;
-
     case MODE_DECRYPT:
+        DEBUG_INFO_MSG("Starting file decryption");
         processed_size = decrypt_file(input_file, output_file, password, quiet, &original_size);
+        DEBUG_INFO("Decryption result - encrypted: %lu bytes, decrypted: %lu bytes",
+                   original_size, processed_size);
         if (processed_size == 0 && original_size > DEFAULT_SALT_SIZE)
         {
             if (!quiet)
                 fprintf(stderr, "Decryption failed (I/O error or file too small).\n");
+            DEBUG_ERROR_MSG("Decryption failed - invalid result sizes");
             memset(password, 0, sizeof(password));
+            DEBUG_FUNCTION_EXIT("handle_crypto_operation", 1);
             return 1;
         }
         memset(password, 0, sizeof(password));
+        DEBUG_FUNCTION_EXIT("handle_crypto_operation", 0);
         return 0;
-
     case MODE_PROCESS:
+        DEBUG_INFO_MSG("Starting file processing (compress + encrypt)");
         processed_size = process_file(input_file, output_file, password, quiet, &original_size);
+        DEBUG_INFO("Processing result - original: %lu bytes, processed: %lu bytes",
+                   original_size, processed_size);
         if (processed_size > 0)
         {
             add_entry_to_file_list(input_file, output_file, original_size, processed_size, quiet);
             memset(password, 0, sizeof(password));
+            DEBUG_FUNCTION_EXIT("handle_crypto_operation", 0);
             return 0;
         }
+        DEBUG_ERROR_MSG("Processing failed");
         break;
-
     case MODE_EXTRACT:
+        DEBUG_INFO_MSG("Starting file extraction (decrypt + decompress)");
         processed_size = extract_file(input_file, output_file, password, quiet, &original_size);
+        DEBUG_INFO("Extraction result - processed: %lu bytes, extracted: %lu bytes",
+                   original_size, processed_size);
         if (processed_size == 0 && original_size > DEFAULT_SALT_SIZE + sizeof(unsigned long))
         {
             if (!quiet)
                 fprintf(stderr, "Extraction failed (decryption or decompression error).\n");
+            DEBUG_ERROR_MSG("Extraction failed - invalid result sizes");
             memset(password, 0, sizeof(password));
+            DEBUG_FUNCTION_EXIT("handle_crypto_operation", 1);
             return 1;
         }
         memset(password, 0, sizeof(password));
+        DEBUG_FUNCTION_EXIT("handle_crypto_operation", 0);
         return 0;
     }
 
+    DEBUG_ERROR("Unknown crypto operation mode: %d", mode);
     memset(password, 0, sizeof(password));
+    DEBUG_FUNCTION_EXIT("handle_crypto_operation", 1);
     return 1;
 }
 
@@ -146,18 +204,34 @@ static int handle_batch_operation(char *input_files[], int num_files, const char
     char password[MAX_PASSWORD];
     int result;
 
+    DEBUG_FUNCTION_ENTER("handle_batch_operation");
+    DEBUG_INFO("Batch operation - files: %d, output_dir: '%s', quiet: %s",
+               num_files, output_dir, quiet ? "yes" : "no");
+
+    for (int i = 0; i < num_files; i++)
+    {
+        DEBUG_INFO("  File %d: '%s'", i + 1, input_files[i]);
+    }
+
     if (get_password(password, sizeof(password), 1) != 0)
+    {
+        DEBUG_ERROR("Failed to get password for batch operation: %s", "failed");
+        DEBUG_FUNCTION_EXIT("handle_batch_operation", 1);
         return 1;
+    }
+    DEBUG_INFO("Password obtained for batch operation: %s", "success");
 
     result = batch_process(input_files, num_files, output_dir, password, quiet);
+    DEBUG_INFO("Batch operation completed with result: %d", result);
     memset(password, 0, sizeof(password));
 
+    DEBUG_FUNCTION_EXIT("handle_batch_operation", result);
     return result;
 }
 
 static int parse_command_line(int argc, char *argv[], int *mode, char **input_file, char **output_file,
                               char **batch_output_dir, char batch_input_files[][MAX_FILENAME],
-                              int *num_batch_files, int *quiet)
+                              int *num_batch_files, int *quiet, int *debug)
 {
     *mode = MODE_HELP;
     *input_file = NULL;
@@ -165,6 +239,7 @@ static int parse_command_line(int argc, char *argv[], int *mode, char **input_fi
     *batch_output_dir = DEFAULT_OUTPUT_DIR;
     *num_batch_files = 0;
     *quiet = 0;
+    *debug = 0;
 
     if (argc < 2)
         return 0;
@@ -244,14 +319,16 @@ static int parse_command_line(int argc, char *argv[], int *mode, char **input_fi
     case MODE_HELP:
         arg_index = 2;
         break;
-    }
-
-    /* Parse optional arguments */
+    } /* Parse optional arguments */
     for (int i = arg_index; i < argc; i++)
     {
         if (strcmp(argv[i], "-q") == 0)
         {
             *quiet = 1;
+        }
+        else if (strcmp(argv[i], "--debug") == 0)
+        {
+            *debug = 1;
         }
         else if (*mode == MODE_BATCH)
         {
@@ -297,16 +374,29 @@ int main(int argc, char *argv[])
     char batch_input_files[MAX_BATCH_FILES][MAX_FILENAME];
     int num_batch_input_files = 0;
     int quiet_operation = 0;
+    int debug_operation = 0;
     int result = 0;
 
     /* Parse command line arguments */
     if (parse_command_line(argc, argv, &operation_mode, &input_file_arg, &output_file_arg,
                            &batch_output_dir, batch_input_files, &num_batch_input_files,
-                           &quiet_operation) != 0)
+                           &quiet_operation, &debug_operation) != 0)
     {
         print_usage(argv[0]);
         return 1;
+    } /* Initialize debug mode */
+    if (debug_operation)
+    {
+        debug_init(1, DEBUG_LEVEL_TRACE);
+        DEBUG_INFO("Debug mode enabled for Secure File Processor: %s", "enabled");
+        DEBUG_INFO("Command line arguments: argc=%d", argc);
+        for (int i = 0; i < argc; i++)
+        {
+            DEBUG_INFO("  argv[%d] = \"%s\"", i, argv[i]);
+        }
     }
+
+    DEBUG_INFO("Starting operation mode: %d", operation_mode);
 
     /* Execute the selected operation */
     switch (operation_mode)
@@ -330,9 +420,9 @@ int main(int argc, char *argv[])
     case MODE_FIND:
         result = handle_file_list("find", input_file_arg, quiet_operation);
         break;
-
     case MODE_BATCH:
     {
+        DEBUG_INFO_MSG("Preparing batch operation");
         char *batch_file_ptrs[MAX_BATCH_FILES];
         for (int i = 0; i < num_batch_input_files; i++)
         {
@@ -344,10 +434,16 @@ int main(int argc, char *argv[])
 
     case MODE_HELP:
     default:
+        if (operation_mode != MODE_HELP)
+        {
+            DEBUG_ERROR("Unknown operation mode: %d", operation_mode);
+        }
         print_usage(argv[0]);
         result = (operation_mode == MODE_HELP) ? 0 : 1;
         break;
     }
 
+    DEBUG_INFO("Operation completed with result: %d", result);
+    DEBUG_INFO("Program exiting with status: %s", (result == 0) ? "SUCCESS" : "FAILURE");
     return (result == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

@@ -78,6 +78,7 @@ make clean        # Clean build artifacts
 | `-b` | `<outdir> <files...>` | Batch process files |
 | `-q` | | Quiet mode |
 | `-h` | | Show help |
+| `--debug` | | Debug mode |
 
 ## Implementation Details
 
