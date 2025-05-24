@@ -23,7 +23,7 @@ void print_usage(const char *program_name)
     printf("  -u <input> <output>    Extract a file (decrypt then decompress)\n");
     printf("  -l                     List processed files (from file_list.dat)\n");
     printf("  -f <pattern>           Find files matching pattern in list\n");
-    printf("  -b <outdir> <files..>  Batch process (compress+encrypt) multiple files\n");
+    printf("  -b <outdir> <files..>  Batch process (compress + encrypt) multiple files\n");
     printf("  -h, --help             Show this help information\n\n");
 
     printf("OPTIONS:\n");

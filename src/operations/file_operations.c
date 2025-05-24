@@ -814,7 +814,7 @@ unsigned long process_file(const char *input_file, const char *output_file,
     if (!quiet)
     {
         printf("\n");
-        print_processing_summary("Process (Compress+Encrypt)", input_file, output_file,
+        print_processing_summary("Process (Compress + Encrypt)", input_file, output_file,
                                  original_input_size, final_size);
         print_operation_result(0, "File processing (compress + encrypt)");
     }
