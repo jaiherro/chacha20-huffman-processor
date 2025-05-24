@@ -12,9 +12,8 @@ int file_list_init(file_list_t *list)
     if (!list)
         return -1;
 
-    list->head = NULL;
-    list->tail = NULL;
-    list->count = 0;
+    // Clear entire structure to ensure all fields are initialized
+    memset(list, 0, sizeof(*list));
     list->next_sequence_num = 1;
     return 0;
 }
