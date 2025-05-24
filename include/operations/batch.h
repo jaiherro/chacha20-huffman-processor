@@ -8,10 +8,6 @@
 #define MAX_BATCH_FILES 100         /* Maximum files per batch */
 #define DEFAULT_OUTPUT_DIR "output" /* Default output directory */
 
-/*
- * Process multiple files in batch mode (compress + encrypt)
- * Returns 0 on success, -1 if any files failed
- */
 int batch_process(char *filenames[], int num_files, const char *output_dir,
                   const char *password, int quiet);
 
