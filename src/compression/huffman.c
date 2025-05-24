@@ -18,15 +18,20 @@ typedef struct
 } priority_queue;
 
 /* Helper functions */
-static void count_frequencies(const unsigned char *input, unsigned long len, unsigned long freq[MAX_SYMBOLS]);
+static void count_frequencies(const unsigned char *input, unsigned long len,
+                              unsigned long freq[MAX_SYMBOLS]);
 static huffman_node *build_tree(unsigned long freq[MAX_SYMBOLS]);
-static void generate_codes(huffman_node *root, huffman_code codes[MAX_SYMBOLS], unsigned char *code, int len);
+static void generate_codes(huffman_node *root, huffman_code codes[MAX_SYMBOLS],
+                           unsigned char *code, int len);
 static void free_tree(huffman_node *root);
 static void pq_insert(priority_queue *pq, huffman_node *node);
 static huffman_node *pq_extract_min(priority_queue *pq);
-static int write_tree(huffman_node *root, unsigned char *out, unsigned long *pos, int *bit);
-static huffman_node *read_tree(const unsigned char *in, unsigned long *pos, int *bit);
-static void write_bit(unsigned char *out, unsigned long *pos, int *bit, int val);
+static int write_tree(huffman_node *root, unsigned char *out,
+                      unsigned long *pos, int *bit);
+static huffman_node *read_tree(const unsigned char *in, unsigned long *pos,
+                               int *bit);
+static void write_bit(unsigned char *out, unsigned long *pos, int *bit,
+                      int val);
 static int read_bit(const unsigned char *in, unsigned long *pos, int *bit);
 
 unsigned long huffman_worst_case_size(unsigned long input_len)
@@ -34,7 +39,8 @@ unsigned long huffman_worst_case_size(unsigned long input_len)
     return input_len + MAX_SYMBOLS * 10 + sizeof(unsigned long) + 256;
 }
 
-static void count_frequencies(const unsigned char *input, unsigned long len, unsigned long freq[MAX_SYMBOLS])
+static void count_frequencies(const unsigned char *input, unsigned long len,
+                              unsigned long freq[MAX_SYMBOLS])
 {
     memset(freq, 0, MAX_SYMBOLS * sizeof(unsigned long));
     for (unsigned long i = 0; i < len; i++)
