@@ -36,16 +36,6 @@ typedef struct
 /* Calculate worst-case compressed size */
 unsigned long huffman_worst_case_size(unsigned long input_len);
 
-/* Compress data using Huffman coding */
-int huffman_compress(const unsigned char *input, unsigned long input_len,
-                     unsigned char *output, unsigned long output_max_len,
-                     unsigned long *output_len);
-
-/* Decompress data using Huffman coding */
-int huffman_decompress(const unsigned char *input, unsigned long input_len,
-                       unsigned char *output, unsigned long output_max_len,
-                       unsigned long *output_len);
-
 /* Initialise streaming compression context */
 int huffman_stream_init(huffman_stream_context *ctx);
 

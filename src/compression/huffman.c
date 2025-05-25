@@ -20,8 +20,6 @@ typedef struct
 } priority_queue;
 
 /* Helper functions */
-static void count_frequencies(const unsigned char *input, unsigned long len,
-                              unsigned long freq[MAX_SYMBOLS]);
 static huffman_node *build_tree(unsigned long freq[MAX_SYMBOLS]);
 static void generate_codes(huffman_node *root, huffman_code codes[MAX_SYMBOLS],
                            unsigned char *code, int len);
@@ -39,16 +37,6 @@ static int read_bit(const unsigned char *in, unsigned long *pos, int *bit);
 unsigned long huffman_worst_case_size(unsigned long input_len)
 {
     return input_len + MAX_SYMBOLS * 10 + sizeof(unsigned long) + 256;
-}
-
-static void count_frequencies(const unsigned char *input, unsigned long len,
-                              unsigned long freq[MAX_SYMBOLS])
-{
-    memset(freq, 0, MAX_SYMBOLS * sizeof(unsigned long));
-    for (unsigned long i = 0; i < len; i++)
-    {
-        freq[input[i]]++;
-    }
 }
 
 static void pq_insert(priority_queue *pq, huffman_node *node)
@@ -279,150 +267,6 @@ static huffman_node *read_tree(const unsigned char *in, unsigned long *pos, int 
     }
     return node;
 }
-
-int huffman_compress(const unsigned char *input, unsigned long input_len,
-                     unsigned char *output, unsigned long output_max_len,
-                     unsigned long *output_len)
-{
-    if (!input || !output || !output_len)
-        return -1;
-    if (input_len == 0)
-    {
-        *output_len = 0;
-        return 0;
-    }
-
-    unsigned long freq[MAX_SYMBOLS];
-    count_frequencies(input, input_len, freq);
-
-    huffman_node *root = build_tree(freq);
-    if (!root)
-        return -1;
-
-    huffman_code codes[MAX_SYMBOLS] = {0};
-    unsigned char code_buffer[MAX_CODE_LEN];
-    generate_codes(root, codes, code_buffer, 0);
-
-    /* Write header: original size */
-    unsigned long pos = 0;
-    int bit = 0;
-
-    if (pos + sizeof(unsigned long) > output_max_len)
-    {
-        free_tree(root);
-        return -1;
-    }
-
-    memcpy(output + pos, &input_len, sizeof(unsigned long));
-    pos += sizeof(unsigned long);
-
-    /* Write tree */
-    write_tree(root, output, &pos, &bit);
-
-    /* Align to byte boundary */
-    if (bit != 0)
-    {
-        bit = 0;
-        pos++;
-    }
-
-    /* Write compressed data */
-    for (unsigned long i = 0; i < input_len; i++)
-    {
-        unsigned char symbol = input[i];
-        for (int j = 0; j < codes[symbol].code_len; j++)
-        {
-            if (pos >= output_max_len)
-            {
-                free_tree(root);
-                return -1;
-            }
-            write_bit(output, &pos, &bit, codes[symbol].code[j]);
-        }
-    }
-
-    if (bit != 0)
-        pos++;
-    *output_len = pos;
-
-    free_tree(root);
-    return 0;
-}
-
-int huffman_decompress(const unsigned char *input, unsigned long input_len,
-                       unsigned char *output, unsigned long output_max_len,
-                       unsigned long *output_len)
-{
-    if (!input || !output || !output_len)
-        return -1;
-    if (input_len == 0)
-    {
-        *output_len = 0;
-        return 0;
-    }
-
-    unsigned long pos = 0;
-    int bit = 0;
-
-    /* Read original size */
-    if (pos + sizeof(unsigned long) > input_len)
-        return -1;
-
-    unsigned long original_size;
-    memcpy(&original_size, input + pos, sizeof(unsigned long));
-    pos += sizeof(unsigned long);
-
-    if (original_size == 0)
-    {
-        *output_len = 0;
-        return 0;
-    }
-
-    if (output_max_len < original_size)
-        return -1;
-
-    /* Read tree */
-    huffman_node *root = read_tree(input, &pos, &bit);
-    if (!root)
-        return -1;
-
-    /* Align to byte boundary */
-    if (bit != 0)
-    {
-        bit = 0;
-        pos++;
-    }
-
-    /* Decompress data */
-    unsigned long decoded = 0;
-    huffman_node *current = root;
-
-    while (decoded < original_size && pos < input_len)
-    {
-        int b = read_bit(input, &pos, &bit);
-        current = b ? current->right : current->left;
-
-        if (!current)
-        {
-            free_tree(root);
-            return -1;
-        }
-
-        if (!current->left && !current->right)
-        {
-            /* Leaf node */
-            output[decoded++] = current->symbol;
-            current = root;
-        }
-    }
-
-    *output_len = decoded;
-    free_tree(root);
-
-    return (decoded == original_size) ? 0 : -1;
-}
-
-/* Streaming implementation for large files */
 
 int huffman_stream_init(huffman_stream_context *ctx)
 {
