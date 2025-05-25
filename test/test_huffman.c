@@ -21,10 +21,10 @@ static int create_test_file(const char *filename, const unsigned char *content,
         return -1;
 
     if (size > 0 && fwrite(content, 1, size, file) != size)
-    {
-        fclose(file);
-        return -1;
-    }
+        {
+            fclose(file);
+            return -1;
+        }
 
     fclose(file);
     return 0;
@@ -69,12 +69,12 @@ static int test_huffman_basic_symmetry(void)
 {
     printf("  - Basic compression/decompression symmetry... ");
 
-    const unsigned char test_data[] =
-        "The quick brown fox jumps over the lazy dog. This is a test of "
-        "Huffman compression with repeated characters and words.";
-    size_t        test_size = sizeof(test_data) - 1; // Exclude null terminator
+    const unsigned char test_data[]
+        = "The quick brown fox jumps over the lazy dog. This is a test of "
+          "Huffman compression with repeated characters and words.";
+    size_t test_size = sizeof(test_data) - 1; // Exclude null terminator
     unsigned char output_buffer[1024];
-    size_t        output_size;
+    size_t output_size;
 
     cleanup_test_files();
 
@@ -143,9 +143,9 @@ static int test_huffman_single_character(void)
     printf("  - Single character compression... ");
 
     const unsigned char test_data[] = "A";
-    size_t              test_size   = 1;
-    unsigned char       output_buffer[16];
-    size_t              output_size;
+    size_t test_size = 1;
+    unsigned char output_buffer[16];
+    size_t output_size;
 
     cleanup_test_files();
 
@@ -183,7 +183,7 @@ static int test_huffman_repetitive_data(void)
     memset(test_data, 'A',
            sizeof(test_data)); /* All A's should compress very well */
     unsigned char output_buffer[1000];
-    size_t        output_size;
+    size_t output_size;
 
     cleanup_test_files();
 
@@ -196,7 +196,7 @@ static int test_huffman_repetitive_data(void)
         "Repetitive data compression failed");
 
     /* Check that compression actually reduced size significantly */
-    long original_size   = get_test_file_size(TEST_INPUT_FILE);
+    long original_size = get_test_file_size(TEST_INPUT_FILE);
     long compressed_size = get_test_file_size(TEST_COMPRESSED_FILE);
     ASSERT_TRUE(compressed_size < original_size / 2,
                 "Repetitive data should compress significantly");
@@ -227,12 +227,12 @@ static int test_huffman_diverse_data(void)
     /* Create data with all possible byte values */
     unsigned char test_data[256];
     for (int i = 0; i < 256; i++)
-    {
-        test_data[i] = (unsigned char) i;
-    }
+        {
+            test_data[i] = (unsigned char)i;
+        }
 
     unsigned char output_buffer[256];
-    size_t        output_size;
+    size_t output_size;
 
     cleanup_test_files();
 
@@ -268,8 +268,8 @@ static int test_huffman_streaming_context(void)
     printf("  - Streaming context operations... ");
 
     huffman_stream_context ctx;
-    const unsigned char    test_data[] = "Hello, streaming world!";
-    size_t                 test_size   = sizeof(test_data) - 1;
+    const unsigned char test_data[] = "Hello, streaming world!";
+    size_t test_size = sizeof(test_data) - 1;
 
     cleanup_test_files();
 
@@ -333,20 +333,22 @@ static int test_huffman_error_conditions(void)
 
     /* Test operations on non-existent files */
     cleanup_test_files();
-    ASSERT_TRUE(huffman_compress_file("nonexistent_file.txt",
-                                      TEST_COMPRESSED_FILE, 1) != 0,
-                "Should fail on non-existent input file");
+    ASSERT_TRUE(
+        huffman_compress_file("nonexistent_file.txt", TEST_COMPRESSED_FILE, 1)
+            != 0,
+        "Should fail on non-existent input file");
     ASSERT_TRUE(huffman_stream_decompress_file("nonexistent_compressed.huf",
-                                               TEST_OUTPUT_FILE, 1) != 0,
+                                               TEST_OUTPUT_FILE, 1)
+                    != 0,
                 "Should fail on non-existent compressed file");
 
     /* Test context operations in wrong order */
     huffman_stream_init(&ctx);
     ASSERT_TRUE(huffman_stream_prepare_encoding(&ctx) != 0,
                 "Should fail prepare without frequency count");
-    ASSERT_TRUE(
-        huffman_stream_compress_file(&ctx, "nonexistent", "output", 1) != 0,
-        "Should fail compress without preparation");
+    ASSERT_TRUE(huffman_stream_compress_file(&ctx, "nonexistent", "output", 1)
+                    != 0,
+                "Should fail compress without preparation");
     huffman_stream_cleanup(&ctx);
 
     printf("PASS\n");
@@ -358,17 +360,17 @@ static int test_huffman_worst_case_size(void)
 {
     printf("  - Worst-case size calculation... ");
 
-    unsigned long test_sizes[] = {0, 1, 100, 1000, 10000};
-    size_t        num_tests    = sizeof(test_sizes) / sizeof(test_sizes[0]);
+    unsigned long test_sizes[] = { 0, 1, 100, 1000, 10000 };
+    size_t num_tests = sizeof(test_sizes) / sizeof(test_sizes[0]);
 
     for (size_t i = 0; i < num_tests; i++)
-    {
-        unsigned long worst_case = huffman_worst_case_size(test_sizes[i]);
-        ASSERT_TRUE(worst_case >= test_sizes[i],
-                    "Worst case should be at least input size");
-        ASSERT_TRUE(worst_case > 0 || test_sizes[i] == 0,
-                    "Worst case should be positive for non-zero input");
-    }
+        {
+            unsigned long worst_case = huffman_worst_case_size(test_sizes[i]);
+            ASSERT_TRUE(worst_case >= test_sizes[i],
+                        "Worst case should be at least input size");
+            ASSERT_TRUE(worst_case > 0 || test_sizes[i] == 0,
+                        "Worst case should be positive for non-zero input");
+        }
 
     printf("PASS\n");
     return TEST_PASS;
@@ -382,13 +384,14 @@ static int test_huffman_binary_data(void)
     /* Create binary test data with some patterns */
     unsigned char test_data[512];
     for (int i = 0; i < 512; i++)
-    {
-        test_data[i] =
-            (unsigned char) (i % 17); /* Some repetition but not too much */
-    }
+        {
+            test_data[i]
+                = (unsigned char)(i
+                                  % 17); /* Some repetition but not too much */
+        }
 
     unsigned char output_buffer[512];
-    size_t        output_size;
+    size_t output_size;
 
     cleanup_test_files();
 

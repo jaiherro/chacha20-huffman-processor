@@ -10,11 +10,11 @@
 /* File entry structure */
 typedef struct file_entry
 {
-    char               input_filename[FILE_LIST_MAX_FILENAME];
-    char               output_filename[FILE_LIST_MAX_FILENAME];
-    unsigned long      sequence_num;
-    unsigned long      original_size;
-    unsigned long      processed_size;
+    char input_filename[FILE_LIST_MAX_FILENAME];
+    char output_filename[FILE_LIST_MAX_FILENAME];
+    unsigned long sequence_num;
+    unsigned long original_size;
+    unsigned long processed_size;
     struct file_entry *next;
 } file_entry_t;
 

@@ -59,12 +59,12 @@ void print_progress_bar(unsigned long current, unsigned long total,
                         unsigned long width)
 {
     // Avoid division by zero if total is 0 (e.g., empty file)
-    float percent = (total == 0) ? 1.0f : (float) current / total;
+    float percent = (total == 0) ? 1.0f : (float)current / total;
     // Ensure percent doesn't exceed 1.0
     if (percent > 1.0f)
         percent = 1.0f;
 
-    unsigned long filled_width = (unsigned long) (width * percent);
+    unsigned long filled_width = (unsigned long)(width * percent);
 
     printf(CLEAR_LINE); // Clear the current line
     printf("Progress: [");
@@ -72,22 +72,22 @@ void print_progress_bar(unsigned long current, unsigned long total,
     /* Print filled portion */
     unsigned long i;
     for (i = 0; i < filled_width; i++)
-    {
-        printf("=");
-    }
+        {
+            printf("=");
+        }
 
     /* Print cursor if not full */
     if (filled_width < width)
-    {
-        printf(">");
-        i++;
-    }
+        {
+            printf(">");
+            i++;
+        }
 
     /* Print empty portion */
     for (; i < width; i++)
-    {
-        printf(" ");
-    }
+        {
+            printf(" ");
+        }
 
     /* Print percentage */
     printf("] %5.1f%% (%lu/%lu bytes)", percent * 100.0f, current, total);
@@ -99,14 +99,14 @@ void print_operation_result(int result, const char *operation)
     // Add newline before result for better spacing
     printf("\n");
     if (result == 0)
-    {
-        printf("RESULT: %s completed successfully.\n", operation);
-    }
+        {
+            printf("RESULT: %s completed successfully.\n", operation);
+        }
     else
-    {
-        // Use fprintf to stderr for errors
-        fprintf(stderr, "ERROR: %s failed.\n", operation);
-    }
+        {
+            // Use fprintf to stderr for errors
+            fprintf(stderr, "ERROR: %s failed.\n", operation);
+        }
 }
 
 void print_processing_summary(const char *operation, const char *input_file,
@@ -114,8 +114,8 @@ void print_processing_summary(const char *operation, const char *input_file,
                               unsigned long output_size)
 {
     // Avoid division by zero for ratio calculation
-    float ratio =
-        (input_size == 0) ? 0.0f : (float) output_size * 100.0f / input_size;
+    float ratio
+        = (input_size == 0) ? 0.0f : (float)output_size * 100.0f / input_size;
 
     printf("\n");
     print_section_header("Processing Summary");
@@ -125,13 +125,13 @@ void print_processing_summary(const char *operation, const char *input_file,
 
     // Only show ratio if input size is non-zero
     if (input_size > 0)
-    {
-        printf("Size ratio:  %.2f%%\n", ratio);
-    }
+        {
+            printf("Size ratio:  %.2f%%\n", ratio);
+        }
     else
-    {
-        printf("Size ratio:  N/A (input size is 0)\n");
-    }
+        {
+            printf("Size ratio:  N/A (input size is 0)\n");
+        }
 }
 
 void print_section_header(const char *title)

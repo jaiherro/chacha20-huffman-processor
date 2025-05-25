@@ -16,10 +16,10 @@ int file_exists(const char *filename)
 {
     FILE *file = fopen(filename, "rb");
     if (file)
-    {
-        fclose(file);
-        return 1; // File exists and is readable
-    }
+        {
+            fclose(file);
+            return 1; // File exists and is readable
+        }
     return 0; // File does not exist or cannot be opened
 }
 
@@ -28,12 +28,12 @@ int ensure_directory_exists(const char *directory)
     char command[MAX_FILENAME * 2];
 
     if (directory == NULL || directory[0] == '\0')
-    {
-        fprintf(stderr, "ERROR: Invalid directory path provided.\n");
-        return -1;
-    }
+        {
+            fprintf(stderr, "ERROR: Invalid directory path provided.\n");
+            return -1;
+        }
 
-    // Create directory using system command
+        // Create directory using system command
 #ifdef _WIN32
     snprintf(command, sizeof(command), "mkdir \"%s\" 2>nul", directory);
 #else

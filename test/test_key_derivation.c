@@ -12,7 +12,7 @@ static int test_key_derivation_basic(void)
 {
     printf("  - Basic key derivation... ");
 
-    const char   *password = "testpassword123";
+    const char *password = "testpassword123";
     unsigned char salt[16];
     unsigned char key1[32], key2[32];
     unsigned char nonce1[12], nonce2[12];
@@ -84,8 +84,8 @@ static int test_salt_generation(void)
                  "Salt3 generation failed");
 
     /* Salts should be different (with very high probability) */
-    ASSERT_TRUE(memcmp(salt1, salt2, sizeof(salt1)) != 0 ||
-                    memcmp(salt2, salt3, sizeof(salt2)) != 0,
+    ASSERT_TRUE(memcmp(salt1, salt2, sizeof(salt1)) != 0
+                    || memcmp(salt2, salt3, sizeof(salt2)) != 0,
                 "Salts should be unique");
 
     printf("PASS\n");

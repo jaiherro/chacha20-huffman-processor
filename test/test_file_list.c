@@ -14,7 +14,7 @@ static int test_file_list_basic(void)
 {
     printf("  - Basic operations... ");
 
-    file_list_t   list;
+    file_list_t list;
     file_entry_t *entry;
 
     /* Initialise */
@@ -46,7 +46,7 @@ static int test_file_list_persistence(void)
 {
     printf("  - Save/load persistence... ");
 
-    file_list_t   list1, list2;
+    file_list_t list1, list2;
     file_entry_t *entry; /* Create and populate list */
     file_list_init(&list1);
     file_list_add(&list1, "input1.txt", "test1.bin", 5000, 4500);
@@ -82,7 +82,7 @@ static int test_file_list_recent(void)
 {
     printf("  - Get recent entries... ");
 
-    file_list_t   list;
+    file_list_t list;
     file_entry_t *recent[3];
     unsigned long count;
 

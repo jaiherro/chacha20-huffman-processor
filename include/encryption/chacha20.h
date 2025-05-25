@@ -14,7 +14,7 @@
 /* ChaCha20 context structure */
 typedef struct
 {
-    unsigned int  state[16];                      /* 4x4 state matrix */
+    unsigned int state[16];                       /* 4x4 state matrix */
     unsigned char keystream[CHACHA20_BLOCK_SIZE]; /* Keystream buffer */
     unsigned long position;                       /* Current position */
 } chacha20_ctx;

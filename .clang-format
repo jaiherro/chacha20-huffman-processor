@@ -1,44 +1,14 @@
-# .clang-format
-# Based on LLVM style, with your specific overrides and other common settings.
-Language: Cpp
-BasedOnStyle: LLVM
-
-# Rule: Properly indented, with space characters ONLY (1 tab = 4 spaces, do NOT use tab characters).
-UseTab: Never
+---
+BasedOnStyle: GNU
 IndentWidth: 4
 TabWidth: 4 # Should match IndentWidth when UseTab is Never
-
-# Rule: Make sure the { } brackets are aligned and what goes between them are properly indented.
-# Allman style puts braces on a new line for functions, namespaces, and control statements.
-# This generally makes alignment clear.
-BreakBeforeBraces: Allman
-AllowShortBlocksOnASingleLine: false # Ensures blocks are always on new lines if not empty
-AllowShortFunctionsOnASingleLine: None # Ensures function bodies are on new lines
-AllowShortIfStatementsOnASingleLine: Never # Ensures if statements with bodies are on new lines
-AllowShortLoopsOnASingleLine: false # Ensures loop bodies are on new lines
-
-# Rule: Code width must be a fixed value (80 characters).
+UseTab: Never
 ColumnLimit: 80
-
-# Other good industry standard settings:
-AlignConsecutiveAssignments: true
-AlignConsecutiveDeclarations: true
-AlignEscapedNewlines: Left
-AllowAllParametersOfDeclarationOnNextLine: true
-BinPackArguments: true # Prefer to pack arguments/parameters horizontally
-BinPackParameters: true
-SpaceAfterCStyleCast: true
-SpaceBeforeAssignmentOperators: true
-SpaceBeforeParens: ControlStatements # e.g. if (condition)
-SpacesInAngles: false
-SpacesInCStyleCastParentheses: false
-SpacesInContainerLiterals: false # For C arrays with {}
-SpacesInParentheses: false
+BreakBeforeBraces: GNU
 PointerAlignment: Right # Aligns '*' or '&' to the right, with the name (e.g., char *ptr)
-ContinuationIndentWidth: 4 # Indentation for new lines broken due to ColumnLimit
 IndentCaseLabels: true # Indent 'case' labels within a 'switch' statement
-SortIncludes: false # Set to true if you want includes to be sorted. Can be 'CaseSensitive' or 'CaseInsensitive'
-
-# Control over blank lines
-MaxEmptyLinesToKeep: 1
-KeepEmptyLinesAtTheStartOfBlocks: false
+SortIncludes: true # Set to true if you want includes to be sorted. Can be 'CaseSensitive' or 'CaseInsensitive'
+SpacesInParentheses: false
+SpaceBeforeParens: ControlStatements
+AlwaysBreakAfterDefinitionReturnType: None
+AlwaysBreakAfterReturnType: None
