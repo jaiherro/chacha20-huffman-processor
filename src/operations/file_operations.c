@@ -874,6 +874,24 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
     if (original_size_out)
         *original_size_out = compressed_file_size;
 
+    // Handle empty compressed file (only size header, no data)
+    if (compressed_file_size == sizeof(unsigned long))
+    {
+        if (!quiet)
+        {
+            print_section_header("Empty File Decompression");
+            printf("Input file:  %s\n", input_file);
+            printf("Output file: %s\n", output_file);
+            printf("No data to decompress; creating empty file.\n");
+        }
+        // Create an empty output file
+        FILE *out = fopen(output_file, "wb");
+        if (out)
+            fclose(out);
+        DEBUG_FUNCTION_EXIT("decompress_file", 0);
+        return 0;
+    }
+
     if (compressed_file_size < MIN_COMPRESSED_FILE_SIZE)
     {
         fprintf(stderr, "ERROR: Input file '%s' is too small (%lu bytes) to contain header.\n",
