@@ -1,0 +1,68 @@
+# .clang-tidy
+Checks: >
+  # Start by enabling most checks from key groups for good industry standards
+  bugprone-*,
+  cert-*, # Checks for CERT C secure coding standard violations
+  clang-analyzer-*, # More in-depth static analysis from Clang Static Analyzer
+  cppcoreguidelines-*, # Many C++ Core Guidelines are also good practice in C
+  misc-*,
+  performance-*,
+  portability-*,
+  readability-*,
+
+  # Disable specific checks if they are too noisy or conflict with project needs
+  # Example: -readability-braces-around-statements,
+  # Example: -cppcoreguidelines-pro-bounds-pointer-arithmetic, # If pointer arithmetic is heavily used and understood
+
+  # Specific checks to address your requirements:
+  # Rule: NO global variables
+  cppcoreguidelines-avoid-non-const-global-variables,
+
+  # Rule: Macros for constants, uppercase & appropriate use. Also helps flag magic numbers.
+  cppcoreguidelines-macro-usage,
+  readability-magic-numbers,
+
+  # Rule: Appropriate variable/function names (enforced via readability-identifier-naming)
+  # Rule: Adequate commenting (partially addressed by missing-comment checks)
+  # These are part of the 'readability-*' group enabled above, but ensure they are active.
+  # Specific check names if you want to be very explicit:
+  readability-identifier-naming,
+  readability-comment-missing-param-comment,
+  readability-comment-missing-return-comment
+
+CheckOptions:
+  # Rule: Appropriate variable and function parameter names & Macros uppercase
+  - key: readability-identifier-naming.VariableCase
+    value: 'snake_case' # Suggesting snake_case for variables
+  - key: readability-identifier-naming.ParameterCase
+    value: 'snake_case' # Suggesting snake_case for parameters
+  - key: readability-identifier-naming.FunctionCase
+    value: 'snake_case' # Suggesting snake_case for functions
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: 'UPPER_SNAKE_CASE'
+  - key: readability-identifier-naming.GlobalVariableCase # if any globals were allowed (e.g. const globals)
+    value: 'snake_case' # or 'k_snake_case' with a prefix
+  - key: readability-identifier-naming.IgnoreMainLikeFunctions
+    value: '1' # Don't apply strict naming to 'main'
+
+  # Rule: Macros for constants (#define statements for constants)
+  # Configuration for readability-magic-numbers
+  - key: readability-magic-numbers.IgnoreAllFloatingPointValues
+    value: 'false' # Flag magic floating point numbers
+  - key: readability-magic-numbers.IgnoreBitFieldsWidths
+    value: 'false' # Flag magic numbers in bitfield widths
+  - key: readability-magic-numbers.IgnoredNumbers # List numbers to ignore, e.g., 0, 1, -1
+    value: '0;1;-1;2' # Common small integers that might not need naming
+
+  # For clang-analyzer, you can increase strictness
+  # - key: clang-analyzer-opt-in.UncheckedOptionalAccess
+  #   value: 'true'
+  # - key: clang-analyzer-opt-in.NoNullForbiddenContractPrefix
+  #   value: 'true'
+
+  # To focus linting on your project's code and not system/library headers:
+  # HeaderFilterRegex: '^(your_project_include_dir1|your_project_include_dir2)/.*'
+  # For example, if your project headers are in 'include/':
+  # HeaderFilterRegex: '^include/.*'
+
+WarningsAsErrors: '*' # Treat all clang-tidy warnings as errors for strictness

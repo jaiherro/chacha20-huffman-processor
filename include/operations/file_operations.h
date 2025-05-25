@@ -12,40 +12,40 @@
 #define BUFFER_SIZE 4096
 
 /* Add entry to file list */
-int add_entry_to_file_list (const char *input_file, const char *output_file,
-                            unsigned long original_size,
-                            unsigned long processed_size, int quiet);
+int add_entry_to_file_list(const char *input_file, const char *output_file,
+                           unsigned long original_size,
+                           unsigned long processed_size, int quiet);
 
 /* Encrypt file using ChaCha20 */
-unsigned long encrypt_file (const char *input_file, const char *output_file,
-                            const char *password, int quiet,
-                            unsigned long *original_size_out);
+unsigned long encrypt_file(const char *input_file, const char *output_file,
+                           const char *password, int quiet,
+                           unsigned long *original_size_out);
 
 /* Decrypt file using ChaCha20 */
-unsigned long decrypt_file (const char *input_file, const char *output_file,
-                            const char *password, int quiet,
-                            unsigned long *original_size_out);
+unsigned long decrypt_file(const char *input_file, const char *output_file,
+                           const char *password, int quiet,
+                           unsigned long *original_size_out);
 
 /* Compress file using Huffman coding */
-unsigned long compress_file (const char *input_file, const char *output_file,
-                             int quiet, unsigned long *original_size_out);
+unsigned long compress_file(const char *input_file, const char *output_file,
+                            int quiet, unsigned long *original_size_out);
 
 /* Decompress file using Huffman coding */
-unsigned long decompress_file (const char *input_file, const char *output_file,
-                               int quiet, unsigned long *original_size_out);
+unsigned long decompress_file(const char *input_file, const char *output_file,
+                              int quiet, unsigned long *original_size_out);
 
 /* Process file (compress then encrypt) */
-unsigned long process_file (const char *input_file, const char *output_file,
-                            const char *password, int quiet,
-                            unsigned long *original_size_out);
+unsigned long process_file(const char *input_file, const char *output_file,
+                           const char *password, int quiet,
+                           unsigned long *original_size_out);
 
 /* Extract file (decrypt then decompress) */
-unsigned long extract_file (const char *input_file, const char *output_file,
-                            const char *password, int quiet,
-                            unsigned long *original_size_out);
+unsigned long extract_file(const char *input_file, const char *output_file,
+                           const char *password, int quiet,
+                           unsigned long *original_size_out);
 
 /* Handle file list operations */
-int handle_file_list (const char *command, const char *filename_pattern,
-                      int quiet);
+int handle_file_list(const char *command, const char *filename_pattern,
+                     int quiet);
 
 #endif
