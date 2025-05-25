@@ -837,9 +837,8 @@ unsigned long compress_file(const char *input_file, const char *output_file,
     unsigned long compressed_file_size = 0;
 
     DEBUG_FUNCTION_ENTER("compress_file");
-    DEBUG_INFO(
-        "Compressing file - input: '%s', output: '%s', quiet: %s",
-        input_file, output_file, quiet ? "yes" : "no");
+    DEBUG_INFO("Compressing file - input: '%s', output: '%s', quiet: %s",
+               input_file, output_file, quiet ? "yes" : "no");
 
     if (validate_input_params(input_file, output_file) != FILE_OP_SUCCESS)
         {
@@ -930,9 +929,8 @@ unsigned long decompress_file(const char *input_file, const char *output_file,
     unsigned long decompressed_file_size = 0;
 
     DEBUG_FUNCTION_ENTER("decompress_file");
-    DEBUG_INFO(
-        "Decompressing file - input: '%s', output: '%s', quiet: %s",
-        input_file, output_file, quiet ? "yes" : "no");
+    DEBUG_INFO("Decompressing file - input: '%s', output: '%s', quiet: %s",
+               input_file, output_file, quiet ? "yes" : "no");
 
     if (validate_input_params(input_file, output_file) != FILE_OP_SUCCESS)
         {

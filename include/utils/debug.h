@@ -37,7 +37,7 @@ void debug_counter(char *buffer, size_t buffer_size);
                     char counter[32];                                          \
                     debug_counter(counter, sizeof(counter));                   \
                     fprintf(stderr, "[%s ERROR] %s:%d: " fmt "\n", counter,    \
-                            __FILE__, __LINE__, ##__VA_ARGS__);                \
+                            __FILE__, __LINE__, __VA_ARGS__);                  \
                 }                                                              \
         }                                                                      \
     while (0)
@@ -63,7 +63,7 @@ void debug_counter(char *buffer, size_t buffer_size);
                     char counter[32];                                          \
                     debug_counter(counter, sizeof(counter));                   \
                     fprintf(stderr, "[%s WARN ] %s:%d: " fmt "\n", counter,    \
-                            __FILE__, __LINE__, ##__VA_ARGS__);                \
+                            __FILE__, __LINE__, __VA_ARGS__);                  \
                 }                                                              \
         }                                                                      \
     while (0)
@@ -89,7 +89,7 @@ void debug_counter(char *buffer, size_t buffer_size);
                     char counter[32];                                          \
                     debug_counter(counter, sizeof(counter));                   \
                     printf("[%s INFO ] %s:%d: " fmt "\n", counter, __FILE__,   \
-                           __LINE__, ##__VA_ARGS__);                           \
+                           __LINE__, __VA_ARGS__);                             \
                 }                                                              \
         }                                                                      \
     while (0)
@@ -115,7 +115,7 @@ void debug_counter(char *buffer, size_t buffer_size);
                     char counter[32];                                          \
                     debug_counter(counter, sizeof(counter));                   \
                     printf("[%s TRACE] %s:%d: " fmt "\n", counter, __FILE__,   \
-                           __LINE__, ##__VA_ARGS__);                           \
+                           __LINE__, __VA_ARGS__);                             \
                 }                                                              \
         }                                                                      \
     while (0)
