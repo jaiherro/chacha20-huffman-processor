@@ -1075,7 +1075,7 @@ unsigned long extract_file(const char *input_file, const char *output_file,
 
     decrypted_size = decrypt_file(input_file, temp_file, password, quiet, &original_input_size);
     if (original_size_out)
-        *original_size_out = original_input_size;
+        *original_size_out = decrypted_size;
 
     DEBUG_INFO("Decryption step completed - input: %lu bytes, decrypted: %lu bytes",
                original_input_size, decrypted_size);

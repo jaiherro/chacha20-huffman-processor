@@ -5,9 +5,9 @@
  *
  * Dependencies: Standard C libraries only (stdio, stdlib, string, math)
  * C Standard: C99
- * 
+ *
  * Built by: Ethan Hall and Jai Herro
- * 
+ *
  */
 
 #include <stdio.h>
@@ -187,7 +187,8 @@ static int handle_crypto_operation(int mode, const char *input_file, const char 
         processed_size = extract_file(input_file, output_file, password, quiet, &original_size);
         DEBUG_INFO("Extraction result - processed: %lu bytes, extracted: %lu bytes",
                    original_size, processed_size);
-        if (processed_size == 0 && original_size > DEFAULT_SALT_SIZE + sizeof(unsigned long))
+        /* Treat zero-size decompressed output as valid for empty files (only header). */
+        if (processed_size == 0 && original_size > sizeof(unsigned long))
         {
             if (!quiet)
                 fprintf(stderr, "Extraction failed (decryption or decompression error).\n");
