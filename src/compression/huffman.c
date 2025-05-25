@@ -6,6 +6,7 @@
  */
 
 #include "compression/huffman.h"
+#include "utils/ui.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -334,7 +335,8 @@ int huffman_stream_prepare_encoding(huffman_stream_context *ctx)
 
 int huffman_stream_compress_file(huffman_stream_context *ctx,
                                  const char *input_file,
-                                 const char *output_file)
+                                 const char *output_file,
+                                 int quiet)
 {
     if (!ctx || !input_file || !output_file || ctx->pass != 2)
         return -1;
@@ -381,12 +383,19 @@ int huffman_stream_compress_file(huffman_stream_context *ctx,
         return -1;
     }
 
-    /* Second pass: encode data */
+    /* Second pass: encode data with progress tracking */
     unsigned char input_buffer[4096];
     unsigned char output_buffer[8192];
     unsigned long output_pos = 0;
     int output_bit = 0;
     size_t bytes_read;
+    unsigned long processed_bytes = 0;
+
+    /* Initialise progress bar */
+    if (!quiet)
+    {
+        print_progress_bar(0, ctx->input_size, PROGRESS_WIDTH);
+    }
 
     while ((bytes_read = fread(input_buffer, 1, sizeof(input_buffer), input)) > 0)
     {
@@ -413,6 +422,13 @@ int huffman_stream_compress_file(huffman_stream_context *ctx,
                           ctx->codes[symbol].code[j]);
             }
         }
+
+        /* Update progress */
+        processed_bytes += bytes_read;
+        if (!quiet)
+        {
+            print_progress_bar(processed_bytes, ctx->input_size, PROGRESS_WIDTH);
+        }
     }
 
     /* Flush remaining bits */
@@ -437,7 +453,8 @@ int huffman_stream_compress_file(huffman_stream_context *ctx,
 }
 
 int huffman_stream_decompress_file(const char *input_file,
-                                   const char *output_file)
+                                   const char *output_file,
+                                   int quiet)
 {
     if (!input_file || !output_file)
         return -1;
@@ -508,7 +525,7 @@ int huffman_stream_decompress_file(const char *input_file,
         return -1;
     }
 
-    /* Decompress data in chunks */
+    /* Decompress data in chunks with progress tracking */
     unsigned char input_buffer[8192];
     unsigned char output_buffer[4096];
     unsigned long decoded = 0;
@@ -518,6 +535,12 @@ int huffman_stream_decompress_file(const char *input_file,
     size_t bytes_read;
     unsigned long input_pos = 0;
     int input_bit = 0;
+
+    /* Initialise progress bar */
+    if (!quiet)
+    {
+        print_progress_bar(0, original_size, PROGRESS_WIDTH);
+    }
 
     while (decoded < original_size &&
            (bytes_read = fread(input_buffer, 1, sizeof(input_buffer), input)) > 0)
@@ -547,6 +570,12 @@ int huffman_stream_decompress_file(const char *input_file,
                     output_buffer[output_count++] = current->symbol;
                     decoded++;
                     current = root;
+
+                    /* Update progress periodically (every 1024 bytes decoded) */
+                    if (!quiet && (decoded % 1024 == 0 || decoded == original_size))
+                    {
+                        print_progress_bar(decoded, original_size, PROGRESS_WIDTH);
+                    }
 
                     /* Flush output buffer if full */
                     if (output_count >= sizeof(output_buffer))
@@ -599,7 +628,8 @@ void huffman_stream_cleanup(huffman_stream_context *ctx)
 }
 
 /* Convenience function for complete streaming compression */
-int huffman_compress_file(const char *input_file, const char *output_file)
+int huffman_compress_file(const char *input_file, const char *output_file,
+                          int quiet)
 {
     huffman_stream_context ctx;
 
@@ -622,7 +652,7 @@ int huffman_compress_file(const char *input_file, const char *output_file)
     }
 
     /* Second pass: compress file */
-    int result = huffman_stream_compress_file(&ctx, input_file, output_file);
+    int result = huffman_stream_compress_file(&ctx, input_file, output_file, quiet);
 
     /* Clean up */
     huffman_stream_cleanup(&ctx);

@@ -49,16 +49,19 @@ int huffman_stream_prepare_encoding(huffman_stream_context *ctx);
 /* Second pass: compress file to output */
 int huffman_stream_compress_file(huffman_stream_context *ctx,
                                  const char *input_file,
-                                 const char *output_file);
+                                 const char *output_file,
+                                 int quiet);
 
 /* Decompress streaming file */
 int huffman_stream_decompress_file(const char *input_file,
-                                   const char *output_file);
+                                   const char *output_file,
+                                   int quiet);
 
 /* Clean up streaming context */
 void huffman_stream_cleanup(huffman_stream_context *ctx);
 
 /* Convenience function for complete file compression */
-int huffman_compress_file(const char *input_file, const char *output_file);
+int huffman_compress_file(const char *input_file, const char *output_file,
+                          int quiet);
 
 #endif /* HUFFMAN_H */

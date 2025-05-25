@@ -146,14 +146,12 @@ static int test_huffman_streaming(void)
             return TEST_FAIL;
         }
     }
-    fclose(f);
-
-    /* Test streaming compression */
-    ASSERT_EQUAL(huffman_compress_file(test_input, test_compressed), 0,
+    fclose(f);    /* Test streaming compression */
+    ASSERT_EQUAL(huffman_compress_file(test_input, test_compressed, 1), 0,
                  "Streaming compression failed");
 
     /* Test streaming decompression */
-    ASSERT_EQUAL(huffman_stream_decompress_file(test_compressed, test_decompressed), 0,
+    ASSERT_EQUAL(huffman_stream_decompress_file(test_compressed, test_decompressed, 1), 0,
                  "Streaming decompression failed");
 
     /* Verify the decompressed file matches the original */
