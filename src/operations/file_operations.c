@@ -796,7 +796,8 @@ unsigned long compress_file(const char *input_file, const char *output_file, int
         printf("\nCompressing file (streaming approach)...\n");
         print_progress_bar(0, original_size, PROGRESS_WIDTH);
     }
-    DEBUG_INFO("Starting streaming Huffman compression - input size: %lu bytes", original_size);    if (huffman_compress_file(input_file, output_file, quiet) != 0)
+    DEBUG_INFO("Starting streaming Huffman compression - input size: %lu bytes", original_size);
+    if (huffman_compress_file(input_file, output_file, quiet) != 0)
     {
         fprintf(stderr, "\nERROR: Streaming Huffman compression failed.\n");
         DEBUG_ERROR_MSG("Streaming Huffman compression failed");
@@ -888,7 +889,8 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
         printf("\nDecompressing file (streaming approach)...\n");
         print_progress_bar(0, compressed_file_size, PROGRESS_WIDTH);
     }
-    DEBUG_INFO("Starting streaming Huffman decompression - compressed size: %lu bytes", compressed_file_size);    if (huffman_stream_decompress_file(input_file, output_file, quiet) != 0)
+    DEBUG_INFO("Starting streaming Huffman decompression - compressed size: %lu bytes", compressed_file_size);
+    if (huffman_stream_decompress_file(input_file, output_file, quiet) != 0)
     {
         fprintf(stderr, "\nERROR: Streaming Huffman decompression failed. Input file might be corrupted or not compressed with this tool.\n");
         DEBUG_ERROR_MSG("Streaming Huffman decompression failed");
