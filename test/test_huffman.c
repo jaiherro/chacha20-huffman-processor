@@ -115,6 +115,88 @@ static int test_huffman_edge_cases(void)
     return TEST_PASS;
 }
 
+/* Test streaming compression */
+static int test_huffman_streaming(void)
+{
+    printf("  - Streaming file compression... ");
+
+    const char *test_input = "test_input.tmp";
+    const char *test_compressed = "test_compressed.tmp";
+    const char *test_decompressed = "test_decompressed.tmp";
+
+    /* Create test input file */
+    FILE *f = fopen(test_input, "wb");
+    if (!f)
+    {
+        printf("FAIL (could not create test file)\n");
+        return TEST_FAIL;
+    }
+
+    /* Write test data */
+    const char *test_data = "AAAAAAAAAABBBBBBBBBBCCCCCCCCCCDDDDDDDDDDEEEEEEEEEEFFFFFFFFFF";
+    size_t data_len = strlen(test_data);
+
+    /* Write the data multiple times to make it larger */
+    for (int i = 0; i < 100; i++)
+    {
+        if (fwrite(test_data, 1, data_len, f) != data_len)
+        {
+            fclose(f);
+            printf("FAIL (could not write test data)\n");
+            return TEST_FAIL;
+        }
+    }
+    fclose(f);
+
+    /* Test streaming compression */
+    ASSERT_EQUAL(huffman_compress_file(test_input, test_compressed), 0,
+                 "Streaming compression failed");
+
+    /* Test streaming decompression */
+    ASSERT_EQUAL(huffman_stream_decompress_file(test_compressed, test_decompressed), 0,
+                 "Streaming decompression failed");
+
+    /* Verify the decompressed file matches the original */
+    FILE *original = fopen(test_input, "rb");
+    FILE *decompressed = fopen(test_decompressed, "rb");
+
+    if (!original || !decompressed)
+    {
+        if (original)
+            fclose(original);
+        if (decompressed)
+            fclose(decompressed);
+        printf("FAIL (could not open files for verification)\n");
+        return TEST_FAIL;
+    }
+
+    /* Compare files byte by byte */
+    int ch1, ch2;
+    do
+    {
+        ch1 = fgetc(original);
+        ch2 = fgetc(decompressed);
+        if (ch1 != ch2)
+        {
+            fclose(original);
+            fclose(decompressed);
+            printf("FAIL (decompressed file doesn't match original)\n");
+            return TEST_FAIL;
+        }
+    } while (ch1 != EOF);
+
+    fclose(original);
+    fclose(decompressed);
+
+    /* Clean up test files */
+    remove(test_input);
+    remove(test_compressed);
+    remove(test_decompressed);
+
+    printf("PASS\n");
+    return TEST_PASS;
+}
+
 int run_huffman_tests(void)
 {
     printf("\n--- Huffman Compression Tests ---\n");
@@ -124,6 +206,8 @@ int run_huffman_tests(void)
     if (test_huffman_repetitive() != TEST_PASS)
         return TEST_FAIL;
     if (test_huffman_edge_cases() != TEST_PASS)
+        return TEST_FAIL;
+    if (test_huffman_streaming() != TEST_PASS)
         return TEST_FAIL;
 
     printf("Huffman tests: ALL PASSED\n");

@@ -421,3 +421,367 @@ int huffman_decompress(const unsigned char *input, unsigned long input_len,
 
     return (decoded == original_size) ? 0 : -1;
 }
+
+/* Streaming implementation for large files */
+
+int huffman_stream_init(huffman_stream_context *ctx)
+{
+    if (!ctx)
+        return -1;
+
+    memset(ctx->frequencies, 0, sizeof(ctx->frequencies));
+    memset(ctx->codes, 0, sizeof(ctx->codes));
+    ctx->tree = NULL;
+    ctx->input_size = 0;
+    ctx->pass = 0;
+
+    return 0;
+}
+
+int huffman_stream_count_frequencies(huffman_stream_context *ctx,
+                                     const char *input_file)
+{
+    if (!ctx || !input_file)
+        return -1;
+
+    FILE *file = fopen(input_file, "rb");
+    if (!file)
+        return -1;
+
+    unsigned char buffer[8192]; /* 8KB buffer for streaming */
+    size_t bytes_read;
+
+    ctx->input_size = 0;
+
+    /* First pass: count frequencies */
+    while ((bytes_read = fread(buffer, 1, sizeof(buffer), file)) > 0)
+    {
+        for (size_t i = 0; i < bytes_read; i++)
+        {
+            ctx->frequencies[buffer[i]]++;
+        }
+        ctx->input_size += bytes_read;
+    }
+
+    fclose(file);
+    ctx->pass = 1;
+
+    return 0;
+}
+
+int huffman_stream_prepare_encoding(huffman_stream_context *ctx)
+{
+    if (!ctx || ctx->pass != 1)
+        return -1;
+
+    /* Build tree from frequencies */
+    ctx->tree = build_tree(ctx->frequencies);
+    if (!ctx->tree)
+        return -1;
+
+    /* Generate codes */
+    unsigned char code_buffer[MAX_CODE_LEN];
+    generate_codes(ctx->tree, ctx->codes, code_buffer, 0);
+
+    ctx->pass = 2;
+
+    return 0;
+}
+
+int huffman_stream_compress_file(huffman_stream_context *ctx,
+                                 const char *input_file,
+                                 const char *output_file)
+{
+    if (!ctx || !input_file || !output_file || ctx->pass != 2)
+        return -1;
+
+    FILE *input = fopen(input_file, "rb");
+    if (!input)
+        return -1;
+
+    FILE *output = fopen(output_file, "wb");
+    if (!output)
+    {
+        fclose(input);
+        return -1;
+    }
+
+    /* Write header: original file size */
+    if (fwrite(&ctx->input_size, sizeof(unsigned long), 1, output) != 1)
+    {
+        fclose(input);
+        fclose(output);
+        return -1;
+    }
+
+    /* Write tree to output in a temporary buffer */
+    unsigned char tree_buffer[MAX_SYMBOLS * 10]; /* Generous buffer for tree */
+    unsigned long tree_pos = 0;
+    int tree_bit = 0;
+
+    write_tree(ctx->tree, tree_buffer, &tree_pos, &tree_bit);
+
+    /* Align tree to byte boundary */
+    if (tree_bit != 0)
+    {
+        tree_bit = 0;
+        tree_pos++;
+    }
+
+    /* Write tree size and tree data */
+    if (fwrite(&tree_pos, sizeof(unsigned long), 1, output) != 1 ||
+        fwrite(tree_buffer, 1, tree_pos, output) != tree_pos)
+    {
+        fclose(input);
+        fclose(output);
+        return -1;
+    }
+
+    /* Second pass: encode data */
+    unsigned char input_buffer[4096];
+    unsigned char output_buffer[8192];
+    unsigned long output_pos = 0;
+    int output_bit = 0;
+    size_t bytes_read;
+
+    while ((bytes_read = fread(input_buffer, 1, sizeof(input_buffer), input)) > 0)
+    {
+        for (size_t i = 0; i < bytes_read; i++)
+        {
+            unsigned char symbol = input_buffer[i];
+
+            /* Write the code for this symbol */
+            for (int j = 0; j < ctx->codes[symbol].code_len; j++)
+            {
+                /* Flush output buffer if needed */
+                if (output_pos >= sizeof(output_buffer) - 1)
+                {
+                    if (fwrite(output_buffer, 1, output_pos, output) != output_pos)
+                    {
+                        fclose(input);
+                        fclose(output);
+                        return -1;
+                    }
+                    output_pos = 0;
+                }
+
+                write_bit(output_buffer, &output_pos, &output_bit,
+                          ctx->codes[symbol].code[j]);
+            }
+        }
+    }
+
+    /* Flush remaining bits */
+    if (output_bit != 0)
+        output_pos++;
+
+    /* Write remaining output buffer */
+    if (output_pos > 0)
+    {
+        if (fwrite(output_buffer, 1, output_pos, output) != output_pos)
+        {
+            fclose(input);
+            fclose(output);
+            return -1;
+        }
+    }
+
+    fclose(input);
+    fclose(output);
+
+    return 0;
+}
+
+int huffman_stream_decompress_file(const char *input_file,
+                                   const char *output_file)
+{
+    if (!input_file || !output_file)
+        return -1;
+
+    FILE *input = fopen(input_file, "rb");
+    if (!input)
+        return -1;
+
+    FILE *output = fopen(output_file, "wb");
+    if (!output)
+    {
+        fclose(input);
+        return -1;
+    }
+
+    /* Read original file size */
+    unsigned long original_size;
+    if (fread(&original_size, sizeof(unsigned long), 1, input) != 1)
+    {
+        fclose(input);
+        fclose(output);
+        return -1;
+    }
+
+    if (original_size == 0)
+    {
+        fclose(input);
+        fclose(output);
+        return 0;
+    }
+
+    /* Read tree size */
+    unsigned long tree_size;
+    if (fread(&tree_size, sizeof(unsigned long), 1, input) != 1)
+    {
+        fclose(input);
+        fclose(output);
+        return -1;
+    }
+
+    /* Read tree data */
+    unsigned char *tree_buffer = malloc(tree_size);
+    if (!tree_buffer)
+    {
+        fclose(input);
+        fclose(output);
+        return -1;
+    }
+
+    if (fread(tree_buffer, 1, tree_size, input) != tree_size)
+    {
+        free(tree_buffer);
+        fclose(input);
+        fclose(output);
+        return -1;
+    }
+
+    /* Reconstruct tree */
+    unsigned long tree_pos = 0;
+    int tree_bit = 0;
+    huffman_node *root = read_tree(tree_buffer, &tree_pos, &tree_bit);
+    free(tree_buffer);
+
+    if (!root)
+    {
+        fclose(input);
+        fclose(output);
+        return -1;
+    }
+
+    /* Decompress data in chunks */
+    unsigned char input_buffer[8192];
+    unsigned char output_buffer[4096];
+    unsigned long decoded = 0;
+    unsigned long output_count = 0;
+    huffman_node *current = root;
+
+    size_t bytes_read;
+    unsigned long input_pos = 0;
+    int input_bit = 0;
+
+    while (decoded < original_size &&
+           (bytes_read = fread(input_buffer, 1, sizeof(input_buffer), input)) > 0)
+    {
+        input_pos = 0;
+        input_bit = 0;
+
+        while (decoded < original_size && input_pos < bytes_read)
+        {
+            /* Read bit from input */
+            if (input_pos < bytes_read)
+            {
+                int b = read_bit(input_buffer, &input_pos, &input_bit);
+                current = b ? current->right : current->left;
+
+                if (!current)
+                {
+                    free_tree(root);
+                    fclose(input);
+                    fclose(output);
+                    return -1;
+                }
+
+                if (!current->left && !current->right)
+                {
+                    /* Leaf node - write to output buffer */
+                    output_buffer[output_count++] = current->symbol;
+                    decoded++;
+                    current = root;
+
+                    /* Flush output buffer if full */
+                    if (output_count >= sizeof(output_buffer))
+                    {
+                        if (fwrite(output_buffer, 1, output_count, output) != output_count)
+                        {
+                            free_tree(root);
+                            fclose(input);
+                            fclose(output);
+                            return -1;
+                        }
+                        output_count = 0;
+                    }
+                }
+            }
+        }
+    }
+
+    /* Write remaining output buffer */
+    if (output_count > 0)
+    {
+        if (fwrite(output_buffer, 1, output_count, output) != output_count)
+        {
+            free_tree(root);
+            fclose(input);
+            fclose(output);
+            return -1;
+        }
+    }
+
+    free_tree(root);
+    fclose(input);
+    fclose(output);
+
+    return (decoded == original_size) ? 0 : -1;
+}
+
+void huffman_stream_cleanup(huffman_stream_context *ctx)
+{
+    if (!ctx)
+        return;
+
+    if (ctx->tree)
+    {
+        free_tree(ctx->tree);
+        ctx->tree = NULL;
+    }
+
+    memset(ctx, 0, sizeof(huffman_stream_context));
+}
+
+/* Convenience function for complete streaming compression */
+int huffman_compress_file(const char *input_file, const char *output_file)
+{
+    huffman_stream_context ctx;
+
+    /* Initialize context */
+    if (huffman_stream_init(&ctx) != 0)
+        return -1;
+
+    /* First pass: count frequencies */
+    if (huffman_stream_count_frequencies(&ctx, input_file) != 0)
+    {
+        huffman_stream_cleanup(&ctx);
+        return -1;
+    }
+
+    /* Prepare encoding (build tree and codes) */
+    if (huffman_stream_prepare_encoding(&ctx) != 0)
+    {
+        huffman_stream_cleanup(&ctx);
+        return -1;
+    }
+
+    /* Second pass: compress file */
+    int result = huffman_stream_compress_file(&ctx, input_file, output_file);
+
+    /* Clean up */
+    huffman_stream_cleanup(&ctx);
+
+    return result;
+}
