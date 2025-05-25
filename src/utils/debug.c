@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
-/* Global debug state */
+// Global debug state
 int debug_enabled = 0;
 int debug_level = DEBUG_LEVEL_INFO;
 
@@ -37,7 +37,7 @@ void debug_set_level(int level)
 {
     if (level < DEBUG_LEVEL_NONE || level > DEBUG_LEVEL_TRACE)
         {
-            level = DEBUG_LEVEL_INFO; /* Default to info level */
+            level = DEBUG_LEVEL_INFO; // Default to info level
         }
 
     debug_level = level;

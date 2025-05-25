@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Constants */
+// Constants
 #define KEY_DERIVATION_ITERATIONS 100000
 #define MIN_ENCRYPTED_FILE_SIZE (DEFAULT_SALT_SIZE + 1)
 #define MIN_COMPRESSED_FILE_SIZE (sizeof(unsigned long) + 1)
@@ -26,7 +26,7 @@
 #define TEMP_FILE_SUFFIX_DECRYPT ".tmp_decrypt"
 #define WRITE_CHUNK_SIZE BUFFER_SIZE
 
-/* Error codes for internal functions */
+// Error codes for internal functions
 typedef enum
 {
     FILE_OP_SUCCESS = 0,
@@ -41,7 +41,7 @@ typedef enum
     FILE_OP_ERROR_VALIDATION = -9
 } file_op_result_t;
 
-/* Structure for managing crypto operations */
+// Structure for managing crypto operations
 typedef struct
 {
     unsigned char *input_buffer;
@@ -54,7 +54,7 @@ typedef struct
     unsigned char salt[DEFAULT_SALT_SIZE];
 } crypto_operation_t;
 
-/* Helper function prototypes */
+// Helper function prototypes
 static int validate_input_params(const char *input_file,
                                  const char *output_file);
 static int get_file_size(FILE *file, unsigned long *size);
@@ -73,7 +73,7 @@ static unsigned long process_crypto_chunks(crypto_operation_t *op,
 static int create_temp_filename(char *temp_file, size_t size,
                                 const char *output_file, const char *suffix);
 
-/* Input validation helper */
+// Input validation helper
 static int validate_input_params(const char *input_file,
                                  const char *output_file)
 {
@@ -102,7 +102,7 @@ static int validate_input_params(const char *input_file,
     return FILE_OP_SUCCESS;
 }
 
-/* File operation helpers */
+// File operation helpers
 static int get_file_size(FILE *file, unsigned long *size)
 {
     DEBUG_TRACE_MSG("Getting file size");
@@ -154,7 +154,7 @@ static FILE *open_output_file(const char *filename)
     return file;
 }
 
-/* Buffer management helpers */
+// Buffer management helpers
 static int allocate_crypto_buffers(crypto_operation_t *op)
 {
     op->input_buffer = malloc(BUFFER_SIZE);
@@ -184,7 +184,7 @@ static int allocate_crypto_buffers(crypto_operation_t *op)
     return FILE_OP_SUCCESS;
 }
 
-/* Cleanup helpers */
+// Cleanup helpers
 static void cleanup_crypto_operation(crypto_operation_t *op,
                                      const char *output_file, int failed)
 {
@@ -246,7 +246,7 @@ static void secure_cleanup_crypto_keys(crypto_operation_t *op)
     DEBUG_TRACE_MSG("Crypto keys securely cleared");
 }
 
-/* Crypto operation helpers */
+// Crypto operation helpers
 static int init_crypto_context(crypto_operation_t *op, const char *password)
 {
     // Generate salt for encryption, read for decryption
@@ -345,7 +345,7 @@ static int verify_magic_header(crypto_operation_t *op)
     return FILE_OP_SUCCESS;
 }
 
-/* Process crypto data in chunks */
+// Process crypto data in chunks
 static unsigned long process_crypto_chunks(crypto_operation_t *op,
                                            unsigned long data_size, int quiet,
                                            int encrypt)
@@ -426,7 +426,7 @@ static unsigned long process_crypto_chunks(crypto_operation_t *op,
     return processed_size;
 }
 
-/* Create temporary filename helper */
+// Create temporary filename helper
 static int create_temp_filename(char *temp_file, size_t size,
                                 const char *output_file, const char *suffix)
 {
@@ -442,7 +442,7 @@ static int create_temp_filename(char *temp_file, size_t size,
     return FILE_OP_SUCCESS;
 }
 
-/* Main operation functions */
+// Main operation functions
 int add_entry_to_file_list(const char *input_file, const char *output_file,
                            unsigned long original_size,
                            unsigned long processed_size, int quiet)
@@ -838,7 +838,7 @@ unsigned long compress_file(const char *input_file, const char *output_file,
 
     DEBUG_FUNCTION_ENTER("compress_file");
     DEBUG_INFO(
-        "Compressing file (streaming) - input: '%s', output: '%s', quiet: %s",
+        "Compressing file - input: '%s', output: '%s', quiet: %s",
         input_file, output_file, quiet ? "yes" : "no");
 
     if (validate_input_params(input_file, output_file) != FILE_OP_SUCCESS)
@@ -852,7 +852,7 @@ unsigned long compress_file(const char *input_file, const char *output_file,
             print_section_header("File Compression");
             printf("Input file:  %s\n", input_file);
             printf("Output file: %s\n", output_file);
-            printf("Algorithm:   Huffman Coding (Streaming)\n");
+            printf("Algorithm:   Huffman Coding\n");
         }
 
     // Get original file size for reporting
@@ -883,7 +883,7 @@ unsigned long compress_file(const char *input_file, const char *output_file,
     // Perform streaming compression
     if (!quiet)
         {
-            printf("\nCompressing file (streaming approach)...\n");
+            printf("\nCompressing file...\n");
             print_progress_bar(0, original_size, PROGRESS_WIDTH);
         }
     DEBUG_INFO("Starting streaming Huffman compression - input size: %lu bytes",
@@ -931,7 +931,7 @@ unsigned long decompress_file(const char *input_file, const char *output_file,
 
     DEBUG_FUNCTION_ENTER("decompress_file");
     DEBUG_INFO(
-        "Decompressing file (streaming) - input: '%s', output: '%s', quiet: %s",
+        "Decompressing file - input: '%s', output: '%s', quiet: %s",
         input_file, output_file, quiet ? "yes" : "no");
 
     if (validate_input_params(input_file, output_file) != FILE_OP_SUCCESS)
@@ -945,7 +945,7 @@ unsigned long decompress_file(const char *input_file, const char *output_file,
             print_section_header("File Decompression");
             printf("Input file:  %s\n", input_file);
             printf("Output file: %s\n", output_file);
-            printf("Algorithm:   Huffman Coding (Streaming)\n");
+            printf("Algorithm:   Huffman Coding\n");
         }
 
     // Get compressed file size for reporting
@@ -1007,7 +1007,7 @@ unsigned long decompress_file(const char *input_file, const char *output_file,
     // Perform streaming decompression
     if (!quiet)
         {
-            printf("\nDecompressing file (streaming approach)...\n");
+            printf("\nDecompressing file...\n");
             print_progress_bar(0, compressed_file_size, PROGRESS_WIDTH);
         }
     DEBUG_INFO(

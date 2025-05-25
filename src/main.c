@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Program modes */
+// Program modes
 #define MODE_COMPRESS 1
 #define MODE_DECOMPRESS 2
 #define MODE_ENCRYPT 3
@@ -32,7 +32,7 @@
 #define MODE_BATCH 9
 #define MODE_HELP 10
 
-/* Operation handler function prototypes */
+// Operation handler function prototypes
 static int handle_compression_operation(int mode, const char *input_file,
                                         const char *output_file, int quiet);
 static int handle_crypto_operation(int mode, const char *input_file,
@@ -46,7 +46,7 @@ static int parse_command_line(int argc, char *argv[], int *mode,
                               int *num_batch_files, int *quiet, int *debug);
 static int validate_file_input(const char *filename);
 
-/* Helper function implementations */
+// Helper function implementations
 static int validate_file_input(const char *filename)
 {
     if (!file_exists(filename))
@@ -301,7 +301,7 @@ static int parse_command_line(int argc, char *argv[], int *mode,
     if (argc < 2)
         return 0;
 
-    /* Parse the main mode */
+    // Parse the main mode
     if (strcmp(argv[1], "-e") == 0)
         *mode = MODE_ENCRYPT;
     else if (strcmp(argv[1], "-d") == 0)
@@ -329,7 +329,7 @@ static int parse_command_line(int argc, char *argv[], int *mode,
             return -1;
         }
 
-    /* Parse mode-specific arguments */
+    // Parse mode-specific arguments
     int arg_index = 2;
 
     switch (*mode)
@@ -392,7 +392,7 @@ static int parse_command_line(int argc, char *argv[], int *mode,
             case MODE_HELP:
                 arg_index = 2;
                 break;
-        } /* Parse optional arguments */
+        } // Parse optional arguments
     for (int i = arg_index; i < argc; i++)
         {
             if (strcmp(argv[i], "-q") == 0)
@@ -439,7 +439,7 @@ static int parse_command_line(int argc, char *argv[], int *mode,
                 }
         }
 
-    /* Validate batch mode arguments */
+    // Validate batch mode arguments
     if (*mode == MODE_BATCH && *num_batch_files == 0)
         {
             fprintf(stderr,
@@ -464,7 +464,7 @@ int main(int argc, char *argv[])
     int debug_operation = 0;
     int result = 0;
 
-    /* Parse command line arguments */
+    // Parse command line arguments
     if (parse_command_line(argc, argv, &operation_mode, &input_file_arg,
                            &output_file_arg, &batch_output_dir,
                            batch_input_files, &num_batch_input_files,
@@ -473,7 +473,7 @@ int main(int argc, char *argv[])
         {
             print_usage(argv[0]);
             return 1;
-        } /* Initialise debug mode */
+        } // Initialise debug mode
     if (debug_operation)
         {
             debug_init(1, DEBUG_LEVEL_TRACE);
@@ -488,7 +488,7 @@ int main(int argc, char *argv[])
 
     DEBUG_INFO("Starting operation mode: %d", operation_mode);
 
-    /* Execute the selected operation */
+    // Execute the selected operation
     switch (operation_mode)
         {
             case MODE_COMPRESS:

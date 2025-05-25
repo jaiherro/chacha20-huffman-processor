@@ -5,46 +5,46 @@
 #ifndef FILE_OPERATIONS_H
 #define FILE_OPERATIONS_H
 
-/* Constants */
+// Constants
 #define DEFAULT_SALT_SIZE 16
 #define DEFAULT_FILE_LIST "file_list.dat"
 #define MAX_FILENAME 256
 #define BUFFER_SIZE 4096
 
-/* Add entry to file list */
+// Add entry to file list
 int add_entry_to_file_list(const char *input_file, const char *output_file,
                            unsigned long original_size,
                            unsigned long processed_size, int quiet);
 
-/* Encrypt file using ChaCha20 */
+// Encrypt file using ChaCha20
 unsigned long encrypt_file(const char *input_file, const char *output_file,
                            const char *password, int quiet,
                            unsigned long *original_size_out);
 
-/* Decrypt file using ChaCha20 */
+// Decrypt file using ChaCha20
 unsigned long decrypt_file(const char *input_file, const char *output_file,
                            const char *password, int quiet,
                            unsigned long *original_size_out);
 
-/* Compress file using Huffman coding */
+// Compress file using Huffman coding
 unsigned long compress_file(const char *input_file, const char *output_file,
                             int quiet, unsigned long *original_size_out);
 
-/* Decompress file using Huffman coding */
+// Decompress file using Huffman coding
 unsigned long decompress_file(const char *input_file, const char *output_file,
                               int quiet, unsigned long *original_size_out);
 
-/* Process file (compress then encrypt) */
+// Process file (compress then encrypt)
 unsigned long process_file(const char *input_file, const char *output_file,
                            const char *password, int quiet,
                            unsigned long *original_size_out);
 
-/* Extract file (decrypt then decompress) */
+// Extract file (decrypt then decompress)
 unsigned long extract_file(const char *input_file, const char *output_file,
                            const char *password, int quiet,
                            unsigned long *original_size_out);
 
-/* Handle file list operations */
+// Handle file list operations
 int handle_file_list(const char *command, const char *filename_pattern,
                      int quiet);
 

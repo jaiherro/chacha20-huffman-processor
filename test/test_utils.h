@@ -7,11 +7,11 @@
 
 #include <stdio.h>
 
-/* Test result macros */
+// Test result macros
 #define TEST_PASS 0
 #define TEST_FAIL 1
 
-/* Test assertion macros */
+// Test assertion macros
 #define ASSERT_TRUE(condition, msg)                                            \
     if (!(condition))                                                          \
         {                                                                      \
@@ -34,10 +34,10 @@
             return TEST_FAIL;                                                  \
         }
 
-/* Test suite function declarations */
+// Test suite function declarations
 int run_chacha20_tests(void);
 int run_huffman_tests(void);
 int run_key_derivation_tests(void);
 int run_file_list_tests(void);
 
-#endif /* TEST_UTILS_H */
+#endif // TEST_UTILS_H

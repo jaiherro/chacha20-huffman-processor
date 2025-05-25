@@ -7,7 +7,7 @@
 
 #define FILE_LIST_MAX_FILENAME 256
 
-/* File entry structure */
+// File entry structure
 typedef struct file_entry
 {
     char input_filename[FILE_LIST_MAX_FILENAME];
@@ -18,7 +18,7 @@ typedef struct file_entry
     struct file_entry *next;
 } file_entry_t;
 
-/* File list structure */
+// File list structure
 typedef struct
 {
     file_entry_t *head;
@@ -27,31 +27,31 @@ typedef struct
     unsigned long next_sequence_num;
 } file_list_t;
 
-/* Initialise file list */
+// Initialise file list
 int file_list_init(file_list_t *list);
 
-/* Add file to list */
+// Add file to list
 int file_list_add(file_list_t *list, const char *input_filename,
                   const char *output_filename, unsigned long original_size,
                   unsigned long processed_size);
 
-/* Find file in list by name */
+// Find file in list by name
 file_entry_t *file_list_find(file_list_t *list, const char *filename);
 
-/* Get most recent files */
+// Get most recent files
 unsigned long file_list_get_recent(file_list_t *list, unsigned long count,
                                    file_entry_t **result);
 
-/* Save list to file */
+// Save list to file
 int file_list_save(file_list_t *list, const char *filename);
 
-/* Load list from file */
+// Load list from file
 int file_list_load(file_list_t *list, const char *filename);
 
-/* Free list memory */
+// Free list memory
 void file_list_free(file_list_t *list);
 
-/* Print list to stdout */
+// Print list to stdout
 void file_list_print(file_list_t *list);
 
 #endif

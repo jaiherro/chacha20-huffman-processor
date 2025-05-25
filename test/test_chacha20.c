@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* RFC 8439 test vector */
+// RFC 8439 test vector
 static int test_chacha20_rfc8439_vector(void)
 {
     printf("  - RFC 8439 test vector... ");
@@ -55,7 +55,7 @@ static int test_chacha20_rfc8439_vector(void)
     return TEST_PASS;
 }
 
-/* Test encryption/decryption symmetry */
+// Test encryption/decryption symmetry
 static int test_chacha20_symmetry(void)
 {
     printf("  - Encryption/decryption symmetry... ");
@@ -68,14 +68,14 @@ static int test_chacha20_symmetry(void)
 
     chacha20_ctx ctx;
 
-    /* Encrypt */
+    // Encrypt
     ASSERT_EQUAL(chacha20_init(&ctx, key, nonce, 0), 0, "Encrypt init failed");
     ASSERT_EQUAL(
         chacha20_process(&ctx, plaintext, ciphertext, sizeof(plaintext)), 0,
         "Encryption failed");
     chacha20_cleanup(&ctx);
 
-    /* Decrypt */
+    // Decrypt
     ASSERT_EQUAL(chacha20_init(&ctx, key, nonce, 0), 0, "Decrypt init failed");
     ASSERT_EQUAL(
         chacha20_process(&ctx, ciphertext, decrypted, sizeof(plaintext)), 0,
@@ -89,7 +89,7 @@ static int test_chacha20_symmetry(void)
     return TEST_PASS;
 }
 
-/* Test with empty input */
+// Test with empty input
 static int test_chacha20_empty_input(void)
 {
     printf("  - Empty input handling... ");

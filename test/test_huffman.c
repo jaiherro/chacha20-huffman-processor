@@ -12,7 +12,7 @@
 #define TEST_COMPRESSED_FILE "test_compressed.tmp"
 #define TEST_OUTPUT_FILE "test_output.tmp"
 
-/* Helper function to create test file with content */
+// Helper function to create test file with content
 static int create_test_file(const char *filename, const unsigned char *content,
                             size_t size)
 {
@@ -30,7 +30,7 @@ static int create_test_file(const char *filename, const unsigned char *content,
     return 0;
 }
 
-/* Helper function to read file content */
+// Helper function to read file content
 static int read_test_file(const char *filename, unsigned char *buffer,
                           size_t buffer_size, size_t *bytes_read)
 {
@@ -43,7 +43,7 @@ static int read_test_file(const char *filename, unsigned char *buffer,
     return 0;
 }
 
-/* Helper function to get file size */
+// Helper function to get file size
 static long get_test_file_size(const char *filename)
 {
     FILE *file = fopen(filename, "rb");
@@ -56,7 +56,7 @@ static long get_test_file_size(const char *filename)
     return size;
 }
 
-/* Helper function to clean up test files */
+// Helper function to clean up test files
 static void cleanup_test_files(void)
 {
     remove(TEST_INPUT_FILE);
@@ -64,7 +64,7 @@ static void cleanup_test_files(void)
     remove(TEST_OUTPUT_FILE);
 }
 
-/* Test basic compression/decompression symmetry */
+// Test basic compression/decompression symmetry
 static int test_huffman_basic_symmetry(void)
 {
     printf("  - Basic compression/decompression symmetry... ");
@@ -78,21 +78,21 @@ static int test_huffman_basic_symmetry(void)
 
     cleanup_test_files();
 
-    /* Create test input file */
+    // Create test input file
     ASSERT_EQUAL(create_test_file(TEST_INPUT_FILE, test_data, test_size), 0,
                  "Failed to create test input file");
 
-    /* Compress the file */
+    // Compress the file
     ASSERT_EQUAL(
         huffman_compress_file(TEST_INPUT_FILE, TEST_COMPRESSED_FILE, 1), 0,
         "Huffman compression failed");
 
-    /* Decompress the file */
+    // Decompress the file
     ASSERT_EQUAL(huffman_stream_decompress_file(TEST_COMPRESSED_FILE,
                                                 TEST_OUTPUT_FILE, 1),
                  0, "Huffman decompression failed");
 
-    /* Read the output and compare */
+    // Read the output and compare
     ASSERT_EQUAL(read_test_file(TEST_OUTPUT_FILE, output_buffer,
                                 sizeof(output_buffer), &output_size),
                  0, "Failed to read decompressed file");
@@ -107,28 +107,28 @@ static int test_huffman_basic_symmetry(void)
     return TEST_PASS;
 }
 
-/* Test empty file handling */
+// Test empty file handling
 static int test_huffman_empty_file(void)
 {
     printf("  - Empty file handling... ");
 
     cleanup_test_files();
 
-    /* Create empty test file */
+    // Create empty test file
     ASSERT_EQUAL(create_test_file(TEST_INPUT_FILE, NULL, 0), 0,
                  "Failed to create empty test file");
 
-    /* Compress empty file */
+    // Compress empty file
     ASSERT_EQUAL(
         huffman_compress_file(TEST_INPUT_FILE, TEST_COMPRESSED_FILE, 1), 0,
         "Failed to compress empty file");
 
-    /* Decompress empty file */
+    // Decompress empty file
     ASSERT_EQUAL(huffman_stream_decompress_file(TEST_COMPRESSED_FILE,
                                                 TEST_OUTPUT_FILE, 1),
                  0, "Failed to decompress empty file");
 
-    /* Verify output file is empty */
+    // Verify output file is empty
     long output_size = get_test_file_size(TEST_OUTPUT_FILE);
     ASSERT_EQUAL(output_size, 0, "Decompressed empty file should be empty");
 
@@ -137,7 +137,7 @@ static int test_huffman_empty_file(void)
     return TEST_PASS;
 }
 
-/* Test single character file */
+// Test single character file
 static int test_huffman_single_character(void)
 {
     printf("  - Single character compression... ");
@@ -174,14 +174,14 @@ static int test_huffman_single_character(void)
     return TEST_PASS;
 }
 
-/* Test highly repetitive data */
+// Test highly repetitive data
 static int test_huffman_repetitive_data(void)
 {
     printf("  - Repetitive data compression... ");
 
     unsigned char test_data[1000];
     memset(test_data, 'A',
-           sizeof(test_data)); /* All A's should compress very well */
+           sizeof(test_data)); // All A's should compress very well
     unsigned char output_buffer[1000];
     size_t output_size;
 
@@ -195,7 +195,7 @@ static int test_huffman_repetitive_data(void)
         huffman_compress_file(TEST_INPUT_FILE, TEST_COMPRESSED_FILE, 1), 0,
         "Repetitive data compression failed");
 
-    /* Check that compression actually reduced size significantly */
+    // Check that compression actually reduced size significantly
     long original_size = get_test_file_size(TEST_INPUT_FILE);
     long compressed_size = get_test_file_size(TEST_COMPRESSED_FILE);
     ASSERT_TRUE(compressed_size < original_size / 2,
@@ -219,12 +219,12 @@ static int test_huffman_repetitive_data(void)
     return TEST_PASS;
 }
 
-/* Test diverse character set */
+// Test diverse character set
 static int test_huffman_diverse_data(void)
 {
     printf("  - Diverse character set compression... ");
 
-    /* Create data with all possible byte values */
+    // Create data with all possible byte values
     unsigned char test_data[256];
     for (int i = 0; i < 256; i++)
         {
@@ -262,7 +262,7 @@ static int test_huffman_diverse_data(void)
     return TEST_PASS;
 }
 
-/* Test streaming context operations */
+// Test streaming context operations
 static int test_huffman_streaming_context(void)
 {
     printf("  - Streaming context operations... ");
@@ -273,37 +273,37 @@ static int test_huffman_streaming_context(void)
 
     cleanup_test_files();
 
-    /* Test context initialisation */
+    // Test context initialisation
     ASSERT_EQUAL(huffman_stream_init(&ctx), 0, "Context initialisation failed");
 
-    /* Create test file */
+    // Create test file
     ASSERT_EQUAL(create_test_file(TEST_INPUT_FILE, test_data, test_size), 0,
                  "Failed to create streaming test file");
 
-    /* Test frequency counting */
+    // Test frequency counting
     ASSERT_EQUAL(huffman_stream_count_frequencies(&ctx, TEST_INPUT_FILE), 0,
                  "Frequency counting failed");
 
-    /* Verify input size was recorded */
+    // Verify input size was recorded
     ASSERT_EQUAL(ctx.input_size, test_size,
                  "Input size not recorded correctly");
     ASSERT_EQUAL(ctx.pass, 1, "Pass number not updated correctly");
 
-    /* Test encoding preparation */
+    // Test encoding preparation
     ASSERT_EQUAL(huffman_stream_prepare_encoding(&ctx), 0,
                  "Encoding preparation failed");
     ASSERT_EQUAL(ctx.pass, 2, "Pass number not updated after preparation");
     ASSERT_TRUE(ctx.tree != NULL, "Huffman tree not created");
 
-    /* Test compression */
+    // Test compression
     ASSERT_EQUAL(huffman_stream_compress_file(&ctx, TEST_INPUT_FILE,
                                               TEST_COMPRESSED_FILE, 1),
                  0, "Streaming compression failed");
 
-    /* Clean up context */
+    // Clean up context
     huffman_stream_cleanup(&ctx);
 
-    /* Verify decompression still works */
+    // Verify decompression still works
     ASSERT_EQUAL(huffman_stream_decompress_file(TEST_COMPRESSED_FILE,
                                                 TEST_OUTPUT_FILE, 1),
                  0, "Decompression after context cleanup failed");
@@ -313,14 +313,14 @@ static int test_huffman_streaming_context(void)
     return TEST_PASS;
 }
 
-/* Test error conditions */
+// Test error conditions
 static int test_huffman_error_conditions(void)
 {
     printf("  - Error condition handling... ");
 
     huffman_stream_context ctx;
 
-    /* Test NULL parameter handling */
+    // Test NULL parameter handling
     ASSERT_TRUE(huffman_stream_init(NULL) != 0, "Should reject NULL context");
     ASSERT_TRUE(huffman_compress_file(NULL, "output", 1) != 0,
                 "Should reject NULL input file");
@@ -331,7 +331,7 @@ static int test_huffman_error_conditions(void)
     ASSERT_TRUE(huffman_stream_decompress_file("input", NULL, 1) != 0,
                 "Should reject NULL output for decompression");
 
-    /* Test operations on non-existent files */
+    // Test operations on non-existent files
     cleanup_test_files();
     ASSERT_TRUE(
         huffman_compress_file("nonexistent_file.txt", TEST_COMPRESSED_FILE, 1)
@@ -342,7 +342,7 @@ static int test_huffman_error_conditions(void)
                     != 0,
                 "Should fail on non-existent compressed file");
 
-    /* Test context operations in wrong order */
+    // Test context operations in wrong order
     huffman_stream_init(&ctx);
     ASSERT_TRUE(huffman_stream_prepare_encoding(&ctx) != 0,
                 "Should fail prepare without frequency count");
@@ -355,7 +355,7 @@ static int test_huffman_error_conditions(void)
     return TEST_PASS;
 }
 
-/* Test worst-case size calculation */
+// Test worst-case size calculation
 static int test_huffman_worst_case_size(void)
 {
     printf("  - Worst-case size calculation... ");
@@ -376,18 +376,17 @@ static int test_huffman_worst_case_size(void)
     return TEST_PASS;
 }
 
-/* Test binary data compression */
+// Test binary data compression
 static int test_huffman_binary_data(void)
 {
     printf("  - Binary data compression... ");
 
-    /* Create binary test data with some patterns */
+    // Create binary test data with some patterns
     unsigned char test_data[512];
     for (int i = 0; i < 512; i++)
         {
             test_data[i]
-                = (unsigned char)(i
-                                  % 17); /* Some repetition but not too much */
+                = (unsigned char)(i % 17); // Some repetition but not too much
         }
 
     unsigned char output_buffer[512];
@@ -445,7 +444,7 @@ int run_huffman_tests(void)
 
     printf("Huffman compression tests: ALL PASSED\n");
 
-    /* Final cleanup */
+    // Final cleanup
     cleanup_test_files();
 
     return TEST_PASS;

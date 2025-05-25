@@ -20,7 +20,7 @@
     (((unsigned int)((p)[0])) | ((unsigned int)((p)[1]) << 8)                  \
      | ((unsigned int)((p)[2]) << 16) | ((unsigned int)((p)[3]) << 24))
 
-/* ChaCha20 constants: "expand 32-byte k" */
+// ChaCha20 constants: "expand 32-byte k"
 static const unsigned int CONSTANTS[4]
     = { 0x61707865, 0x3320646e, 0x79622d32, 0x6b206574 };
 
@@ -50,35 +50,35 @@ static int generate_block(chacha20_ctx *ctx)
 
     memcpy(x, ctx->state, sizeof(ctx->state));
 
-    /* 20 rounds (10 pairs of column/diagonal rounds) */
+    // 20 rounds (10 pairs of column/diagonal rounds)
     for (i = 0; i < 10; i++)
         {
-            /* Column rounds */
+            // Column rounds
             quarterround(0, 4, 8, 12, x);
             quarterround(1, 5, 9, 13, x);
             quarterround(2, 6, 10, 14, x);
             quarterround(3, 7, 11, 15, x);
 
-            /* Diagonal rounds */
+            // Diagonal rounds
             quarterround(0, 5, 10, 15, x);
             quarterround(1, 6, 11, 12, x);
             quarterround(2, 7, 8, 13, x);
             quarterround(3, 4, 9, 14, x);
         }
 
-    /* Add original state */
+    // Add original state
     for (i = 0; i < 16; i++)
         {
             x[i] += ctx->state[i];
         }
 
-    /* Convert to little-endian bytes */
+    // Convert to little-endian bytes
     for (i = 0; i < 16; i++)
         {
             U32TO8_LITTLE(ctx->keystream + (i * 4), x[i]);
         }
 
-    /* Increment counter */
+    // Increment counter
     if (++ctx->state[12] == 0)
         {
             ctx->state[13]++;
@@ -97,25 +97,25 @@ int chacha20_init(chacha20_ctx *ctx, const unsigned char *key,
     if (!ctx || !key || !nonce)
         return -1;
 
-    /* Constants */
+    // Constants
     for (i = 0; i < 4; i++)
         {
             ctx->state[i] = CONSTANTS[i];
         }
 
-    /* Key (256 bits) */
+    // Key (256 bits)
     for (i = 0; i < 8; i++)
         {
             ctx->state[4 + i] = U8TO32_LITTLE(key + (i * 4));
         }
 
-    /* Counter and nonce */
+    // Counter and nonce
     ctx->state[12] = counter;
     ctx->state[13] = U8TO32_LITTLE(nonce);
     ctx->state[14] = U8TO32_LITTLE(nonce + 4);
     ctx->state[15] = U8TO32_LITTLE(nonce + 8);
 
-    ctx->position = CHACHA20_BLOCK_SIZE; /* Force block generation */
+    ctx->position = CHACHA20_BLOCK_SIZE; // Force block generation
     return 0;
 }
 

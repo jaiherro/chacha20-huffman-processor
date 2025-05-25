@@ -69,27 +69,27 @@ void print_progress_bar(unsigned long current, unsigned long total,
     printf(CLEAR_LINE); // Clear the current line
     printf("Progress: [");
 
-    /* Print filled portion */
+    // Print filled portion
     unsigned long i;
     for (i = 0; i < filled_width; i++)
         {
             printf("=");
         }
 
-    /* Print cursor if not full */
+    // Print cursor if not full
     if (filled_width < width)
         {
             printf(">");
             i++;
         }
 
-    /* Print empty portion */
+    // Print empty portion
     for (; i < width; i++)
         {
             printf(" ");
         }
 
-    /* Print percentage */
+    // Print percentage
     printf("] %5.1f%% (%lu/%lu bytes)", percent * 100.0f, current, total);
     fflush(stdout); // Ensure progress bar updates
 }

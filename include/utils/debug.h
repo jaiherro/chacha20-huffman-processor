@@ -7,28 +7,28 @@
 
 #include <stdio.h>
 
-/* Debug levels */
+// Debug levels
 #define DEBUG_LEVEL_NONE 0
 #define DEBUG_LEVEL_ERROR 1
 #define DEBUG_LEVEL_WARN 2
 #define DEBUG_LEVEL_INFO 3
 #define DEBUG_LEVEL_TRACE 4
 
-/* Global debug state */
+// Global debug state
 extern int debug_enabled;
 extern int debug_level;
 
-/* Debug initialisation and control */
+// Debug initialisation and control
 void debug_init(int enabled, int level);
 void debug_set_enabled(int enabled);
 void debug_set_level(int level);
 int debug_is_enabled(void);
 int debug_get_level(void);
 
-/* Helper function to get current debug counter */
+// Helper function to get current debug counter
 void debug_counter(char *buffer, size_t buffer_size);
 
-/* Debug macros - separate versions for messages with and without arguments */
+// Debug macros - separate versions for messages with and without arguments
 #define DEBUG_ERROR(fmt, ...)                                                  \
     do                                                                         \
         {                                                                      \
@@ -133,7 +133,7 @@ void debug_counter(char *buffer, size_t buffer_size);
         }                                                                      \
     while (0)
 
-/* Function entry/exit tracing */
+// Function entry/exit tracing
 #define DEBUG_FUNCTION_ENTER(func_name)                                        \
     DEBUG_TRACE("Entering function: %s", func_name)
 
@@ -143,24 +143,24 @@ void debug_counter(char *buffer, size_t buffer_size);
 #define DEBUG_FUNCTION_EXIT_SIZE(func_name, result)                            \
     DEBUG_TRACE("Exiting function: %s with result: %lu", func_name, result)
 
-/* Memory allocation debugging */
+// Memory allocation debugging
 #define DEBUG_MALLOC(ptr, size)                                                \
     DEBUG_TRACE("malloc: allocated %zu bytes at %p", size, ptr)
 
 #define DEBUG_FREE(ptr) DEBUG_TRACE("free: deallocating memory at %p", ptr)
 
-/* File operation debugging */
+// File operation debugging
 #define DEBUG_FILE_OPEN(filename, mode)                                        \
     DEBUG_TRACE("fopen: opening file '%s' with mode '%s'", filename, mode)
 
 #define DEBUG_FILE_CLOSE(filename)                                             \
     DEBUG_TRACE("fclose: closing file '%s'", filename)
 
-/* Buffer operation debugging */
+// Buffer operation debugging
 #define DEBUG_BUFFER_OP(op, size)                                              \
     DEBUG_TRACE("buffer operation: %s, size: %lu bytes", op, size)
 
-/* Crypto operation debugging */
+// Crypto operation debugging
 #define DEBUG_CRYPTO_OP(op, input_size, output_size)                           \
     DEBUG_TRACE("crypto operation: %s, input: %lu bytes, output: %lu bytes",   \
                 op, input_size, output_size)
