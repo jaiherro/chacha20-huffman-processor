@@ -8,6 +8,6 @@
 #define MAX_PASSWORD 128
 
 /* Prompt for password with optional confirmation */
-int get_password(char *password, unsigned long max_len, int confirm);
+int get_password (char *password, unsigned long max_len, int confirm);
 
 #endif /* PASSWORD_H */

@@ -20,20 +20,20 @@ typedef struct
 } chacha20_ctx;
 
 /* Initialise ChaCha20 context with key, nonce, and counter */
-int chacha20_init(chacha20_ctx *ctx, const unsigned char *key,
-                  const unsigned char *nonce, unsigned int counter);
+int chacha20_init (chacha20_ctx *ctx, const unsigned char *key,
+                   const unsigned char *nonce, unsigned int counter);
 
 /* Process data (encrypt/decrypt - same operation) */
-int chacha20_process(chacha20_ctx *ctx, const unsigned char *input,
-                     unsigned char *output, unsigned long input_len);
+int chacha20_process (chacha20_ctx *ctx, const unsigned char *input,
+                      unsigned char *output, unsigned long input_len);
 
 /* Generate new keystream block (internal function) */
-int chacha20_block(chacha20_ctx *ctx);
+int chacha20_block (chacha20_ctx *ctx);
 
 /* Perform ChaCha20 quarter round operation */
-void chacha20_quarterround(int a, int b, int c, int d, unsigned int *state);
+void chacha20_quarterround (int a, int b, int c, int d, unsigned int *state);
 
 /* Clear sensitive data from memory */
-void chacha20_cleanup(chacha20_ctx *ctx);
+void chacha20_cleanup (chacha20_ctx *ctx);
 
 #endif /* CHACHA20_H */
