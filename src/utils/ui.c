@@ -118,15 +118,6 @@ void print_processing_summary(const char *operation, const char *input_file, con
     if (input_size > 0)
     {
         printf("Size ratio:  %.2f%%\n", ratio);
-        // Only show savings if ratio is less than 100%
-        if (ratio < 100.0f && ratio >= 0.0f)
-        {
-            printf("Space saved: %.2f%%\n", 100.0f - ratio);
-        }
-        else if (ratio > 100.0f)
-        {
-            printf("Size increase: %.2f%%\n", ratio - 100.0f);
-        }
     }
     else
     {

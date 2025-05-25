@@ -319,6 +319,14 @@ int huffman_stream_prepare_encoding(huffman_stream_context *ctx)
     if (!ctx || ctx->pass != 1)
         return -1;
 
+    /* Handle empty file case */
+    if (ctx->input_size == 0)
+    {
+        ctx->tree = NULL;
+        ctx->pass = 2;
+        return 0;
+    }
+
     /* Build tree from frequencies */
     ctx->tree = build_tree(ctx->frequencies);
     if (!ctx->tree)
@@ -358,6 +366,14 @@ int huffman_stream_compress_file(huffman_stream_context *ctx,
         fclose(input);
         fclose(output);
         return -1;
+    }
+
+    /* Handle empty file case */
+    if (ctx->input_size == 0)
+    {
+        fclose(input);
+        fclose(output);
+        return 0;
     }
 
     /* Write tree to output in a temporary buffer */
