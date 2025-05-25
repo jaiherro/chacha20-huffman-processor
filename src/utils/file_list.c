@@ -15,7 +15,7 @@ int file_list_init(file_list_t *list)
     if (!list)
         return -1;
 
-    // Clear entire structure to ensure all fields are initialized
+    // Clear entire structure to ensure all fields are initialised
     memset(list, 0, sizeof(*list));
     list->next_sequence_num = 1;
     return 0;
@@ -84,7 +84,7 @@ unsigned long file_list_get_recent(file_list_t *list, unsigned long count, file_
         return i;
     }
 
-    // Initialize result array
+    // Initialise result array
     for (unsigned long i = 0; i < count; i++)
     {
         result[i] = NULL;

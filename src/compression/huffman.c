@@ -759,7 +759,7 @@ int huffman_compress_file(const char *input_file, const char *output_file)
 {
     huffman_stream_context ctx;
 
-    /* Initialize context */
+    /* Initialise context */
     if (huffman_stream_init(&ctx) != 0)
         return -1;
 

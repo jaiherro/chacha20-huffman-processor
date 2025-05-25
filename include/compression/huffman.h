@@ -46,7 +46,7 @@ int huffman_decompress(const unsigned char *input, unsigned long input_len,
                        unsigned char *output, unsigned long output_max_len,
                        unsigned long *output_len);
 
-/* Initialize streaming compression context */
+/* Initialise streaming compression context */
 int huffman_stream_init(huffman_stream_context *ctx);
 
 /* First pass: count frequencies from file */

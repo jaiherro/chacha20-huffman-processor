@@ -54,32 +54,18 @@ typedef struct
     unsigned char salt[DEFAULT_SALT_SIZE];
 } crypto_operation_t;
 
-/* Structure for managing compression operations */
-typedef struct
-{
-    unsigned char *input_buffer;
-    unsigned char *output_buffer;
-    FILE *input_file;
-    FILE *output_file;
-    unsigned long input_size;
-    unsigned long output_max_size;
-} compress_operation_t;
-
 /* Helper function prototypes */
 static int validate_input_params(const char *input_file, const char *output_file);
 static int get_file_size(FILE *file, unsigned long *size);
 static FILE *open_input_file(const char *filename);
 static FILE *open_output_file(const char *filename);
 static int allocate_crypto_buffers(crypto_operation_t *op);
-static int allocate_compress_buffers(compress_operation_t *op, unsigned long input_size, unsigned long output_max_size);
 static void cleanup_crypto_operation(crypto_operation_t *op, const char *output_file, int failed);
-static void cleanup_compress_operation(compress_operation_t *op, const char *output_file, int failed);
 static void secure_cleanup_crypto_keys(crypto_operation_t *op);
 static int init_crypto_context(crypto_operation_t *op, const char *password);
 static int verify_magic_header(crypto_operation_t *op);
 static int write_magic_header(crypto_operation_t *op);
 static unsigned long process_crypto_chunks(crypto_operation_t *op, unsigned long data_size, int quiet, int encrypt);
-static unsigned long write_compressed_data(compress_operation_t *op, unsigned long output_size, int quiet);
 static int create_temp_filename(char *temp_file, size_t size, const char *output_file, const char *suffix);
 
 /* Input validation helper */
@@ -183,43 +169,7 @@ static int allocate_crypto_buffers(crypto_operation_t *op)
         }
         return FILE_OP_ERROR_MEMORY;
     }
-
     DEBUG_TRACE_MSG("Crypto buffers allocated successfully");
-    return FILE_OP_SUCCESS;
-}
-
-static int allocate_compress_buffers(compress_operation_t *op, unsigned long input_size, unsigned long output_max_size)
-{
-    op->input_buffer = NULL;
-    op->output_buffer = NULL;
-
-    if (input_size > 0)
-    {
-        op->input_buffer = malloc(input_size);
-        if (!op->input_buffer)
-        {
-            fprintf(stderr, "ERROR: Memory allocation failed for input buffer (%lu bytes).\n", input_size);
-            DEBUG_ERROR_MSG("Input buffer allocation failed");
-            return FILE_OP_ERROR_MEMORY;
-        }
-    }
-
-    op->output_buffer = malloc(output_max_size > 0 ? output_max_size : 1);
-    if (!op->output_buffer)
-    {
-        fprintf(stderr, "ERROR: Memory allocation failed for output buffer (%lu bytes).\n", output_max_size);
-        DEBUG_ERROR_MSG("Output buffer allocation failed");
-
-        if (op->input_buffer)
-        {
-            free(op->input_buffer);
-            op->input_buffer = NULL;
-        }
-        return FILE_OP_ERROR_MEMORY;
-    }
-
-    DEBUG_TRACE("Compression buffers allocated successfully - input: %lu, output: %lu bytes",
-                input_size, output_max_size);
     return FILE_OP_SUCCESS;
 }
 
@@ -270,44 +220,6 @@ static void cleanup_crypto_operation(crypto_operation_t *op, const char *output_
         else
         {
             DEBUG_TRACE_MSG("Failed output file removed successfully");
-        }
-    }
-}
-
-static void cleanup_compress_operation(compress_operation_t *op, const char *output_file, int failed)
-{
-    DEBUG_TRACE("Cleaning up compression operation - failed: %s", failed ? "yes" : "no");
-
-    if (op->input_file)
-    {
-        fclose(op->input_file);
-        op->input_file = NULL;
-    }
-
-    if (op->output_file)
-    {
-        fclose(op->output_file);
-        op->output_file = NULL;
-    }
-
-    if (op->input_buffer)
-    {
-        free(op->input_buffer);
-        op->input_buffer = NULL;
-    }
-
-    if (op->output_buffer)
-    {
-        free(op->output_buffer);
-        op->output_buffer = NULL;
-    }
-
-    if (failed && output_file)
-    {
-        DEBUG_TRACE("Removing failed output file: '%s'", output_file);
-        if (remove(output_file) != 0)
-        {
-            DEBUG_ERROR("Failed to remove output file: '%s'", output_file);
         }
     }
 }
@@ -465,43 +377,8 @@ static unsigned long process_crypto_chunks(crypto_operation_t *op, unsigned long
             print_progress_bar(processed_size, data_size, PROGRESS_WIDTH);
         }
     }
-
     DEBUG_INFO("%s loop completed, processed %lu bytes", operation, processed_size);
     return processed_size;
-}
-
-/* Write compressed data in chunks with progress */
-static unsigned long write_compressed_data(compress_operation_t *op, unsigned long output_size, int quiet)
-{
-    size_t written = 0;
-
-    if (output_size == 0)
-        return 0;
-
-    DEBUG_TRACE("Writing compressed data (%lu bytes)", output_size);
-
-    while (written < output_size)
-    {
-        size_t chunk = (output_size - written < WRITE_CHUNK_SIZE) ? output_size - written : WRITE_CHUNK_SIZE;
-
-        if (fwrite(op->output_buffer + written, 1, chunk, op->output_file) != chunk)
-        {
-            fprintf(stderr, "\nERROR: Failed to write compressed data to output file.\n");
-            DEBUG_ERROR_MSG("Failed to write compressed data");
-            return 0;
-        }
-
-        written += chunk;
-
-        if (!quiet)
-        {
-            unsigned long write_progress = (unsigned long)((double)op->input_size * written / output_size);
-            print_progress_bar(write_progress, op->input_size, PROGRESS_WIDTH);
-        }
-    }
-
-    DEBUG_TRACE_MSG("Compressed data written successfully");
-    return written;
 }
 
 /* Create temporary filename helper */
@@ -868,11 +745,12 @@ unsigned long decrypt_file(const char *input_file, const char *output_file,
 
 unsigned long compress_file(const char *input_file, const char *output_file, int quiet, unsigned long *original_size_out)
 {
-    compress_operation_t op = {0};
-    unsigned long read_size, output_size, total_output_size = 0;
+    FILE *input_file_handle;
+    unsigned long original_size = 0;
+    unsigned long compressed_file_size = 0;
 
     DEBUG_FUNCTION_ENTER("compress_file");
-    DEBUG_INFO("Compressing file - input: '%s', output: '%s', quiet: %s",
+    DEBUG_INFO("Compressing file (streaming) - input: '%s', output: '%s', quiet: %s",
                input_file, output_file, quiet ? "yes" : "no");
 
     if (validate_input_params(input_file, output_file) != FILE_OP_SUCCESS)
@@ -886,131 +764,78 @@ unsigned long compress_file(const char *input_file, const char *output_file, int
         print_section_header("File Compression");
         printf("Input file:  %s\n", input_file);
         printf("Output file: %s\n", output_file);
-        printf("Algorithm:   Huffman Coding\n");
+        printf("Algorithm:   Huffman Coding (Streaming)\n");
     }
 
-    // Open and read input file
-    op.input_file = open_input_file(input_file);
-    if (!op.input_file)
+    // Get original file size for reporting
+    input_file_handle = open_input_file(input_file);
+    if (!input_file_handle)
     {
         DEBUG_FUNCTION_EXIT("compress_file", 0);
         return 0;
     }
 
-    if (get_file_size(op.input_file, &op.input_size) != FILE_OP_SUCCESS)
+    if (get_file_size(input_file_handle, &original_size) != FILE_OP_SUCCESS)
     {
         fprintf(stderr, "ERROR: Could not determine size of input file '%s'.\n", input_file);
         DEBUG_ERROR("Failed to get file size for: '%s'", input_file);
-        fclose(op.input_file);
+        fclose(input_file_handle);
         DEBUG_FUNCTION_EXIT("compress_file", 0);
         return 0;
     }
-    DEBUG_INFO("Input file size: %lu bytes", op.input_size);
+    fclose(input_file_handle);
+
+    DEBUG_INFO("Input file size: %lu bytes", original_size);
 
     if (original_size_out)
-        *original_size_out = op.input_size;
+        *original_size_out = original_size;
 
-    op.output_file = open_output_file(output_file);
-    if (!op.output_file)
+    // Perform streaming compression
+    if (!quiet)
     {
-        fclose(op.input_file);
+        printf("\nCompressing file (streaming approach)...\n");
+        print_progress_bar(0, original_size, PROGRESS_WIDTH);
+    }
+    DEBUG_INFO("Starting streaming Huffman compression - input size: %lu bytes", original_size);
+
+    if (huffman_compress_file(input_file, output_file) != 0)
+    {
+        fprintf(stderr, "\nERROR: Streaming Huffman compression failed.\n");
+        DEBUG_ERROR_MSG("Streaming Huffman compression failed");
         DEBUG_FUNCTION_EXIT("compress_file", 0);
         return 0;
     }
 
-    // Write file size header
-    DEBUG_TRACE("Writing file size header (%lu bytes)", op.input_size);
-    if (fwrite(&op.input_size, sizeof(unsigned long), 1, op.output_file) != 1)
+    // Get compressed file size
+    FILE *output_handle = fopen(output_file, "rb");
+    if (output_handle)
     {
-        fprintf(stderr, "ERROR: Failed to write file size header to output file '%s'.\n", output_file);
-        DEBUG_ERROR_MSG("Failed to write file size header");
-        cleanup_compress_operation(&op, output_file, 1);
-        DEBUG_FUNCTION_EXIT("compress_file", 0);
-        return 0;
-    }
-    total_output_size += sizeof(unsigned long);
-    DEBUG_TRACE_MSG("File size header written successfully");
-
-    // Allocate buffers and read input
-    op.output_max_size = huffman_worst_case_size(op.input_size);
-    if (allocate_compress_buffers(&op, op.input_size, op.output_max_size) != FILE_OP_SUCCESS)
-    {
-        cleanup_compress_operation(&op, output_file, 1);
-        DEBUG_FUNCTION_EXIT("compress_file", 0);
-        return 0;
-    }
-
-    if (op.input_size > 0)
-    {
-        DEBUG_TRACE("Reading entire input file (%lu bytes)", op.input_size);
-        read_size = fread(op.input_buffer, 1, op.input_size, op.input_file);
-        if (read_size != op.input_size || ferror(op.input_file))
+        if (get_file_size(output_handle, &compressed_file_size) == FILE_OP_SUCCESS)
         {
-            fprintf(stderr, "ERROR: Failed to read entire input file '%s'.\n", input_file);
-            DEBUG_ERROR("Failed to read input file - expected %lu, got %lu", op.input_size, read_size);
-            cleanup_compress_operation(&op, output_file, 1);
-            DEBUG_FUNCTION_EXIT("compress_file", 0);
-            return 0;
+            DEBUG_INFO("Streaming Huffman compression completed - output size: %lu bytes", compressed_file_size);
         }
-        DEBUG_TRACE_MSG("Input file read successfully");
-    }
-    else
-    {
-        read_size = 0;
-        DEBUG_TRACE_MSG("Empty input file - no data to compress");
-    }
-
-    // Perform compression
-    if (!quiet)
-    {
-        printf("\nCompressing file...\n");
-        print_progress_bar(0, op.input_size, PROGRESS_WIDTH);
-    }
-    DEBUG_INFO("Starting Huffman compression - input size: %lu bytes", read_size);
-
-    if (huffman_compress(op.input_buffer, read_size, op.output_buffer, op.output_max_size, &output_size) != 0)
-    {
-        fprintf(stderr, "\nERROR: Huffman compression failed.\n");
-        DEBUG_ERROR_MSG("Huffman compression failed");
-        cleanup_compress_operation(&op, output_file, 1);
-        DEBUG_FUNCTION_EXIT("compress_file", 0);
-        return 0;
-    }
-    DEBUG_INFO("Huffman compression completed - output size: %lu bytes", output_size);
-
-    // Write compressed data
-    unsigned long written = write_compressed_data(&op, output_size, quiet);
-    if (written != output_size)
-    {
-        cleanup_compress_operation(&op, output_file, 1);
-        DEBUG_FUNCTION_EXIT("compress_file", 0);
-        return 0;
+        fclose(output_handle);
     }
 
     if (!quiet)
     {
-        print_progress_bar(op.input_size, op.input_size, PROGRESS_WIDTH);
+        print_progress_bar(original_size, original_size, PROGRESS_WIDTH);
         printf("\n");
     }
 
-    total_output_size += output_size;
-
-    // Clean up successfully
-    cleanup_compress_operation(&op, NULL, 0);
-
-    DEBUG_INFO("Compression completed - total output size: %lu bytes", total_output_size);
-    DEBUG_FUNCTION_EXIT_SIZE("compress_file", total_output_size);
-    return total_output_size;
+    DEBUG_INFO("Compression completed - compressed file size: %lu bytes", compressed_file_size);
+    DEBUG_FUNCTION_EXIT_SIZE("compress_file", compressed_file_size);
+    return compressed_file_size;
 }
 
 unsigned long decompress_file(const char *input_file, const char *output_file, int quiet, unsigned long *original_size_out)
 {
-    compress_operation_t op = {0};
-    unsigned long compressed_data_size, output_size, expected_original_size = 0;
-    unsigned long input_actual_file_size = 0;
+    FILE *input_file_handle;
+    unsigned long compressed_file_size = 0;
+    unsigned long decompressed_file_size = 0;
 
     DEBUG_FUNCTION_ENTER("decompress_file");
-    DEBUG_INFO("Decompressing file - input: '%s', output: '%s', quiet: %s",
+    DEBUG_INFO("Decompressing file (streaming) - input: '%s', output: '%s', quiet: %s",
                input_file, output_file, quiet ? "yes" : "no");
 
     if (validate_input_params(input_file, output_file) != FILE_OP_SUCCESS)
@@ -1024,155 +849,77 @@ unsigned long decompress_file(const char *input_file, const char *output_file, i
         print_section_header("File Decompression");
         printf("Input file:  %s\n", input_file);
         printf("Output file: %s\n", output_file);
-        printf("Algorithm:   Huffman Coding\n");
+        printf("Algorithm:   Huffman Coding (Streaming)\n");
     }
 
-    // Open and validate input file
-    op.input_file = open_input_file(input_file);
-    if (!op.input_file)
+    // Get compressed file size for reporting
+    input_file_handle = open_input_file(input_file);
+    if (!input_file_handle)
     {
         DEBUG_FUNCTION_EXIT("decompress_file", 0);
         return 0;
     }
 
-    if (get_file_size(op.input_file, &input_actual_file_size) != FILE_OP_SUCCESS)
+    if (get_file_size(input_file_handle, &compressed_file_size) != FILE_OP_SUCCESS)
     {
         fprintf(stderr, "ERROR: Could not determine size of input file '%s'.\n", input_file);
         DEBUG_ERROR("Failed to get file size for: '%s'", input_file);
-        fclose(op.input_file);
+        fclose(input_file_handle);
         DEBUG_FUNCTION_EXIT("decompress_file", 0);
         return 0;
     }
-    DEBUG_INFO("Input file size: %lu bytes", input_actual_file_size);
+    fclose(input_file_handle);
+
+    DEBUG_INFO("Compressed file size: %lu bytes", compressed_file_size);
 
     if (original_size_out)
-        *original_size_out = input_actual_file_size;
+        *original_size_out = compressed_file_size;
 
-    if (input_actual_file_size < MIN_COMPRESSED_FILE_SIZE)
+    if (compressed_file_size < MIN_COMPRESSED_FILE_SIZE)
     {
         fprintf(stderr, "ERROR: Input file '%s' is too small (%lu bytes) to contain header.\n",
-                input_file, input_actual_file_size);
-        DEBUG_ERROR("Input file too small: %lu bytes", input_actual_file_size);
-        fclose(op.input_file);
+                input_file, compressed_file_size);
+        DEBUG_ERROR("Input file too small: %lu bytes", compressed_file_size);
         DEBUG_FUNCTION_EXIT("decompress_file", 0);
         return 0;
     }
 
-    // Read original file size header
-    DEBUG_TRACE_MSG("Reading original file size header");
-    if (fread(&expected_original_size, sizeof(unsigned long), 1, op.input_file) != 1)
-    {
-        fprintf(stderr, "ERROR: Failed to read original file size header from input file '%s'.\n", input_file);
-        DEBUG_ERROR_MSG("Failed to read original file size header");
-        fclose(op.input_file);
-        DEBUG_FUNCTION_EXIT("decompress_file", 0);
-        return 0;
-    }
-    DEBUG_INFO("Expected original size: %lu bytes", expected_original_size);
-
-    op.output_file = open_output_file(output_file);
-    if (!op.output_file)
-    {
-        fclose(op.input_file);
-        DEBUG_FUNCTION_EXIT("decompress_file", 0);
-        return 0;
-    }
-
-    // Calculate compressed data size and allocate buffers
-    compressed_data_size = input_actual_file_size - sizeof(unsigned long);
-    DEBUG_INFO("Compressed data size: %lu bytes", compressed_data_size);
-
-    if (allocate_compress_buffers(&op, compressed_data_size, expected_original_size) != FILE_OP_SUCCESS)
-    {
-        cleanup_compress_operation(&op, output_file, 1);
-        DEBUG_FUNCTION_EXIT("decompress_file", 0);
-        return 0;
-    }
-
-    // Read compressed data
-    if (compressed_data_size > 0)
-    {
-        DEBUG_TRACE("Reading compressed data (%lu bytes)", compressed_data_size);
-        if (fread(op.input_buffer, 1, compressed_data_size, op.input_file) != compressed_data_size || ferror(op.input_file))
-        {
-            fprintf(stderr, "ERROR: Failed to read compressed data from input file '%s'.\n", input_file);
-            DEBUG_ERROR_MSG("Failed to read compressed data");
-            cleanup_compress_operation(&op, output_file, 1);
-            DEBUG_FUNCTION_EXIT("decompress_file", 0);
-            return 0;
-        }
-        DEBUG_TRACE_MSG("Compressed data read successfully");
-    }
-    else if (expected_original_size > 0)
-    {
-        fprintf(stderr, "ERROR: Compressed file format error - header indicates %lu original bytes, but no compressed data found.\n",
-                expected_original_size);
-        DEBUG_ERROR_MSG("File format error - no compressed data but original size > 0");
-        cleanup_compress_operation(&op, output_file, 1);
-        DEBUG_FUNCTION_EXIT("decompress_file", 0);
-        return 0;
-    }
-    else
-    {
-        DEBUG_TRACE_MSG("Empty file - no compressed data");
-    }
-
-    // Perform decompression
+    // Perform streaming decompression
     if (!quiet)
     {
-        printf("\nDecompressing file...\n");
-        print_progress_bar(0, expected_original_size, PROGRESS_WIDTH);
+        printf("\nDecompressing file (streaming approach)...\n");
+        print_progress_bar(0, compressed_file_size, PROGRESS_WIDTH);
     }
-    DEBUG_INFO("Starting Huffman decompression - compressed size: %lu, expected output: %lu bytes",
-               compressed_data_size, expected_original_size);
+    DEBUG_INFO("Starting streaming Huffman decompression - compressed size: %lu bytes", compressed_file_size);
 
-    if (huffman_decompress(op.input_buffer, compressed_data_size, op.output_buffer, expected_original_size, &output_size) != 0)
+    if (huffman_stream_decompress_file(input_file, output_file) != 0)
     {
-        fprintf(stderr, "\nERROR: Huffman decompression failed. Input file might be corrupted or not compressed with this tool.\n");
-        DEBUG_ERROR_MSG("Huffman decompression failed");
-        cleanup_compress_operation(&op, output_file, 1);
-        DEBUG_FUNCTION_EXIT("decompress_file", 0);
-        return 0;
-    }
-    DEBUG_INFO("Huffman decompression completed - actual output size: %lu bytes", output_size);
-
-    if (output_size != expected_original_size)
-    {
-        fprintf(stderr, "\nERROR: Decompressed size (%lu) does not match expected size from header (%lu). File might be corrupted.\n",
-                output_size, expected_original_size);
-        DEBUG_ERROR("Size mismatch - expected: %lu, actual: %lu", expected_original_size, output_size);
-        cleanup_compress_operation(&op, output_file, 1);
+        fprintf(stderr, "\nERROR: Streaming Huffman decompression failed. Input file might be corrupted or not compressed with this tool.\n");
+        DEBUG_ERROR_MSG("Streaming Huffman decompression failed");
         DEBUG_FUNCTION_EXIT("decompress_file", 0);
         return 0;
     }
 
-    // Write decompressed data
-    if (output_size > 0)
+    // Get decompressed file size
+    FILE *output_handle = fopen(output_file, "rb");
+    if (output_handle)
     {
-        DEBUG_TRACE("Writing decompressed data (%lu bytes)", output_size);
-        if (fwrite(op.output_buffer, 1, output_size, op.output_file) != output_size)
+        if (get_file_size(output_handle, &decompressed_file_size) == FILE_OP_SUCCESS)
         {
-            fprintf(stderr, "\nERROR: Failed to write decompressed data to output file '%s'.\n", output_file);
-            DEBUG_ERROR_MSG("Failed to write decompressed data");
-            cleanup_compress_operation(&op, output_file, 1);
-            DEBUG_FUNCTION_EXIT("decompress_file", 0);
-            return 0;
+            DEBUG_INFO("Streaming Huffman decompression completed - output size: %lu bytes", decompressed_file_size);
         }
-        DEBUG_TRACE_MSG("Decompressed data written successfully");
+        fclose(output_handle);
     }
 
     if (!quiet)
     {
-        print_progress_bar(expected_original_size, expected_original_size, PROGRESS_WIDTH);
+        print_progress_bar(compressed_file_size, compressed_file_size, PROGRESS_WIDTH);
         printf("\n");
     }
 
-    // Clean up successfully
-    cleanup_compress_operation(&op, NULL, 0);
-
-    DEBUG_INFO("Decompression completed successfully - output size: %lu bytes", expected_original_size);
-    DEBUG_FUNCTION_EXIT_SIZE("decompress_file", expected_original_size);
-    return expected_original_size;
+    DEBUG_INFO("Decompression completed - decompressed file size: %lu bytes", decompressed_file_size);
+    DEBUG_FUNCTION_EXIT_SIZE("decompress_file", decompressed_file_size);
+    return decompressed_file_size;
 }
 
 unsigned long process_file(const char *input_file, const char *output_file,
