@@ -11,4 +11,4 @@ int file_exists (const char *filename);
 /* Create directory if it doesn't exist */
 int ensure_directory_exists (const char *directory);
 
-#endif /* FILESYSTEM_H */
+#endif

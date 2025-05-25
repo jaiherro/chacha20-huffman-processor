@@ -54,4 +54,4 @@ void file_list_free (file_list_t *list);
 /* Print list to stdout */
 void file_list_print (file_list_t *list);
 
-#endif /* FILE_LIST_H */
+#endif

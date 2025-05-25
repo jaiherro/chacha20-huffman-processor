@@ -48,4 +48,4 @@ unsigned long extract_file (const char *input_file, const char *output_file,
 int handle_file_list (const char *command, const char *filename_pattern,
                       int quiet);
 
-#endif /* FILE_OPERATIONS_H */
+#endif

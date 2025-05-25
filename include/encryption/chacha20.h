@@ -36,4 +36,4 @@ void chacha20_quarterround (int a, int b, int c, int d, unsigned int *state);
 /* Clear sensitive data from memory */
 void chacha20_cleanup (chacha20_ctx *ctx);
 
-#endif /* CHACHA20_H */
+#endif

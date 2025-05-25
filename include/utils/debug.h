@@ -165,4 +165,4 @@ void debug_counter (char *buffer, size_t buffer_size);
     DEBUG_TRACE ("crypto operation: %s, input: %lu bytes, output: %lu bytes",  \
                  op, input_size, output_size)
 
-#endif /* DEBUG_H */
+#endif

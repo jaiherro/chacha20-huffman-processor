@@ -14,4 +14,4 @@ int derive_key_and_nonce (const char *password, const unsigned char *salt,
 /* Generate random salt */
 int generate_salt (unsigned char *salt, unsigned long salt_len);
 
-#endif /* KEY_DERIVATION_H */
+#endif

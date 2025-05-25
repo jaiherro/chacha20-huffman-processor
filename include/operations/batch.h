@@ -11,4 +11,4 @@
 int batch_process (char *filenames[], int num_files, const char *output_dir,
                    const char *password, int quiet);
 
-#endif /* BATCH_H */
+#endif

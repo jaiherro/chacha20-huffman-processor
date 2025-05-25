@@ -62,4 +62,4 @@ void huffman_stream_cleanup (huffman_stream_context *ctx);
 int huffman_compress_file (const char *input_file, const char *output_file,
                            int quiet);
 
-#endif /* HUFFMAN_H */
+#endif

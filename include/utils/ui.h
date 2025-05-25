@@ -30,4 +30,4 @@ void print_processing_summary (const char *operation, const char *input_file,
 /* Print section header */
 void print_section_header (const char *title);
 
-#endif /* UI_H */
+#endif
