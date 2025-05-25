@@ -729,13 +729,10 @@ unsigned long compress_file(const char *input_file, const char *output_file, int
         return 0;
     }
     DEBUG_INFO("Huffman compression completed - output size: %lu bytes", output_size);
+
     if (output_size > 0)
     {
         DEBUG_TRACE("Writing compressed data (%lu bytes)", output_size);
-        if (!quiet)
-        {
-            print_progress_bar(0, output_size, PROGRESS_WIDTH);
-        }
         size_t written = 0;
         while (written < output_size)
         {
@@ -754,21 +751,23 @@ unsigned long compress_file(const char *input_file, const char *output_file, int
                 return 0;
             }
             written += chunk;
+
             if (!quiet)
             {
-                print_progress_bar(written, output_size, PROGRESS_WIDTH);
+                unsigned long write_progress = (unsigned long)((double)total_input_size * written / output_size);
+                print_progress_bar(write_progress, total_input_size, PROGRESS_WIDTH);
             }
         }
-        if (!quiet)
-            printf("\n");
         DEBUG_TRACE_MSG("Compressed data written successfully");
     }
-    total_output_size += output_size;
+
     if (!quiet)
     {
         print_progress_bar(total_input_size, total_input_size, PROGRESS_WIDTH);
         printf("\n");
     }
+
+    total_output_size += output_size;
 
     DEBUG_TRACE_MSG("Cleaning up buffers and files");
     if (buffer)
