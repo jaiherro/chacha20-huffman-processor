@@ -17,6 +17,19 @@
 int batch_process(char *input_files[], int num_files, const char *output_dir,
                   const char *password, int quiet)
 {
+
+    // Parameter validation
+    if (input_files == NULL)
+        return 1;
+    if (num_files <= 0 || num_files > MAX_BATCH_FILES)
+        return 1;
+    if (output_dir == NULL || output_dir[0] == '\0')
+        return 1;
+    if (password == NULL || password[0] == '\0')
+        return 1;
+    if (quiet != 0 && quiet != 1)
+        return 1;
+
     int success_count = 0;
     int failure_count = 0;
     char output_path[MAX_FILENAME];
